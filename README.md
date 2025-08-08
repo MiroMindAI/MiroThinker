@@ -23,6 +23,11 @@
 
 ## Introduction
 
+<div align="center">
+  <img src="assets/gaia_text_103.png" width="98%" alt="MiroFlow Performance on GAIA-Validation" />
+  <p><strong>Performance of Open-sourced models on GAIA-Validation Benchmark.</strong></p>
+</div>
+
 **MiroThinker** is an open-source agentic model series built on top of Qwen3. Designed for deep research and complex, long-horizon problem solving, it integrates strong capabilities in **task decomposition**, **multi-hop reasoning**, **retrieval-augmented generation**, **code execution**, **web browsing**, and **document/file processing**, making it suitable for a wide range of real-world applications.
 
 We have released the **MiroThinker-v0.1** series, including both SFT and DPO variants at parameter scales of **8B**, **14B**, and **32B**. Notably, MiroThinker v0.1 achieves **state-of-the-art performance** among open-source models on the [GAIA benchmark](https://huggingface.co/datasets/gaia-benchmark/GAIA), a rigorous evaluation suite for advanced agentic capabilities, demonstrating its strength in long-context, decision-intensive, and real-world task scenarios.
@@ -191,44 +196,41 @@ python benchmarks/evaluators/check_progress_gaia-validation-text-103.py /path/to
 # Others follow the same pattern
 ```
 
-## 🛠️ (Optional) Using Open-Source Tools
+## 🛠️ Using Open-Source Tools
 
 We also provide the option to use open-source tools as alternatives to proprietary models and tools. For detailed setup and configuration instructions, please refer to our documentation: [USE-OS-TOOL.md](assets/USE-OS-TOOL.md).
 
 ## 📈 Benchmark Performance
 
-<div align="center">
-  <img src="assets/gaia_text_103.png" width="80%" alt="MiroFlow Performance on GAIA-Validation" />
-  <p><strong>Performance of MiroFlow on GAIA-Validation Benchmark</strong></p>
-</div>
-
 ### GAIA Benchmark
 
 | **Method** | Text-103<br>Best Pass@1 | Text-103<br>Pass@1 (Avg@8) | Val-165<br>Best Pass@1 | Val-165<br>Pass@1 (Avg@8) |
 | ----------------------------------------------------------------- | :--: | :--: | :--: | :--: |
+| **🔹7B Models** | | | | |
 | Search-o1-7B                                                      | 17.5 | -    | -    | -    |
 | R1-Searcher-7B                                                    | 20.4 | -    | -    | -    |
 | WebDancer-7B                                                      | 31.0 | -    | -    | -    |
 | WebSailor-7B                                                      | 37.9 | -    | -    | -    |
+| **🔹8B Models** | | | | |
 | CK-Pro-8B                                                         | 40.3 | -    | 32.7 | -    |
-| MiroThinker-8B-SFT-v0.1                                           | 44.7 | 40.1 | 34.6 | 31.8 |
+| **MiroThinker-8B-SFT-v0.1**                                           | 44.7 | 40.1 | 34.6 | 31.8 |
 |     + Commercial Tools                        | 46.6 | 42.1 | 37.6 | 33.9 |
-| MiroThinker-8B-DPO-v0.1                                           | 46.6 | 44.8 | 37.0 | 35.4 |
-|     + Commercial Tools                        | 50.5 | 46.7 | 38.2 | 35.9 |
-|                                                                   |      |      |      |      |
+| **MiroThinker-8B-DPO-v0.1**                                           | 46.6 | 44.8 | 37.0 | 35.4 |
+|     + Commercial Tools                        | **50.5** | **46.7** | **38.2** | **35.9** |
+| **🔹14B Models** | | | | |
+| **MiroThinker-14B-SFT-v0.1**                                          | 47.6 | 44.4 | 37.0 | 34.4 |
+|     + Commercial Tools                        | 49.5 | 47.5 | 41.8 | 39.8 |
+| **MiroThinker-14B-DPO-v0.1**                                          | 48.5 | 46.6 | 42.4 | 39.2 |
+|     + Commercial Tools                        | **52.4** | **48.5** | **45.5** | **42.0** |
+| **🔹32B Models** | | | | |
 | Search-o1-32B                                                     | 28.2 | -    | -    | -    |
 | WebThinker-32B-RL                                                 | 48.5 | -    | -    | -    |
 | WebDancer-QwQ-32B                                                 | 51.5 | -    | -    | -    |
 | WebSailor-32B                                                     | 53.2 | -    | -    | -    |
 | WebShaper-QwQ-32B                                                 | 53.3 | -    | -    | -    |
-| WebShaper-72B                                                     | 60.1 | -    | -    | -    |
-| MiroThinker-14B-SFT-v0.1                                          | 47.6 | 44.4 | 37.0 | 34.4 |
-|     + Commercial Tools                        | 49.5 | 47.5 | 41.8 | 39.8 |
-| MiroThinker-14B-DPO-v0.1                                          | 48.5 | 46.6 | 42.4 | 39.2 |
-|     + Commercial Tools                        | 52.4 | 48.5 | 45.5 | 42.0 |
-| MiroThinker-32B-SFT-v0.1                                          | 55.3 | 51.3 | 44.9 | 42.7 |
+| **MiroThinker-32B-SFT-v0.1**                                          | 55.3 | 51.3 | 44.9 | 42.7 |
 |     + Commercial Tools                        | 58.3 | 54.2 | 48.5 | 45.8 |
-| <span style="white-space:nowrap;">MiroThinker-32B-DPO-v0.1</span> | 57.3 | 54.1 | 48.5 | 45.9 |
+| **MiroThinker-32B-DPO-v0.1** | 57.3 | 54.1 | 48.5 | 45.9 |
 |     + Commercial Tools                        | **60.2** | **57.9** | **50.9** | **48.9** |
 
 1. Following the practices of WebThinker, WebAgents, and CognitiveKernel, we report the Best Pass@1, the highest score across three runs, which often reflects stronger performance, though it may exhibit some variability. To provide a more stable measure, we additionally report Pass@1 (Avg@8), which offers greater consistency at the cost of slightly lower scores.

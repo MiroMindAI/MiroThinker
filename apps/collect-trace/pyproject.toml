@@ -6,8 +6,9 @@ readme = "README.md"
 requires-python = ">=3.12"
 authors = [{ name = "MiroMind Team", email = "miromind@shanda.com" }]
 dependencies = [
+    "miroflow-tools>=0.1.0",
+    "miroflow-tracing>=0.1.0",
     "dotenv>=0.9.9",
-    "mirage-contrib>=0.1.0",
     "openai>=1.90.0",
 ]
 
