@@ -16,10 +16,12 @@ import base64
 import os
 
 from fastmcp import FastMCP
+import aiohttp
 import requests
 
-SILICONFLOW_API_KEY = os.environ.get("SILICONFLOW_API_KEY")
-SILICONFLOW_BASE_URL = "https://api.siliconflow.cn/v1/chat/completions"
+VISION_API_KEY = os.environ.get("VISION_API_KEY")
+VISION_BASE_URL = os.environ.get("VISION_BASE_URL")
+VISION_MODEL_NAME = os.environ.get("VISION_MODEL_NAME")
 
 # Initialize FastMCP server
 mcp = FastMCP("vision-mcp-server-os")
@@ -66,7 +68,7 @@ async def visual_question_answering(image_path_or_url: str, question: str) -> st
     print("messages_for_llm", messages_for_llm)
 
     headers = {
-        "Authorization": f"Bearer {SILICONFLOW_API_KEY}",
+        "Authorization": f"Bearer {VISION_API_KEY}",
         "Content-Type": "application/json",
     }
 
@@ -77,15 +79,30 @@ async def visual_question_answering(image_path_or_url: str, question: str) -> st
                 messages_for_llm[0]["content"][0]["image_url"]["url"] = (
                     f"data:{await guess_mime_media_type_from_extension(image_path_or_url)};base64,{image_data}"
                 )
+        elif image_path_or_url.startswith("http://") or image_path_or_url.startswith(
+            "https://"
+        ):  # 远程 URL
+            async with aiohttp.ClientSession() as session:
+                async with session.get(image_path_or_url) as resp:
+                    if resp.status == 200:
+                        image_bytes = await resp.read()
+                        mime_type = resp.headers.get(
+                            "Content-Type", "image/png"
+                        )  # fallback MIME type
+                        image_data = base64.b64encode(image_bytes).decode("utf-8")
+                        messages_for_llm[0]["content"][0]["image_url"]["url"] = (
+                            f"data:{mime_type};base64,{image_data}"
+                        )
+                    else:
+                        raise ValueError(
+                            f"Failed to fetch image from URL: {image_path_or_url}"
+                        )
         else:
             messages_for_llm[0]["content"][0]["image_url"]["url"] = image_path_or_url
 
-        payload = {
-            "model": "Qwen/Qwen2.5-VL-72B-Instruct",
-            "messages": messages_for_llm,
-        }
+        payload = {"model": VISION_MODEL_NAME, "messages": messages_for_llm}
 
-        response = requests.post(SILICONFLOW_BASE_URL, json=payload, headers=headers)
+        response = requests.post(VISION_BASE_URL, json=payload, headers=headers)
         print(response)
     except Exception as e:
         return f"Error: {e}\n payload: {payload}"

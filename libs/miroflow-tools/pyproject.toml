@@ -16,7 +16,8 @@ dependencies = [
     "wikipedia",
     "mutagen",
     "markitdown-mcp>=0.0.1a3",
-    "google-genai" 
+    "google-genai",
+    "aiohttp"
 ]
 
 [build-system]

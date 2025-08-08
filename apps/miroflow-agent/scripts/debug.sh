@@ -1,4 +1,4 @@
-
+#!/bin/bash
 
 BENCHMARK_NAME="gaia-validation"
 LLM_PROVIDER="qwen"

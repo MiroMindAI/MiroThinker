@@ -32,18 +32,27 @@ set_tracing_export_api_key("fake-key")
 # Suppress trace provider warnings
 bootstrap_silent_trace_provider()
 
-
 # Get API Keys from environment variables
 SERPER_API_KEY = os.environ.get("SERPER_API_KEY")
 JINA_API_KEY = os.environ.get("JINA_API_KEY")
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 E2B_API_KEY = os.environ.get("E2B_API_KEY")
-HTTPS_PROXY = os.environ.get("HTTPS_PROXY", None)
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
-SILICONFLOW_API_KEY = os.environ.get("SILICONFLOW_API_KEY")
-OPENAI_WHISPER_URL = os.environ.get("OPENAI_WHISPER_URL")
-OPENAI_WHISPER_API_KEY = os.environ.get("OPENAI_WHISPER_API_KEY")
+
+VISION_API_KEY = os.environ.get("VISION_API_KEY")
+VISION_BASE_URL = os.environ.get("VISION_BASE_URL")
+VISION_MODEL_NAME = os.environ.get("VISION_MODEL_NAME")
+
+REASONING_API_KEY = os.environ.get("REASONING_API_KEY")
+REASONING_BASE_URL = os.environ.get("REASONING_BASE_URL")
+REASONING_MODEL_NAME = os.environ.get("REASONING_MODEL_NAME")
+
+WHISPER_BASE_URL = os.environ.get("WHISPER_BASE_URL")
+WHISPER_API_KEY = os.environ.get("WHISPER_API_KEY")
+WHISPER_MODEL_NAME = os.environ.get("WHISPER_MODEL_NAME")
+
+HTTPS_PROXY = os.environ.get("HTTPS_PROXY", None)
 
 
 # MCP server configuration generation function
@@ -148,7 +157,9 @@ def create_mcp_server_parameters(cfg: DictConfig, agent_cfg: DictConfig):
                     command=sys.executable,
                     args=["-m", "miroflow_tools.mcp_servers.vision_mcp_server_os"],
                     env={
-                        "SILICONFLOW_API_KEY": SILICONFLOW_API_KEY,
+                        "VISION_API_KEY": VISION_API_KEY,
+                        "VISION_BASE_URL": VISION_BASE_URL,
+                        "VISION_MODEL_NAME": VISION_MODEL_NAME,
                     },
                 ),
             }
@@ -182,8 +193,9 @@ def create_mcp_server_parameters(cfg: DictConfig, agent_cfg: DictConfig):
                     command=sys.executable,
                     args=["-m", "miroflow_tools.mcp_servers.audio_mcp_server_os"],
                     env={
-                        "OPENAI_WHISPER_URL": OPENAI_WHISPER_URL,
-                        "OPENAI_WHISPER_API_KEY": OPENAI_WHISPER_API_KEY,
+                        "WHISPER_BASE_URL": WHISPER_BASE_URL,
+                        "WHISPER_API_KEY": WHISPER_API_KEY,
+                        "WHISPER_MODEL_NAME": WHISPER_MODEL_NAME,
                     },
                 ),
             }
@@ -238,7 +250,9 @@ def create_mcp_server_parameters(cfg: DictConfig, agent_cfg: DictConfig):
                         "miroflow_tools.mcp_servers.reasoning_mcp_server_os",
                     ],
                     env={
-                        "SILICONFLOW_API_KEY": SILICONFLOW_API_KEY,
+                        "REASONING_API_KEY": REASONING_API_KEY,
+                        "REASONING_BASE_URL": REASONING_BASE_URL,
+                        "REASONING_MODEL_NAME": REASONING_MODEL_NAME,
                     },
                 ),
             }

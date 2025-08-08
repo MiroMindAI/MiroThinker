@@ -15,14 +15,14 @@
 
    This creates a new directory: `gaia-text-103-extraction/qwen_MiroThinker-32B-SFT_evaluation`
 
-1. **Re-grade with GAIA-Text-103 Evaluator**
+2. **Re-grade with GAIA-Text-103 Evaluator**
 
    ```bash
    # Apply GAIA-Text-103 specific grading
    uv run benchmarks/subset_extraction/gaia-text-103-grader.py ../../logs/gaia-validation/0806/gaia-text-103-extraction
    ```
 
-1. **Verify Results**
+3. **Verify Results**
 
    ```bash
    # Check accuracy and generate statistics

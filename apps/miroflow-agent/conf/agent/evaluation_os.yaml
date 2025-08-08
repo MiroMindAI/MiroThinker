@@ -13,7 +13,7 @@ main_agent:
     - tool-reasoning-os
     - tool-reader
   max_turns: 50  # Maximum number of turns for main agent execution
-  
+
 sub_agents:
   agent-browsing:
     tools:

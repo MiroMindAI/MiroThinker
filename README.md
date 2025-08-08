@@ -43,13 +43,13 @@ We have released the **MiroThinker-v0.1** series, including both SFT and DPO var
 ### 🤖 **MiroThinker-Optimized Framework**
 
 - **Fully Open-Source Agent Framework**: Complete transparency with open framework, open models, and open data collection.
-- **Tool Integration**: Seamless integration with external tools and APIs
+- **Tool Integration**: Seamless integration with external tools and APIs.
 - **Trace Collection**: Comprehensive logging and analysis of agent interactions with elapsed time and estimated completion time displayed in minutes. Ready for supervised fine-tuning or DPO.
-- **Benchmark Evaluation**: Extensive testing across multiple benchmark datasets
+- **Benchmark Evaluation**: Extensive testing across multiple benchmark datasets.
 
 ### 📊 **Comprehensive Benchmark Suite**
 
-- **GAIA Validation**: A benchmark for General AI Assistants. ([paper](https://arxiv.org/abs/2311.12983)).
+- **GAIA Validation**: A benchmark for General AI Assistants. ([paper](https://arxiv.org/abs/2311.12983))
 - **GAIA-Text-103**: A subset of GAIA Validation for text-only tasks. ([paper](https://arxiv.org/abs/2505.22648))
 - **HLE**: Humanity's Last Exam. ([paper](https://arxiv.org/abs/2501.14249))
 - **HLE-Text-500**: A subset of HLE for text-only tasks. ([paper](https://arxiv.org/pdf/2504.21776))
@@ -61,7 +61,7 @@ We have released the **MiroThinker-v0.1** series, including both SFT and DPO var
 
 MiroThinker-v0.1 is trained on our large-scale, high-quality trajectory and preference datasets [MiroVerse-v0.1](https://huggingface.co/datasets/miromind-ai/MiroVerse-v0.1), utilizing the efficient training framework [MiroTrain](https://github.com/MiroMindAI/MiroTrain), and enhanced with tool-use capabilities through our agentic framework [MiroFlow](https://github.com/MiroMindAI/MiroFlow).
 
-To promote reproducibility and benefit the community, we decided to open-source the entire suite mentioned above. For more technical details, evaluation results, and usage tutorials, please visit our [technical blog](https://miromind.ai/blog/miromind-open-deep-research).
+In this repository, we mainly introduce how to deploy a pre-trained MiroThinker model and conduct benchmark performance evaluations using the MiroFlow framework.
 
 ### Prerequisites
 

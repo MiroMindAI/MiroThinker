@@ -43,6 +43,7 @@ dependencies = [
     "hydra-core",
     "google-genai",
     "tiktoken>=0.9.0",
+    "aiohttp"
 ]
 
 [build-system]

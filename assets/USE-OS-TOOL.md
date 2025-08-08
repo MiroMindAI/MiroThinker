@@ -2,7 +2,7 @@
 
 We offer three tools which are designed as open-source alternatives to proprietary services, providing similar functionality while maintaining control over the underlying infrastructure and data processing.
 
-The VQA and reasoning tools use the SILICONFLOW interface, which requires a SILICONFLOW API key (SILICONFLOW_API_KEY) to use. The audio tool, which leverages the OpenAI Whisper model, requires a URL and an API key (OPENAI_WHISPER_URL, OPENAI_WHISPER_API_KEY).
+The VQA and reasoning tools use the SILICONFLOW interface, which requires a SILICONFLOW API key (SILICONFLOW_API_KEY) to use. The audio tool, which leverages the OpenAI Whisper model, requires a URL and an API key (WHISPER_BASE_URL, WHISPER_API_KEY).
 
 Please also refer to the agent configuration file: apps/miroflow-agent/conf/agent/evaluation_os.yaml
 
