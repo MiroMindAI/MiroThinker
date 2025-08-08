@@ -49,7 +49,7 @@ We have released the **MiroThinker v0.1** series, including both SFT and DPO var
 
 - **Fully Open-Source Agent Framework**: Complete transparency with open framework and open models.
 - **Tool Integration**: Seamless integration with external tools and APIs.
-- **Trace Collection**: Comprehensive logging and analysis of agent interactions with elapsed time and estimated completion time displayed in minutes. Ready for SFT or DPO.
+- **Trace Collection**: Comprehensive logging and analysis of agent interactions with elapsed time and estimated completion time displayed in minutes. Ready for SFT and DPO.
 - **Benchmark Evaluation**: Extensive testing across multiple benchmark datasets.
 
 ### 📊 **Comprehensive Benchmark Suite**
@@ -76,14 +76,14 @@ In this repository, we mainly introduce how to deploy a MiroThinker model and co
 
 ### Installation
 
-1. **Clone the Repository**
+#### 1. **Clone the Repository**
 
 ```bash
 git clone https://github.com/MiroMindAI/MiroThinker
 cd MiroThinker
 ```
 
-2. **Download Benchmark Data**
+#### 2. **Download Benchmark Data**
 
 ```bash
 wget https://huggingface.co/datasets/miromind-ai/MiroFlow-Benchmarks/resolve/main/data_20250808_password_protected.zip
@@ -92,7 +92,7 @@ unzip data_20250808_password_protected.zip
 rm data_20250808_password_protected.zip
 ```
 
-3. **Setup Environment**
+#### 3. **Setup Environment**
 
 ```bash
 # Shift working dir
@@ -104,7 +104,20 @@ cp .env.example .env
 # Edit .env with your actual API keys
 ```
 
+We currently support two tool configurations:
+1. Using the default settings of open-source tools as much as possible.
+2. Using advanced settings of commercial tools.
+   
+The tool lists for these two settings are shown in the table below:
+
+| Tools    | [Default Setting <br>with Open-Source Tools](apps/miroflow-agent/conf/agent/evaluation_os.yaml) | [Advanced Setting <br>with Commercial Tools](apps/miroflow-agent/conf/agent/evaluation.yaml) |
+| -------- | -------------------------------------------- | -------------------------------------------- |
+| Google Search Tool    |         Serper                                     |              Serper                                |
+
+
 Create a `.env` file in the `apps/miroflow-agent` directory:
+
+
 
 ```bash
 # Required APIs
