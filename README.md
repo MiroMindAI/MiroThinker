@@ -118,7 +118,7 @@ The tool lists for these two settings are shown in the table below:
 | Visual Question Answering |       [Qwen2.5-VL-72B-Instruct](https://huggingface.co/Qwen/Qwen2.5-VL-72B-Instruct)        |   [Claude Sonnet 3.7](https://docs.anthropic.com/en/docs/about-claude/models/overview)   |
 |         Reasoning         | [Qwen3-235B-A22B-Thinking-2507](https://huggingface.co/Qwen/Qwen3-235B-A22B-Thinking-2507)  |   [Claude Sonnet 3.7](https://docs.anthropic.com/en/docs/about-claude/models/overview)   |
 
-You can configure the API keys in the `.env` file according to the settings you want to adopt:
+Configure the following variables in your `.env` file according to the mode you choose:
 
 ```bash
 # Required APIs
@@ -133,9 +133,11 @@ OPENAI_API_KEY=your_openai_key
 REASONING_MODEL_NAME="Qwen/Qwen3-235B-A22B-Thinking-2507"
 REASONING_API_KEY=your_reasoning_key
 REASONING_BASE_URL="https://your_reasoning_base_url/v1/chat/completions"
+
 VISION_MODEL_NAME="Qwen/Qwen2.5-VL-72B-Instruct"
 VISION_API_KEY=your_vision_key
 VISION_BASE_URL="https://your_vision_base_url/v1/chat/completions"
+
 WHISPER_MODEL_NAME="openai/whisper-large-v3-turbo"
 WHISPER_API_KEY=your_whisper_key
 WHISPER_BASE_URL="https://your_whisper_base_url/v1"
@@ -182,7 +184,7 @@ This will start a server at: `http://0.0.0.0:$PORT$`. Use this as your server ba
 
 ```bash
 cd apps/miroflow-agent
-uv run main.py llm=qwen3-32b agent=evaluation llm.openai_base_url=https://your-api.com/v1
+uv run main.py llm=qwen3-32b agent=evaluation llm.openai_base_url=https://your_base_url/v1
 ```
 
 2. **Run comprehensive benchmark evaluation**
@@ -191,7 +193,7 @@ uv run main.py llm=qwen3-32b agent=evaluation llm.openai_base_url=https://your-a
 # GAIA-Validation
 bash scripts/run_evaluate_multiple_runs_gaia-validation.sh
 
-# GAIA-Validation-Text-103
+# GAIA-Text-103
 bash scripts/run_evaluate_multiple_runs_gaia-validation-text-103.sh
 
 # WebWalkerQA
@@ -224,7 +226,10 @@ python benchmarks/evaluators/check_progress_gaia-validation-text-103.py /path/to
 
 ## 🛠️ Using Open-Source Tools
 
-We also provide the option to use open-source tools as alternatives to proprietary models and tools. For detailed setup and configuration instructions, please refer to our documentation: [USE-OS-TOOL.md](assets/USE-OS-TOOL.md).
+We provide the option to use open-source tools as alternatives to commercial tools. 
+One way to access these open-source tools is to purchase them from API providers, such as [SiliconFlow](https://www.siliconflow.com/).
+Of course, these tools can also be deployed on local servers.
+For detailed setup and local deployment instructions, please refer to our documentation: [USE-OS-TOOL.md](assets/USE-OS-TOOL.md).
 
 ## 📈 Benchmark Performance
 
