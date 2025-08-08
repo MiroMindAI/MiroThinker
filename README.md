@@ -25,12 +25,12 @@
 
 <div align="center">
   <img src="assets/gaia_text_103.png" width="98%" alt="MiroFlow Performance on GAIA-Validation" />
-  <p><strong>Performance of Open-sourced models on GAIA-Validation Benchmark.</strong></p>
+  <p><strong>Performance of Open-Source Models on GAIA-Validation Benchmark.</strong></p>
 </div>
 
 **MiroThinker** is an open-source agentic model series built on top of Qwen3. Designed for deep research and complex, long-horizon problem solving, it integrates strong capabilities in **task decomposition**, **multi-hop reasoning**, **retrieval-augmented generation**, **code execution**, **web browsing**, and **document/file processing**, making it suitable for a wide range of real-world applications.
 
-We have released the **MiroThinker-v0.1** series, including both SFT and DPO variants at parameter scales of **8B**, **14B**, and **32B**. Notably, MiroThinker v0.1 achieves **state-of-the-art performance** among open-source models on the [GAIA benchmark](https://huggingface.co/datasets/gaia-benchmark/GAIA), a rigorous evaluation suite for advanced agentic capabilities, demonstrating its strength in long-context, decision-intensive, and real-world task scenarios.
+We have released the **MiroThinker v0.1** series, including both SFT and DPO variants at parameter scales of **8B**, **14B**, and **32B**. Notably, MiroThinker-v0.1 achieves **state-of-the-art performance** among open-source models on the [GAIA benchmark](https://huggingface.co/datasets/gaia-benchmark/GAIA), a rigorous evaluation suite for advanced agentic capabilities, demonstrating its strength in long-context, decision-intensive, and real-world task scenarios.
 
 | Model Name                | Base Model | HF Link                                                               |
 | :-----------------------: |:----------:| :--------------------------------------------------------------------:|
@@ -47,9 +47,9 @@ We have released the **MiroThinker-v0.1** series, including both SFT and DPO var
 
 ### 🤖 **MiroThinker-Optimized Framework**
 
-- **Fully Open-Source Agent Framework**: Complete transparency with open framework, open models, and open data collection.
+- **Fully Open-Source Agent Framework**: Complete transparency with open framework and open models.
 - **Tool Integration**: Seamless integration with external tools and APIs.
-- **Trace Collection**: Comprehensive logging and analysis of agent interactions with elapsed time and estimated completion time displayed in minutes. Ready for supervised fine-tuning or DPO.
+- **Trace Collection**: Comprehensive logging and analysis of agent interactions with elapsed time and estimated completion time displayed in minutes. Ready for SFT or DPO.
 - **Benchmark Evaluation**: Extensive testing across multiple benchmark datasets.
 
 ### 📊 **Comprehensive Benchmark Suite**
@@ -66,24 +66,24 @@ We have released the **MiroThinker-v0.1** series, including both SFT and DPO var
 
 MiroThinker-v0.1 is trained on our large-scale, high-quality trajectory and preference datasets [MiroVerse-v0.1](https://huggingface.co/datasets/miromind-ai/MiroVerse-v0.1), utilizing the efficient training framework [MiroTrain](https://github.com/MiroMindAI/MiroTrain), and enhanced with tool-use capabilities through our agentic framework [MiroFlow](https://github.com/MiroMindAI/MiroFlow).
 
-In this repository, we mainly introduce how to deploy a pre-trained MiroThinker model and conduct benchmark performance evaluations using the MiroFlow framework.
+In this repository, we mainly introduce how to deploy a MiroThinker model and conduct benchmark performance evaluations using the MiroFlow framework.
 
 ### Prerequisites
 
 - Python 3.10+
 - [uv](https://docs.astral.sh/uv/) package manager
-- Required API keys (see Configuration section)
+- Required API keys
 
 ### Installation
 
-1. **Clone the repository**
+1. **Clone the Repository**
 
 ```bash
 git clone https://github.com/MiroMindAI/MiroThinker
 cd MiroThinker
 ```
 
-2. **Download benchmark data**
+2. **Download Benchmark Data**
 
 ```bash
 wget https://huggingface.co/datasets/miromind-ai/MiroFlow-Benchmarks/resolve/main/data_20250808_password_protected.zip
@@ -92,7 +92,7 @@ unzip data_20250808_password_protected.zip
 rm data_20250808_password_protected.zip
 ```
 
-3. **Set up environment**
+3. **Setup Environment**
 
 ```bash
 # Shift working dir
