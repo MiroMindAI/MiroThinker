@@ -105,32 +105,45 @@ cp .env.example .env
 ```
 
 We currently support two tool configurations:
-1. Using the default settings of open-source tools as much as possible.
-2. Using advanced settings of commercial tools.
+1. Using the default settings of open-source tools as much as possible. ([config](apps/miroflow-agent/conf/agent/evaluation_os.yaml))
+2. Using advanced settings of commercial tools. ([config](apps/miroflow-agent/conf/agent/evaluation.yaml))
    
 The tool lists for these two settings are shown in the table below:
 
-| Tools    | [Default Setting <br>with Open-Source Tools](apps/miroflow-agent/conf/agent/evaluation_os.yaml) | [Advanced Setting <br>with Commercial Tools](apps/miroflow-agent/conf/agent/evaluation.yaml) |
-| -------- | -------------------------------------------- | -------------------------------------------- |
-| Google Search Tool    |         Serper                                     |              Serper                                |
+|           Tools           |                         Default Setting <br>with Open-Source Tools                          |                        Advanced Setting <br>with Commercial Tools                        |
+|:-------------------------:|:-------------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------:|
+|       Google Search       |                                [Serper](https://serper.dev/)                                |                              [Serper](https://serper.dev/)                               |
+|       Linux Sandbox       |                                   [E2B](https://e2b.dev/)                                   |                                 [E2B](https://e2b.dev/)                                  |
+|    Audio Transcription    |       [Whisper-Large-v3-Turbo](https://huggingface.co/openai/whisper-large-v3-turbo)        | [GPT-4o mini Transcribe](https://platform.openai.com/docs/models/gpt-4o-mini-transcribe) |
+| Visual Question Answering |       [Qwen2.5-VL-72B-Instruct](https://huggingface.co/Qwen/Qwen2.5-VL-72B-Instruct)        |   [Claude Sonnet 3.7](https://docs.anthropic.com/en/docs/about-claude/models/overview)   |
+|         Reasoning         | [Qwen3-235B-A22B-Thinking-2507](https://huggingface.co/Qwen/Qwen3-235B-A22B-Thinking-2507)  |   [Claude Sonnet 3.7](https://docs.anthropic.com/en/docs/about-claude/models/overview)   |
 
-
-Create a `.env` file in the `apps/miroflow-agent` directory:
-
-
+You can configure the API keys in the `.env` file according to the settings you want to adopt:
 
 ```bash
 # Required APIs
 SERPER_API_KEY=your_serper_key
 E2B_API_KEY=your_e2b_key
+
+# APIs for Commercial Tools
 ANTHROPIC_API_KEY=your_anthropic_key
 OPENAI_API_KEY=your_openai_key
+
+# APIs for Open-Source Tools
+REASONING_MODEL_NAME="Qwen/Qwen3-235B-A22B-Thinking-2507"
+REASONING_API_KEY=your_reasoning_key
+REASONING_BASE_URL="https://your_reasoning_base_url/v1/chat/completions"
+VISION_MODEL_NAME="Qwen/Qwen2.5-VL-72B-Instruct"
+VISION_API_KEY=your_vision_key
+VISION_BASE_URL="https://your_vision_base_url/v1/chat/completions"
+WHISPER_MODEL_NAME="openai/whisper-large-v3-turbo"
+WHISPER_API_KEY=your_whisper_key
+WHISPER_BASE_URL="https://your_whisper_base_url/v1"
 
 # Future APIs (Please use dummy values for now)
 GEMINI_API_KEY=your_gemini_key
 JINA_API_KEY=your_jina_key
 FIRECRAWL_API_KEY=your_firecrawl_key
-SILICONFLOW_API_KEY=your_siliconflow_key
 ```
 
 ### Serve the MiroThinker Model
