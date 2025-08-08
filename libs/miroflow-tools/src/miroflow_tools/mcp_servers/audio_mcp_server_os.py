@@ -26,6 +26,7 @@ from mutagen import File as MutagenFile
 
 WHISPER_API_KEY = os.environ.get("WHISPER_API_KEY")
 WHISPER_BASE_URL = os.environ.get("WHISPER_BASE_URL")
+WHISPER_MODEL_NAME = os.environ.get("WHISPER_MODEL_NAME")
 
 # Initialize FastMCP server
 mcp = FastMCP("audio-mcp-server-os")
@@ -145,7 +146,7 @@ async def audio_transcription(audio_path_or_url: str) -> str:
         if os.path.exists(audio_path_or_url):  # Check if the file exists locally
             with open(audio_path_or_url, "rb") as audio_file:
                 transcription = client.audio.transcriptions.create(
-                    model="whisper-large-v3-turbo", file=audio_file
+                    model=WHISPER_MODEL_NAME, file=audio_file
                 )
         else:
             # download the audio file from the URL
