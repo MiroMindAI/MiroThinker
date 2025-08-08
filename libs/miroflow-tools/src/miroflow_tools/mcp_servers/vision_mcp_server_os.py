@@ -81,7 +81,7 @@ async def visual_question_answering(image_path_or_url: str, question: str) -> st
                 )
         elif image_path_or_url.startswith("http://") or image_path_or_url.startswith(
             "https://"
-        ):  # 远程 URL
+        ):
             async with aiohttp.ClientSession() as session:
                 async with session.get(image_path_or_url) as resp:
                     if resp.status == 200:
