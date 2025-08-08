@@ -19,7 +19,7 @@
 
 ## 📰 News & Updates
 
-- **2025-08-08**: 🎉 **MiroThinker v0.1 Released** - Models, framework, data, and trace rollout scripts are now fully open-sourced!
+- **2025-08-08**: 🎉 **MiroThinker v0.1 Released** - Models, framework, and data are now fully open-sourced!
 
 ## Introduction
 
