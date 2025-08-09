@@ -6,7 +6,7 @@ defaults:
 name: "gaia-validation"
 
 data:
-  data_dir: "../../data/eval_data/gaia-2023/validation"
+  data_dir: "../../data/gaia-2023-validation"
 
 execution:
   max_tasks: null  # null means no limit

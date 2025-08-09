@@ -6,7 +6,7 @@ defaults:
 name: "hle-text-500"
 
 data:
-  data_dir: "../../data/eval_data/hle-text-500"
+  data_dir: "../../data/hle-text-500"
 
 
 execution:

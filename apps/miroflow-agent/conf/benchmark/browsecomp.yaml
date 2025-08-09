@@ -6,7 +6,7 @@ defaults:
 name: "browsecomp"
 
 data:
-  data_dir: "../../data/eval_data/browsecomp"
+  data_dir: "../../data/browsecomp"
 
 
 execution:
