@@ -30,7 +30,7 @@ _current_trace: contextvars.ContextVar["Trace | None"] = contextvars.ContextVar(
     "current_trace", default=None
 )
 
-logger = logging.getLogger("mirage")
+logger = logging.getLogger("miroflow")
 
 
 class Scope:

@@ -35,7 +35,7 @@ from .span_data import (
 from .spans import Span
 from .traces import Trace
 
-logger = logging.getLogger("mirage")
+logger = logging.getLogger("miroflow")
 
 
 def trace(

@@ -361,13 +361,13 @@ def main():
     parser.add_argument(
         "--logs_dir",
         type=str,
-        default="/data/wangbin/projects/mirage/apps/reorg-modular-structure/logs",
+        default="../../logs",
         help="Directory containing the log files.",
     )
     parser.add_argument(
         "--metadata_path",
         type=str,
-        default="/data/wangbin/projects/mirage/data/eval_data/gaia-2023/validation/metadata.jsonl",
+        default="../../data/gaia-2023-validation/metadata.jsonl",
         help="Path to the metadata JSONL file.",
     )
     args = parser.parse_args()

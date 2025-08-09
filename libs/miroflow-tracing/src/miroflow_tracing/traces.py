@@ -21,7 +21,7 @@ from . import util
 from .processor_interface import TracingProcessor
 from .scope import Scope
 
-logger = logging.getLogger("mirage")
+logger = logging.getLogger("miroflow")
 
 
 class Trace:

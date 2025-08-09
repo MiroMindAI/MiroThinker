@@ -26,7 +26,7 @@ from .processor_interface import TracingProcessor
 from .scope import Scope
 from .span_data import SpanData
 
-logger = logging.getLogger("mirage")
+logger = logging.getLogger("miroflow")
 
 TSpanData = TypeVar("TSpanData", bound=SpanData)
 

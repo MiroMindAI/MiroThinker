@@ -29,7 +29,7 @@ from .processor_interface import TracingExporter, TracingProcessor
 from .spans import Span
 from .traces import Trace
 
-logger = logging.getLogger("mirage")
+logger = logging.getLogger("miroflow")
 
 
 class ConsoleSpanExporter(TracingExporter):

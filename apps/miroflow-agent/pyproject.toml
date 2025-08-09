@@ -90,6 +90,6 @@ addopts = [
     # use `pytest-testmon` to run tests on changed files only
     # "--testmon",
     # use `pytest-cov` to generate test coverage report
-    "--cov=mirage_agent",
+    "--cov=miroflow_agent",
     "--cov-report=html",
 ]

@@ -27,7 +27,7 @@ from .scope import Scope
 from .spans import NoOpSpan, Span, SpanImpl, TSpanData
 from .traces import NoOpTrace, Trace, TraceImpl
 
-logger = logging.getLogger("mirage")
+logger = logging.getLogger("miroflow")
 
 
 class SynchronousMultiTracingProcessor(TracingProcessor):

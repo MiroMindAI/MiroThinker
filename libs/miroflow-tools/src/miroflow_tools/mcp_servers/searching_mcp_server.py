@@ -24,7 +24,7 @@ import wikipedia
 import asyncio
 from google import genai
 from google.genai import types
-# from mirage_agent.logging.task_logger import logger
+# from miroflow_agent.logging.task_logger import logger
 
 SERPER_API_KEY = os.environ.get("SERPER_API_KEY", "")
 JINA_API_KEY = os.environ.get("JINA_API_KEY", "")

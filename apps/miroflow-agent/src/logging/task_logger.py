@@ -24,10 +24,10 @@ logger = logging.getLogger()
 
 
 def bootstrap_logger() -> logging.Logger:
-    """Configure the mirage_agent logger to print filename and line number"""
+    """Configure the miroflow_agent logger to print filename and line number"""
 
-    # Configure only mirage_agent logger, not the root logger
-    mirage_logger = logging.getLogger()
+    # Configure only miroflow_agent logger, not the root logger
+    miroflow_logger = logging.getLogger()
 
     # Create our desired formatter
     formatter = logging.Formatter(
@@ -36,21 +36,21 @@ def bootstrap_logger() -> logging.Logger:
     )
 
     # Remove any existing handlers to ensure consistent configuration
-    for handler in mirage_logger.handlers[:]:
-        mirage_logger.removeHandler(handler)
+    for handler in miroflow_logger.handlers[:]:
+        miroflow_logger.removeHandler(handler)
 
     # Add our handler with the specified formatter
     handler = logging.StreamHandler()
     handler.setFormatter(formatter)
 
-    # Configure only mirage_agent logger, not the root logger
-    mirage_logger = logging.getLogger()
-    mirage_logger.setLevel(logging.INFO)
-    # mirage_logger.setLevel(logging.DEBUG)
-    mirage_logger.addHandler(handler)
-    mirage_logger.setLevel(logging.DEBUG)
+    # Configure only miroflow_agent logger, not the root logger
+    miroflow_logger = logging.getLogger()
+    miroflow_logger.setLevel(logging.INFO)
+    # miroflow_logger.setLevel(logging.DEBUG)
+    miroflow_logger.addHandler(handler)
+    miroflow_logger.setLevel(logging.DEBUG)
 
-    return mirage_logger
+    return miroflow_logger
 
 
 def get_utc_plus_8_time() -> str:

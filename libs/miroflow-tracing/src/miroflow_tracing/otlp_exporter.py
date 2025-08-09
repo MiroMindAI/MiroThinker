@@ -25,7 +25,7 @@ from .traces import Trace
 
 # import traceback
 
-logger = logging.getLogger("mirage")
+logger = logging.getLogger("miroflow")
 
 
 class NoopExporter(TracingExporter):

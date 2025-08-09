@@ -23,7 +23,7 @@ from mcp.client.stdio import stdio_client
 import logging
 
 logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("mirage")
+logger = logging.getLogger("miroflow")
 
 
 class PlaywrightSession:

@@ -278,14 +278,14 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "dotenv" },
-    { name = "mirage-contrib" },
+    { name = "miroflow-tools" },
     { name = "openai" },
 ]
 
 [package.metadata]
 requires-dist = [
     { name = "dotenv", specifier = ">=0.9.9" },
-    { name = "mirage-contrib", editable = "../../libs/mirage-contrib" },
+    { name = "miroflow-tools", editable = "../../libs/miroflow-tools" },
     { name = "openai", specifier = ">=1.90.0" },
 ]
 
@@ -868,9 +868,9 @@ wheels = [
 ]
 
 [[package]]
-name = "mirage-contrib"
+name = "miroflow-tools"
 version = "0.1.0"
-source = { editable = "../../libs/mirage-contrib" }
+source = { editable = "../../libs/miroflow-tools" }
 dependencies = [
     { name = "anthropic" },
     { name = "e2b-code-interpreter" },
