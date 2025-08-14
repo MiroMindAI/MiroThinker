@@ -389,11 +389,18 @@ def _render_markdown(state: dict) -> str:
                 has_input = not _is_empty_payload(tool_input)
                 has_output = not _is_empty_payload(tool_output)
                 if not has_input and not has_output:
-                    # No parameters, only show tool name
-                    lines.append(f"{tool_name}")
+                    # No parameters, only show tool name with emoji on separate line
+                    if tool_name == "Partial Summary":
+                        lines.append("\n💡Partial Summary\n")
+                    else:
+                        lines.append(f"\n🔧{tool_name}\n")
                 else:
-                    summary = f"{tool_name} ({call_id[:8]})"
-                    lines.append(f"<details><summary>{summary}</summary>")
+                    # Show as collapsible details for any tool with input or output
+                    if tool_name == "Partial Summary":
+                        summary = f"💡{tool_name} ({call_id[:8]})"
+                    else:
+                        summary = f"🔧{tool_name} ({call_id[:8]})"
+                    lines.append(f"\n<details><summary>{summary}</summary>")
                     if has_input:
                         pretty = json.dumps(tool_input, ensure_ascii=False, indent=2)
                         lines.append("\n**Input**:\n")
@@ -402,7 +409,7 @@ def _render_markdown(state: dict) -> str:
                         pretty = json.dumps(tool_output, ensure_ascii=False, indent=2)
                         lines.append("\n**Output**:\n")
                         lines.append(f"```json\n{pretty}\n```")
-                    lines.append("</details>")
+                    lines.append("</details>\n")
         lines.append("\n---\n")
     return "\n".join(lines) if lines else "Waiting..."
 
@@ -456,7 +463,9 @@ def _update_state_with_event(state: dict, message: dict):
                 if isinstance(ti, dict) and "result" in ti:
                     entry["output"] = ti
                 else:
-                    entry["input"] = ti
+                    # Only update input if we don't already have valid input data, or if the new data is not empty
+                    if "input" not in entry or not _is_empty_payload(ti):
+                        entry["input"] = ti
     elif event == "message":
         # Same incremental text display as show_text, aggregated by message_id
         message_id = data.get("message_id")
@@ -590,5 +599,5 @@ def build_demo():
 if __name__ == "__main__":
     demo = build_demo()
     host = os.getenv("HOST", "0.0.0.0")
-    port = int(os.getenv("PORT", "7860"))
+    port = int(os.getenv("PORT", "8000"))
     demo.queue().launch(server_name=host, server_port=port)
