@@ -19,6 +19,29 @@ import re
 logger = logging.getLogger("miroflow_agent")
 
 
+def extract_llm_response_text(llm_response):
+    """
+    Extract text from LLM response, excluding <use_mcp_tool> tags. Stop immediately when this opening tag is encountered.
+    """
+    # If it's a dictionary type, extract the content field
+    if isinstance(llm_response, dict):
+        content = llm_response.get("content", "")
+    else:
+        # If it's a string type, use directly
+        content = str(llm_response)
+    
+    # Find the position of <use_mcp_tool> tag
+    tool_start_pattern = r"<use_mcp_tool>"
+    match = re.search(tool_start_pattern, content)
+    
+    if match:
+        # If <use_mcp_tool> tag is found, only return content before the tag
+        return content[:match.start()].strip()
+    else:
+        # If no tag is found, return the complete content
+        return content.strip()
+
+
 def parse_llm_response_for_tool_calls(llm_response_content_text):
     """
     Parse tool_calls or <use_mcp_tool> tags from LLM response text.

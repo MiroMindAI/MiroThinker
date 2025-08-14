@@ -42,6 +42,9 @@ async def execute_task_pipeline(
     output_formatter: OutputFormatter,
     ground_truth: Optional[Any] = None,
     log_dir: str = "logs",
+    stream_queue: Optional[Any] = None,
+    tool_definitions: Optional[List[Dict[str, Any]]] = None,
+    sub_agent_tool_definitions: Optional[Dict[str, List[Dict[str, Any]]]] = None,
 ):
     """
     Executes the full pipeline for a single task.
@@ -56,7 +59,9 @@ async def execute_task_pipeline(
         output_formatter: An initialized OutputFormatter instance.
         ground_truth: The ground truth for the task (optional).
         log_dir: The directory to save the task log (default: "logs").
-
+        stream_queue: A queue for streaming the task execution (optional).
+        tool_definitions: The definitions of the tools for the main agent (optional).
+        sub_agent_tool_definitions: The definitions of the tools for the sub-agents (optional).
     Returns:
         A tuple containing:
         - A string with the final execution log and summary, or an error message.
@@ -95,6 +100,9 @@ async def execute_task_pipeline(
             output_formatter=output_formatter,
             cfg=cfg,
             task_log=task_log,
+            stream_queue=stream_queue,
+            tool_definitions=tool_definitions,
+            sub_agent_tool_definitions=sub_agent_tool_definitions,
         )
 
         final_summary, final_boxed_answer = await orchestrator.run_main_agent(
