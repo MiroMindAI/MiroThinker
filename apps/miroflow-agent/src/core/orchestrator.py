@@ -449,6 +449,9 @@ class Orchestrator:
 
         self.task_log.end_sub_agent_session(sub_agent_name)
 
+        # Remove thinking content in tool response
+        final_answer_text = final_answer_text.split("</think>")[-1].strip()
+
         # Return final answer instead of conversation log, so main agent can use it directly
         return final_answer_text
 
