@@ -43,6 +43,8 @@ async def reasoning(question: str) -> str:
     payload = {
         "model": REASONING_MODEL_NAME,
         "messages": [{"role": "user", "content": question}],
+        "temperature": 0.6,
+        "top_p": 0.95,
     }
     headers = {
         "Authorization": f"Bearer {REASONING_API_KEY}",
