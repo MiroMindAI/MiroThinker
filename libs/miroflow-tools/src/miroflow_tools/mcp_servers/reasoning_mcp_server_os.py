@@ -13,6 +13,8 @@
 # limitations under the License.
 
 import os
+import time
+import random
 
 from fastmcp import FastMCP
 import requests
@@ -26,6 +28,38 @@ REASONING_MODEL_NAME = os.environ.get("REASONING_MODEL_NAME")
 
 # Initialize FastMCP server
 mcp = FastMCP("reasoning-mcp-server-os")
+
+# Retry configuration
+MAX_RETRIES = 5
+BACKOFF_BASE = 1.0  # initial backoff in seconds
+BACKOFF_MAX = 30.0  # maximum backoff in seconds
+
+
+def post_with_retry(url, json, headers):
+    """Send POST request with retry and exponential backoff.
+    Returns response object if success, otherwise None."""
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            resp = requests.post(url, json=json, headers=headers, timeout=60)
+            if resp.status_code == 200:
+                return resp
+            else:
+                logger.warning(
+                    f"HTTP {resp.status_code} on attempt {attempt}: {resp.text[:200]}"
+                )
+        except requests.exceptions.RequestException as e:
+            logger.warning(f"Request failed on attempt {attempt}: {e}")
+
+        # Backoff before next retry
+        if attempt < MAX_RETRIES:
+            sleep_time = min(BACKOFF_BASE * (2 ** (attempt - 1)), BACKOFF_MAX)
+            # Add jitter to avoid thundering herd
+            sleep_time *= 0.8 + 0.4 * random.random()
+            logger.info(f"Retrying in {sleep_time:.1f}s...")
+            time.sleep(sleep_time)
+
+    logger.error(f"All {MAX_RETRIES} retries failed for {url}")
+    return None
 
 
 @mcp.tool()
@@ -51,7 +85,10 @@ async def reasoning(question: str) -> str:
         "Content-Type": "application/json",
     }
 
-    response = requests.post(REASONING_BASE_URL, json=payload, headers=headers)
+    response = post_with_retry(REASONING_BASE_URL, json=payload, headers=headers)
+    if response is None:
+        return "Reasoning service unavailable. Please try again later."
+
     json_response = response.json()
     try:
         content = json_response["choices"][0]["message"]["content"]
