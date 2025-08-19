@@ -30,7 +30,7 @@ REASONING_MODEL_NAME = os.environ.get("REASONING_MODEL_NAME")
 mcp = FastMCP("reasoning-mcp-server-os")
 
 # Retry configuration
-MAX_RETRIES = 5
+MAX_RETRIES = 10
 BACKOFF_BASE = 1.0  # initial backoff in seconds
 BACKOFF_MAX = 30.0  # maximum backoff in seconds
 
@@ -40,7 +40,7 @@ def post_with_retry(url, json, headers):
     Returns response object if success, otherwise None."""
     for attempt in range(1, MAX_RETRIES + 1):
         try:
-            resp = requests.post(url, json=json, headers=headers, timeout=60)
+            resp = requests.post(url, json=json, headers=headers, timeout=600)
             if resp.status_code == 200:
                 return resp
             else:
@@ -58,7 +58,7 @@ def post_with_retry(url, json, headers):
             logger.info(f"Retrying in {sleep_time:.1f}s...")
             time.sleep(sleep_time)
 
-    logger.error(f"All {MAX_RETRIES} retries failed for {url}")
+    logger.warning(f"All {MAX_RETRIES} retries failed for {url}")
     return None
 
 
