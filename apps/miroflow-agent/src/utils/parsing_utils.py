@@ -15,8 +15,49 @@
 import json
 import logging
 import re
+from json_repair import repair_json
 
 logger = logging.getLogger("miroflow_agent")
+
+
+def safe_json_loads(arguments_str: str) -> dict:
+    """
+    Safely parse a JSON string with multiple fallbacks:
+    1. Try standard json.loads()
+    2. If it fails, try json_repair
+    3. If it still fails, apply simple rule-based fixes
+    4. If all attempts fail, return an error object
+    """
+    # Step 1: Try standard JSON parsing
+    try:
+        return json.loads(arguments_str)
+    except json.JSONDecodeError:
+        print(f"Warning: Unable to parse JSON: {arguments_str}")
+
+    # Step 2: Try json_repair to fix common issues
+    try:
+        repaired = repair_json(arguments_str, ensure_ascii=False)
+        return json.loads(repaired)
+    except Exception:
+        print("Info: json_repair also failed, trying fallback fixes.")
+
+    # Step 3: Apply simple string replacements as a last resort
+    try:
+        fixed = (
+            arguments_str.replace("'", '"')
+            .replace("None", "null")
+            .replace("True", "true")
+            .replace("False", "false")
+        )
+        return json.loads(fixed)
+    except json.JSONDecodeError:
+        print(f"Error: Still unable to parse JSON after all attempts: {arguments_str}")
+
+    # Step 4: Give up and return error information
+    return {
+        "error": "Failed to parse arguments",
+        "raw": arguments_str,
+    }
 
 
 def parse_llm_response_for_tool_calls(llm_response_content_text):
@@ -32,34 +73,7 @@ def parse_llm_response_for_tool_calls(llm_response_content_text):
             if item.get("type") == "function_call":
                 server_name, tool_name = item.get("name").rsplit("-", maxsplit=1)
                 arguments_str = item.get("arguments")
-                try:
-                    # Try to handle possible newlines and escape characters
-                    arguments = json.loads(arguments_str)
-                except json.JSONDecodeError:
-                    print(
-                        f"Warning: Unable to parse tool arguments JSON: {arguments_str}"
-                    )
-                    # Try more lenient parsing or log error
-                    try:
-                        # Try to replace some common error formats, such as Python dict strings
-                        arguments_str_fixed = (
-                            arguments_str.replace("'", '"')
-                            .replace("None", "null")
-                            .replace("True", "true")
-                            .replace("False", "false")
-                        )
-                        arguments = json.loads(arguments_str_fixed)
-                        print(
-                            "Info: Successfully parsed arguments after attempting to fix."
-                        )
-                    except json.JSONDecodeError:
-                        print(
-                            f"Error: Still unable to parse tool arguments JSON after fixing: {arguments_str}"
-                        )
-                        arguments = {
-                            "error": "Failed to parse arguments",
-                            "raw": arguments_str,
-                        }
+                arguments = safe_json_loads(arguments_str)
                 tool_calls.append(
                     dict(
                         server_name=server_name,
@@ -132,31 +146,7 @@ def parse_llm_response_for_tool_calls(llm_response_content_text):
         arguments_str = match[2].strip()
 
         # Parse JSON string to dictionary
-        try:
-            # Try to handle possible newlines and escape characters
-            arguments = json.loads(arguments_str)
-        except json.JSONDecodeError:
-            logger.info(
-                f"Warning: Unable to parse tool arguments JSON: {arguments_str}"
-            )
-            # Try more lenient parsing or log error
-            try:
-                # Try to replace some common error formats, such as Python dict strings
-                arguments_str_fixed = (
-                    arguments_str.replace("'", '"')
-                    .replace("None", "null")
-                    .replace("True", "true")
-                    .replace("False", "false")
-                )
-                arguments = json.loads(arguments_str_fixed)
-                logger.info(
-                    "Info: Successfully parsed arguments after attempting to fix."
-                )
-            except json.JSONDecodeError:
-                logger.info(
-                    f"Error: Still unable to parse tool arguments JSON after fixing: {arguments_str}"
-                )
-                arguments = {"error": "Failed to parse arguments", "raw": arguments_str}
+        arguments = safe_json_loads(arguments_str)
 
         tool_calls.append(
             {
