@@ -469,6 +469,9 @@ async def verify_answer_for_datasets(
     Returns a tuple of (result, judge_type).
     """
 
+    if predicted_answer == target:
+        return "CORRECT", "exact_match"
+
     # For gaia-validation, use gaia scorer
     if benchmark_name == "gaia-validation":
         result = await verify_answer_gaia(question, target, predicted_answer)
