@@ -5,8 +5,8 @@ Host your own Deep Research demo using our [MiroThinker](https://huggingface.co/
 ## 🖥️ Hardware Requirement
 - GPU: Nvidia 40xx/50xx series
 - VRAM:
-   -  8GB minimum (for 4B models)
-   -  16GB minimum (for 8B models)
+   -  8GB minimum (for 4B models), 16GB for longer context 
+   -  16GB minimum (for 8B models), 24GB for longer context
 
 ## 🚀 Quick Start
 
