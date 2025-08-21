@@ -205,7 +205,7 @@ class ToolManager(ToolManagerProtocol):
 
         return all_servers_for_prompt
 
-    @with_timeout(300)
+    @with_timeout(1200)
     async def execute_tool_call(self, server_name, tool_name, arguments) -> Any:
         """
         Execute a single tool call.
