@@ -9,19 +9,11 @@ Host your own Deep Research demo using our [MiroThinker](https://huggingface.co/
    - **16GB minimum** (for 8B models), **24GB recommended** for longer context processing
    - **32GB+ recommended** (for 14B/32B models) for optimal performance
 
-## 📊 Performance Benchmarks
 
-> **Tokens per second (TPS)** - Higher values indicate better performance. Benchmarks conducted on consumer hardware.
+[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/y2LeMjCcB6Q/0.jpg)](https://www.youtube.com/watch?v=y2LeMjCcB6Q)
 
-| Model | Quant | MacBook M4 Pro | RTX 5070 |
-|:------|:-----:|:--------------:|:--------:|
-| MiroThinker-8B-SFT-v0.1 | Q2_K (2-bit) | ~24 TPS | ~106 TPS |
-| MiroThinker-8B-SFT-v0.1 | Q4_K_M (4-bit) | ~24 TPS | ~94 TPS |
-| MiroThinker-8B-SFT-v0.1 | Q8_0 (8-bit) | ~21 TPS | ~64 TPS |
-| MiroThinker-14B-DPO-v0.1 | Q2_K (2-bit) | ~17 TPS | ~63 TPS |
-| MiroThinker-14B-DPO-v0.1 | Q4_K_M (4-bit) | — | ~59 TPS |
 
-## 🖥️ LLM Server Deployment
+## ⚙️ LLM Server Deployment
 
 ### Download Model Checkpoints
 
@@ -129,7 +121,22 @@ You can also leverage other frameworks for model serving like Ollama, vLLM, and 
 
    Open your browser and navigate to: `http://localhost:8000`
 
-## 📝 Notes
+### 📝 Notes
 - Ensure your LLM server is up and running before launching the demo
 - The demo will use your local CPU/GPU for inference while leveraging external APIs for search and code execution
 - Monitor your API usage through the respective provider dashboards
+
+
+
+
+## 📊 Performance Benchmarks
+
+> **Tokens per second (TPS)** - Higher values indicate better performance. Benchmarks conducted on consumer hardware.
+
+| Model | Quant | MacBook M4 Pro | RTX 5070 |
+|:------|:-----:|:--------------:|:--------:|
+| MiroThinker-8B-SFT-v0.1 | Q2_K (2-bit) | ~24 TPS | ~106 TPS |
+| MiroThinker-8B-SFT-v0.1 | Q4_K_M (4-bit) | ~24 TPS | ~94 TPS |
+| MiroThinker-8B-SFT-v0.1 | Q8_0 (8-bit) | ~21 TPS | ~64 TPS |
+| MiroThinker-14B-DPO-v0.1 | Q2_K (2-bit) | ~17 TPS | ~63 TPS |
+| MiroThinker-14B-DPO-v0.1 | Q4_K_M (4-bit) | — | ~59 TPS |
