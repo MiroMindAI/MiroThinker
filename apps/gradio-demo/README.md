@@ -8,6 +8,19 @@ Host your own Deep Research demo using our [MiroThinker](https://huggingface.co/
    -  8GB minimum (for 4B models), 16GB for longer context 
    -  16GB minimum (for 8B models), 24GB for longer context
 
+## 📊 Performance Snapshot (M4 Pro and RTX 5070)
+
+> Approx. tokens/sec (TPS), higher is better.
+
+| Model | Quant | MacBook M4 Pro | RTX 5070 |
+|---|---|---:|---:|
+| MiroThinker-8B-SFT-v0.1-GGUF | Q2_K (2-bit) | ~24 | ~106 |
+| MiroThinker-8B-SFT-v0.1-GGUF | Q4_K_M (4-bit) | ~24 | ~94 |
+| MiroThinker-8B-SFT-v0.1-GGUF | Q8_0 (8-bit) | ~21 | ~64 |
+| MiroThinker-14B-DPO-v0.1-GGUF | Q2_K (2-bit) | ~17 | ~63 |
+| MiroThinker-14B-DPO-v0.1-GGUF | Q4_K_M (4-bit) | — | ~59 |
+
+
 ## 🚀 Quick Start
 
 ### 1. **Environment Setup**
