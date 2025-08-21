@@ -178,10 +178,9 @@ python3 -m sglang.launch_server \
 
 This will start a server at: `http://0.0.0.0:$PORT$`. Use this as your server base URL.
 
-#### Quantized Light-Weight Options
+#### Option 2: Quantized Light-Weight Options
 
-We also provide guidance to serve the MiroThinker model with CPU optimized quantization techniques and GPU-related quantization techniques and provide analysis and guideliens to serve the model with llama.cpp or ollama.
-
+We also provide comprehensive guidance for serving MiroThinker models using CPU-optimized and GPU-accelerated quantization techniques, along with detailed analysis and guidelines for deployment with llama.cpp, Ollama, SGLang, and other inference frameworks. A complete guide can be found at [Deployment Documentation](apps/gradio-demo/)
 
 
 ### Basic Usage
