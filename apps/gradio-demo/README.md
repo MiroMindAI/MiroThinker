@@ -3,7 +3,7 @@
 Host your own Deep Research demo using our [MiroThinker](https://huggingface.co/miromind-ai/MiroThinker-8B-DPO-v0.1) models and lightweight Gradio-based web interface.
 
 <div align="center">
-  <img src="https://github.com/MiroMindAI/miromindai.github.io/blob/mirothinker-gradio-demo-v1.mp4/mirothinker-gradio-demo-v1.gif?raw=true" width="800" alt="MiroThinker Gradio Demo">
+  <img src="https://github.com/MiroMindAI/miromindai.github.io/blob/assets/gif/MiroFlow-v0.1-deploy-4090.gif?raw=true" width="800" alt="MiroThinker Gradio Demo">
 </div>
 
 ## 🖥️ Hardware Requirements
@@ -143,4 +143,6 @@ You can also leverage other frameworks for model serving like Ollama, vLLM, and 
 
 ### Accuracy
 
-We experimented with FP8 precision on model performance. For the same experimental setting. # TODO
+We conducted experiments to evaluate FP8 precision's impact on model performance. Using identical experimental settings, the original model achieved 35.9% accuracy across 8 evaluation runs. After applying FP8 quantization, we performed 4 evaluation runs and obtained an average score of 36.36% on the GAIA validation set. These results demonstrate that FP8 quantization does not negatively impact model performance.
+
+For other quantization methods such as Q8_0, Q4_K_S, and Q4_K_M, these are optimized for CPU deployment to provide better user experience and faster inference speeds, though they may have some impact on model performance to varying degrees.

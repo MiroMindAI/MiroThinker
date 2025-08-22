@@ -23,7 +23,7 @@
 - **2025-08-08**: 🎉 **MiroThinker v0.1 Released** - Models, framework, and data are now fully open-sourced!
 
 <div align="center">
-  <img src="https://github.com/MiroMindAI/miromindai.github.io/blob/mirothinker-gradio-demo-v1.mp4/mirothinker-gradio-demo-v1.gif?raw=true" width="550" alt="MiroThinker Gradio Demo">
+  <img src="https://github.com/MiroMindAI/miromindai.github.io/blob/assets/gif/MiroFlow-v0.1-deploy-4090.gif?raw=true" width="550" alt="MiroThinker Gradio Demo">
 </div>
 
 ## 📝 Introduction
