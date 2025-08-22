@@ -50,6 +50,8 @@ It will start an openai compatible server with BASE_URL=`http://0.0.0.0:61005/v1
 
 For memory-efficient inference, download the pre-quantized GGUF version from the community:
 
+**Note**: Thanks to the community for providing quantized versions: [mradermacher](https://huggingface.co/mradermacher)
+
 ```bash
 # Download Q4_K_M quantized model (recommended balance)
 wget https://huggingface.co/mradermacher/MiroThinker-8B-DPO-v0.1-GGUF/resolve/main/MiroThinker-8B-DPO-v0.1.Q4_K_M.gguf
