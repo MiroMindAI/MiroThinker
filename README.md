@@ -22,6 +22,10 @@
 - **2025-08-22**: 🎉 **Light-Weight Deployment** - Introducing streamlined deployment options for MiroThinker models with optimized resource usage and faster startup times. Experience the interactive demo: [🚀 Try Gradio Demo](apps/gradio-demo)
 - **2025-08-08**: 🎉 **MiroThinker v0.1 Released** - Models, framework, and data are now fully open-sourced!
 
+<div align="center">
+  <img src="https://github.com/MiroMindAI/miromindai.github.io/blob/mirothinker-gradio-demo-v1.mp4/mirothinker-gradio-demo-v1.gif?raw=true" width="550" alt="MiroThinker Gradio Demo">
+</div>
+
 ## 📝 Introduction
 
 <div align="center">

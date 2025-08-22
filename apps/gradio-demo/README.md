@@ -2,16 +2,16 @@
 
 Host your own Deep Research demo using our [MiroThinker](https://huggingface.co/miromind-ai/MiroThinker-8B-DPO-v0.1) models and lightweight Gradio-based web interface.
 
+<div align="center">
+  <img src="https://github.com/MiroMindAI/miromindai.github.io/blob/mirothinker-gradio-demo-v1.mp4/mirothinker-gradio-demo-v1.gif?raw=true" width="800" alt="MiroThinker Gradio Demo">
+</div>
+
 ## 🖥️ Hardware Requirements
 - **GPU**: NVIDIA RTX 40xx/50xx series or equivalent
 - **VRAM**:
    - **8GB minimum** (for 4B models), **16GB recommended** for longer context processing
    - **16GB minimum** (for 8B models), **24GB recommended** for longer context processing
    - **32GB+ recommended** (for 14B/32B models) for optimal performance
-
-
-[![IMAGE ALT TEXT HERE](https://img.youtube.com/vi/y2LeMjCcB6Q/0.jpg)](https://www.youtube.com/watch?v=y2LeMjCcB6Q)
-
 
 ## ⚙️ LLM Server Deployment
 
@@ -140,3 +140,7 @@ You can also leverage other frameworks for model serving like Ollama, vLLM, and 
 | MiroThinker-8B-SFT-v0.1 | Q8_0 (8-bit) | ~21 TPS | ~64 TPS |
 | MiroThinker-14B-DPO-v0.1 | Q2_K (2-bit) | ~17 TPS | ~63 TPS |
 | MiroThinker-14B-DPO-v0.1 | Q4_K_M (4-bit) | — | ~59 TPS |
+
+### Accuracy
+
+We experimented with FP8 precision on model performance. For the same experimental setting. # TODO
