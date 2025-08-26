@@ -295,6 +295,7 @@ class BenchmarkEvaluator(ABC):
                 if (
                     attempt_result["model_boxed_answer"]
                     and attempt_result["final_judge_result"] is None
+                    and task.ground_truth is not None
                 ):
                     print(f"    Verifying answer for attempt {attempt}...")
                     try:
@@ -378,13 +379,17 @@ class BenchmarkEvaluator(ABC):
                 result.final_judge_result = "PASS_AT_K_SUCCESS"
                 result.judge_type = "pass_at_k"
             else:
-                result.final_judge_result = "PASS_AT_K_FAILED"
+                if result.ground_truth is None:
+                    result.final_judge_result = "TEST_SET_MODE"
+                else:
+                    result.final_judge_result = "PASS_AT_K_FAILED"
                 result.judge_type = "pass_at_k"
 
             print(f"Task {task.task_id} completed with {len(result.attempts)} attempts")
-            print(
-                f"    Pass@{self.pass_at_k} result: {'✅ SUCCESS' if found_correct_answer else '❌ FAILED'}"
-            )
+            if result.ground_truth is not None:
+                print(
+                    f"    Pass@{self.pass_at_k} result: {'✅ SUCCESS' if found_correct_answer else '❌ FAILED'}"
+                )
 
         return result
 
@@ -509,9 +514,10 @@ class BenchmarkEvaluator(ABC):
             # Display task results
             print(f"\nTask {result.task_id}:")
             print(f"  Attempts: {len(result.attempts)}")
-            print(
-                f"  Pass@{self.pass_at_k}: {'✅ SUCCESS' if result.pass_at_k_success else '❌ FAILED'}"
-            )
+            if result.ground_truth is not None:
+                print(
+                    f"  Pass@{self.pass_at_k}: {'✅ SUCCESS' if result.pass_at_k_success else '❌ FAILED'}"
+                )
 
             print("  " + "=" * 50)
             print(f"  Reference: {result.ground_truth}")
