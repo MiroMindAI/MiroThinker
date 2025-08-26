@@ -19,7 +19,12 @@
 
 ## 📰 News & Updates
 
+- **2025-08-22**: 🎉 **Light-Weight Deployment** - Introducing streamlined deployment options for MiroThinker models with optimized resource usage and faster startup times. Experience the interactive demo: [🚀 Try Gradio Demo](apps/gradio-demo)
 - **2025-08-08**: 🎉 **MiroThinker v0.1 Released** - Models, framework, and data are now fully open-sourced!
+
+<div align="center">
+  <img src="https://github.com/MiroMindAI/miromindai.github.io/blob/assets/gif/MiroFlow-v0.1-deploy-4090.gif?raw=true" width="550" alt="MiroThinker Gradio Demo">
+</div>
 
 ## 📝 Introduction
 
@@ -64,7 +69,7 @@ We have released the **MiroThinker v0.1** series, including both SFT and DPO var
 
 ## 🌐 Online Demo
 
-Welcome to try out our online demo [here](https://dr.miromind.ai/). In this demo, we have deployed our [MiroThinker-32B-DPO-v0.1](https://huggingface.co/miromind-ai/MiroThinker-32B-DPO-v0.1) along with commercial tools, hoping to deliver a better experience.
+Welcome to try out our online demo [here](https://dr.miromind.ai/). In this demo, we have deployed our [MiroThinker-32B-DPO-v0.1](https://huggingface.co/miromind-ai/MiroThinker-32B-DPO-v0.1) along with commercial tools to deliver an enhanced user experience.
 
 ## 🚀 Quick Start
 
@@ -154,6 +159,8 @@ FIRECRAWL_API_KEY=your_firecrawl_key
 
 ### Serve the MiroThinker Model
 
+#### Option 1 (Recommended): Serve with SGLang
+
 Use SGLang to serve MiroThinker models at port 61002:
 
 ```
@@ -174,6 +181,11 @@ python3 -m sglang.launch_server \
 ```
 
 This will start a server at: `http://0.0.0.0:$PORT$`. Use this as your server base URL.
+
+#### Option 2: Quantized Light-Weight Options
+
+We also provide comprehensive guidance for serving MiroThinker models using CPU-optimized and GPU-accelerated quantization techniques, along with detailed analysis and guidelines for deployment with llama.cpp, Ollama, SGLang, and other inference frameworks. A complete guide can be found at [Deployment Documentation](apps/gradio-demo/)
+
 
 ### Basic Usage
 

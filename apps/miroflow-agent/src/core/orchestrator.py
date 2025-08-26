@@ -12,9 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import json
+import logging
 import time
 from datetime import date
-from typing import Dict, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
+import uuid
 
 from miroflow_tools.manager import ToolManager
 
@@ -32,7 +35,10 @@ from ..utils.prompt_utils import (
     generate_agent_specific_system_prompt,
     generate_agent_summarize_prompt,
 )
+from ..utils.parsing_utils import extract_llm_response_text
+from ..utils.wrapper_utils import ErrorBox, ResponseBox
 
+logger = logging.getLogger(__name__)
 
 def _list_tools(sub_agent_tool_managers: Dict[str, ToolManager]):
     # Use a dictionary to store the cached result
@@ -61,6 +67,9 @@ class Orchestrator:
         output_formatter: OutputFormatter,
         cfg: DictConfig,
         task_log: Optional["TaskLog"] = None,
+        stream_queue: Optional[Any] = None,
+        tool_definitions: Optional[List[Dict[str, Any]]] = None,
+        sub_agent_tool_definitions: Optional[Dict[str, List[Dict[str, Any]]]] = None,
     ):
         self.main_agent_tool_manager = main_agent_tool_manager
         self.sub_agent_tool_managers = sub_agent_tool_managers
@@ -68,6 +77,9 @@ class Orchestrator:
         self.output_formatter = output_formatter
         self.cfg = cfg
         self.task_log = task_log
+        self.stream_queue = stream_queue
+        self.tool_definitions = tool_definitions
+        self.sub_agent_tool_definitions = sub_agent_tool_definitions
         # call this once, then use cache value
         self._list_sub_agent_tools = _list_tools(sub_agent_tool_managers)
 
@@ -75,6 +87,132 @@ class Orchestrator:
         if self.llm_client and task_log:
             self.llm_client.task_log = task_log
 
+    async def _stream_update(self, event_type: str, data: dict):
+        """Send streaming update in new SSE protocol format"""
+        if self.stream_queue:
+            try:
+                stream_message = {
+                    "event": event_type,
+                    "data": data,
+                }
+                await self.stream_queue.put(stream_message)
+            except Exception as e:
+                logger.warning(f"Failed to send stream update: {e}")
+    
+    async def _stream_start_workflow(self,  user_input: str) -> str:
+        """Send start_of_workflow event"""
+        workflow_id = str(uuid.uuid4())
+        await self._stream_update("start_of_workflow", {
+            "workflow_id": workflow_id,
+            "input": [
+                {
+                    "role": "user",
+                    "content": user_input,
+                }
+            ]
+        })
+        return workflow_id
+    
+    async def _stream_end_workflow(self, workflow_id: str):
+        """Send end_of_workflow event"""
+        await self._stream_update("end_of_workflow", {
+            "workflow_id": workflow_id,
+        })
+        
+    async def _stream_show_error(self, error: str):
+        """Send show_error event"""
+        await self._stream_tool_call("show_error", {"error": error})
+        if self.stream_queue:
+            try:
+                await self.stream_queue.put(None)
+            except Exception as e:
+                logger.warning(f"Failed to send show_error: {e}")
+    
+    async def _stream_start_agent(self, agent_name: str, display_name: str = None):
+        """Send start_of_agent event"""
+        agent_id = str(uuid.uuid4())
+        await self._stream_update("start_of_agent", {
+            "agent_name": agent_name,
+            "display_name": display_name,
+            "agent_id": agent_id,
+        })
+        return agent_id
+    
+    async def _stream_end_agent(self, agent_name: str, agent_id: str):
+        """Send end_of_agent event"""
+        await self._stream_update("end_of_agent", {
+            "agent_name": agent_name,
+            "agent_id": agent_id,
+        })
+    
+    async def _stream_start_llm(self, agent_name: str, display_name: str = None):
+        """Send start_of_llm event"""
+        await self._stream_update("start_of_llm", {
+            "agent_name": agent_name,
+            "display_name": display_name,
+        })
+    
+    async def _stream_end_llm(self, agent_name: str):
+        """Send end_of_llm event"""
+        await self._stream_update("end_of_llm", {
+            "agent_name": agent_name,
+        })
+    
+    async def _stream_message(self, message_id: str, delta_content: str):
+        """Send message event"""
+        await self._stream_update("message", {
+            "message_id": message_id,
+            "delta": {
+                "content": delta_content,
+            },
+        })
+
+    async def _stream_tool_call(self, tool_name: str, payload: dict, streaming: bool = False, tool_call_id: str = None) -> str:
+        """Send tool_call event"""
+        if not tool_call_id:
+            tool_call_id = str(uuid.uuid4())
+        
+        if streaming:
+            for key, value in payload.items():
+                await self._stream_update("tool_call", {
+                    "tool_call_id": tool_call_id,
+                    "tool_name": tool_name,
+                    "delta_input": {
+                        key: value
+                    },
+                })
+        else:
+            # Send complete tool call
+            await self._stream_update("tool_call", {
+                "tool_call_id": tool_call_id,
+                "tool_name": tool_name,
+                "tool_input": payload,
+            })
+        
+        return tool_call_id
+
+    def get_scrape_result(self, result: str) -> str:
+        """
+        Check if the scrape result is an error
+        """
+        SCRAPE_MAX_LENGTH = 20000
+        try:
+            scrape_result_dict = json.loads(result)
+            text = scrape_result_dict.get("text")
+            if text and len(text) > SCRAPE_MAX_LENGTH:
+                text = text[:SCRAPE_MAX_LENGTH]
+            return json.dumps({"text": text},ensure_ascii=False)
+        except json.JSONDecodeError:
+            if isinstance(result, str) and len(result) > SCRAPE_MAX_LENGTH:
+                result = result[:SCRAPE_MAX_LENGTH]
+            return result
+
+    def post_process_tool_call_result(self, tool_name, tool_call_result: dict):
+        """Process tool call results"""
+        if "result" in tool_call_result and tool_name == "scrape":
+            tool_call_result['result'] = self.get_scrape_result( tool_call_result['result'])
+        return tool_call_result
+        
     async def _handle_llm_call(
         self,
         system_prompt,
@@ -100,7 +238,20 @@ class Orchestrator:
                 task_log=self.task_log,
                 agent_type=agent_type,
             )
+            if ErrorBox.is_error_box(response):
+                await self._stream_show_error(str(response))
+                response = None
+            should_break = False
+            if ResponseBox.is_response_box(response):
 
+                if response.has_extra_info():
+                    extra_info = response.get_extra_info()
+                    if extra_info.get("should_break",False):
+                        should_break = True
+                    if extra_info.get("warning_msg"):
+                        await self._stream_show_error(extra_info.get("warning_msg","Empty warning message"))
+                
+                response = response.get_response()
             # Check if response is None (indicating an error occurred)
             if response is None:
                 self.task_log.log_step(
@@ -159,6 +310,11 @@ class Orchestrator:
             f"Subtask: {task_description}",
         )
 
+        # Stream sub-agent start
+        display_name = sub_agent_name.replace('agent-', '')
+        sub_agent_id = await self._stream_start_agent(display_name)
+        await self._stream_start_llm(display_name)
+
         # Start new sub-agent session
         self.task_log.start_sub_agent_session(sub_agent_name, task_description)
 
@@ -167,8 +323,11 @@ class Orchestrator:
         message_history = [{"role": "user", "content": initial_user_content}]
 
         # Get sub-agent tool definitions
-        tool_definitions = await self._list_sub_agent_tools()
-        tool_definitions = tool_definitions.get(sub_agent_name, {})
+        if not self.sub_agent_tool_definitions:
+            tool_definitions = await self._list_sub_agent_tools()
+            tool_definitions = tool_definitions.get(sub_agent_name, {})
+        else:
+            tool_definitions = self.sub_agent_tool_definitions[sub_agent_name]
         self.task_log.log_step(
             "info",
             f"{sub_agent_name} | Get Tool Definitions",
@@ -220,7 +379,6 @@ class Orchestrator:
                 tool_definitions,
                 turn_count,
                 f"{sub_agent_name} | Turn: {turn_count}",
-                keep_tool_result=keep_tool_result,
                 agent_type=sub_agent_name,
             )
 
@@ -234,6 +392,9 @@ class Orchestrator:
 
             # Process LLM response
             elif assistant_response_text:
+                text_response = extract_llm_response_text(assistant_response_text)
+                if text_response:
+                    await self._stream_tool_call("show_text", {"text": text_response})
                 self.task_log.log_step(
                     "info",
                     f"{sub_agent_name} | Turn: {turn_count} | LLM Call",
@@ -276,10 +437,13 @@ class Orchestrator:
 
                 call_start_time = time.time()
                 try:
+                    tool_call_id = await self._stream_tool_call(tool_name, arguments)
                     tool_result = await self.sub_agent_tool_managers[
                         sub_agent_name
                     ].execute_tool_call(server_name, tool_name, arguments)
-
+                    tool_result = self.post_process_tool_call_result(tool_name,tool_result)
+                    result = tool_result.get("result") if tool_result.get("result") else tool_result.get("error")
+                    await self._stream_tool_call(tool_name, {"result": result }, tool_call_id=tool_call_id)
                     call_end_time = time.time()
                     call_duration_ms = int((call_end_time - call_start_time) * 1000)
 
@@ -402,6 +566,9 @@ class Orchestrator:
 
         message_history.append({"role": "user", "content": summary_prompt})
 
+        await self._stream_tool_call("Partial Summary", {}, tool_call_id=str(uuid.uuid4()))
+
+
         # Use unified LLM call processing to generate final summary
         (
             final_answer_text,
@@ -452,6 +619,10 @@ class Orchestrator:
         # Remove thinking content in tool response
         final_answer_text = final_answer_text.split("</think>")[-1].strip()
 
+        # Stream sub-agent end
+        await self._stream_end_llm(display_name)
+        await self._stream_end_agent(display_name, sub_agent_id)
+
         # Return final answer instead of conversation log, so main agent can use it directly
         return final_answer_text
 
@@ -461,6 +632,7 @@ class Orchestrator:
         """
         Execute the main end-to-end task.
         """
+        workflow_id = await self._stream_start_workflow(task_description)
         keep_tool_result = int(self.cfg.agent.keep_tool_result)
 
         self.task_log.log_step("info", "Main Agent", f"Start task with id: {task_id}")
@@ -484,8 +656,11 @@ class Orchestrator:
             user_input += f"\n[Attached file: {task_file_name}]"
 
         # 2. Get tool definitions
-        tool_definitions = await self.main_agent_tool_manager.get_all_tool_definitions()
-        tool_definitions += expose_sub_agents_as_tools(self.cfg.agent.sub_agents)
+        if not self.tool_definitions:
+            tool_definitions = await self.main_agent_tool_manager.get_all_tool_definitions()
+            tool_definitions += expose_sub_agents_as_tools(self.cfg.agent.sub_agents)
+        else:
+            tool_definitions = self.tool_definitions
         if not tool_definitions:
             self.task_log.log_step(
                 "warning",
@@ -508,6 +683,9 @@ class Orchestrator:
         turn_count = 0
         error_msg = ""
         tool_calls = []
+
+        self.current_agent_id = await self._stream_start_agent("main")
+        await self._stream_start_llm("main")
         while turn_count < max_turns:
             turn_count += 1
             self.task_log.log_step(
@@ -535,6 +713,9 @@ class Orchestrator:
 
             # Process LLM response
             if assistant_response_text:
+                text_response = extract_llm_response_text(assistant_response_text)
+                if text_response:
+                    await self._stream_tool_call("show_text", {"text": text_response})
                 if should_break:
                     self.task_log.log_step(
                         "info",
@@ -580,6 +761,8 @@ class Orchestrator:
                 call_start_time = time.time()
                 try:
                     if server_name.startswith("agent-"):
+                        await self._stream_end_llm("main")
+                        await self._stream_end_agent("main", self.current_agent_id)
                         sub_agent_result = await self.run_sub_agent(
                             server_name, arguments["subtask"], keep_tool_result
                         )
@@ -588,7 +771,10 @@ class Orchestrator:
                             "tool_name": tool_name,
                             "result": sub_agent_result,
                         }
+                        self.current_agent_id = await self._stream_start_agent("main", display_name="Summarizing")
+                        await self._stream_start_llm("main", display_name="Summarizing")
                     else:
+                        tool_call_id = await self._stream_tool_call(tool_name,arguments)
                         tool_result = (
                             await self.main_agent_tool_manager.execute_tool_call(
                                 server_name=server_name,
@@ -596,6 +782,9 @@ class Orchestrator:
                                 arguments=arguments,
                             )
                         )
+                        tool_result = self.post_process_tool_call_result(tool_name,tool_result)
+                        result = tool_result.get("result") if tool_result.get("result") else tool_result.get("error")
+                        await self._stream_tool_call(tool_name,{"result": result}, tool_call_id=tool_call_id)
 
                     call_end_time = time.time()
                     call_duration_ms = int((call_end_time - call_start_time) * 1000)
@@ -682,6 +871,10 @@ class Orchestrator:
                 )
                 break
 
+        await self._stream_end_llm("main")
+        await self._stream_end_agent("main", self.current_agent_id)
+        
+
         # Record main loop end
         if turn_count >= max_turns:
             self.task_log.log_step(
@@ -701,6 +894,9 @@ class Orchestrator:
         self.task_log.log_step(
             "info", "Main Agent | Final Summary", "Generating final summary"
         )
+        
+        self.current_agent_id = await self._stream_start_agent("Final Summary")
+        await self._stream_start_llm("Final Summary")
 
         # Generate summary prompt (generate only once)
         summary_prompt = generate_agent_summarize_prompt(
@@ -767,6 +963,11 @@ class Orchestrator:
                 final_answer_text, self.llm_client
             )
         )
+
+        await self._stream_tool_call("show_text", {"text": final_boxed_answer})
+        await self._stream_end_llm("Final Summary")
+        await self._stream_end_agent("Final Summary", self.current_agent_id)
+        await self._stream_end_workflow(workflow_id)
 
         self.task_log.log_step(
             "info", "Main Agent | Usage Calculation", f"Usage log: {usage_log}"
