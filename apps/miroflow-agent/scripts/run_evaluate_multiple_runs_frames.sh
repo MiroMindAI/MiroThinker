@@ -36,6 +36,7 @@ for i in $(seq 1 $NUM_RUNS); do
     (
         uv run python benchmarks/common_benchmark.py \
             benchmark=$BENCHMARK_NAME \
+            benchmark.data.metadata_file="standardized_data.jsonl" \
             llm=qwen3-32b \
             llm.provider=$LLM_PROVIDER \
             llm.model_name=$LLM_MODEL \

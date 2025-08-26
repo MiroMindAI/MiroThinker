@@ -8,7 +8,8 @@ name: "webwalkerqa"
 data:
   data_dir: "../../data/webwalkerqa"
 
-
 execution:
   max_tasks: null  # null means no limit
   max_concurrent: 5
+  pass_at_k: 1
+  format_error_retry_limit: 3

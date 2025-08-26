@@ -218,3 +218,5 @@ data/
 .idea/
 
 .DS_Store
+
+apps/collect-trace/scripts/*/*.sh
