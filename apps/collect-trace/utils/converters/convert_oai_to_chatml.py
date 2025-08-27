@@ -40,9 +40,9 @@ def oai_tool_message_to_chat_message(oai_messages, agent_type, tool_definition):
 
         mcp_tool_call_templates = []
         for each_oai_tool_call in oai_tool_call:
-            assert isinstance(each_oai_tool_call, dict), (
-                f"oai_tool_call should be a dict, but got {type(each_oai_tool_call)}"
-            )
+            assert isinstance(
+                each_oai_tool_call, dict
+            ), f"oai_tool_call should be a dict, but got {type(each_oai_tool_call)}"
 
             server_name, tool_name = each_oai_tool_call["function"]["name"].rsplit(
                 "-", maxsplit=1
@@ -178,9 +178,9 @@ def oai_tool_message_to_chat_message(oai_messages, agent_type, tool_definition):
             else:
                 raise ValueError(f"Unknown role: {msg['role']}")
 
-        assert len(pending_user_tool_contents) == 0, (
-            "Error: Trace ends with user/tool round. Pending user/tool contents should be empty."
-        )
+        assert (
+            len(pending_user_tool_contents) == 0
+        ), "Error: Trace ends with user/tool round. Pending user/tool contents should be empty."
 
     except Exception as e:
         raise ValueError(f"Error processing messages: {e}")
