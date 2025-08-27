@@ -32,14 +32,14 @@ def safe_json_loads(arguments_str: str) -> dict:
     try:
         return json.loads(arguments_str)
     except json.JSONDecodeError:
-        print(f"Warning: Unable to parse JSON: {arguments_str}")
+        logger.warning(f"Unable to parse JSON: {arguments_str}")
 
     # Step 2: Try json_repair to fix common issues
     try:
         repaired = repair_json(arguments_str, ensure_ascii=False)
         return json.loads(repaired)
     except Exception:
-        print("Info: json_repair also failed, trying fallback fixes.")
+        logger.info("json_repair also failed, trying fallback fixes.")
 
     # Step 3: Apply simple string replacements as a last resort
     try:
