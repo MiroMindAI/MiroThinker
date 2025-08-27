@@ -653,7 +653,7 @@ class GenericEvaluator(BenchmarkEvaluator):
                     tasks.append(task)
 
                 except Exception as e:
-                    print(f"Warning: Failed to parse line {i+1}: {e}")
+                    print(f"Warning: Failed to parse line {i + 1}: {e}")
                     continue
 
         self.tasks = tasks

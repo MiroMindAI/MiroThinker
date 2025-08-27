@@ -1,0 +1,38 @@
+name: lint
+
+on:
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  lint:
+    if: github.repository_owner == 'MiroMindAI'
+    name: lint pull request
+    runs-on: ubuntu-latest
+    steps:
+    - name: checkout code
+      uses: actions/checkout@v4
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
+
+    - name: Check static error
+      run: |
+        uv tool run ruff@0.8.0 check --show-fixes --output-format=github
+
+    - name: Reformat code style
+      run: |
+        echo '## Reformat summary' >> $GITHUB_STEP_SUMMARY
+        if diff_output="$(uv tool run ruff@0.8.0 format --diff 2>&1)"; then
+          echo "$diff_output"
+          echo '✅ Format check passed.' >> "$GITHUB_STEP_SUMMARY"
+        else
+          echo "$diff_output"
+          echo '❌ Format issues detected.' >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo '```diff'
+            echo "$diff_output"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          exit 1
+        fi

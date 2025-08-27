@@ -83,7 +83,7 @@ def validate_gaia_data_file() -> bool:
                 json.loads(line)
             except json.JSONDecodeError as e:
                 print(
-                    f"Error: Invalid JSON in line {i+1} of GAIA-Text-103 data file: {e}"
+                    f"Error: Invalid JSON in line {i + 1} of GAIA-Text-103 data file: {e}"
                 )
                 return False
 

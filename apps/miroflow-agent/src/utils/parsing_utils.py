@@ -51,7 +51,9 @@ def safe_json_loads(arguments_str: str) -> dict:
         )
         return json.loads(fixed)
     except json.JSONDecodeError:
-        logger.error(f"Error: Still unable to parse JSON after all attempts: {arguments_str}")
+        logger.error(
+            f"Error: Still unable to parse JSON after all attempts: {arguments_str}"
+        )
 
     # Step 4: Give up and return error information
     return {
@@ -70,14 +72,14 @@ def extract_llm_response_text(llm_response):
     else:
         # If it's a string type, use directly
         content = str(llm_response)
-    
+
     # Find the position of <use_mcp_tool> tag
     tool_start_pattern = r"<use_mcp_tool>"
     match = re.search(tool_start_pattern, content)
-    
+
     if match:
         # If <use_mcp_tool> tag is found, only return content before the tag
-        return content[:match.start()].strip()
+        return content[: match.start()].strip()
     else:
         # If no tag is found, return the complete content
         return content.strip()

@@ -8,26 +8,20 @@ from pathlib import Path
 from typing import AsyncGenerator, Optional
 from concurrent.futures import ThreadPoolExecutor
 import gradio as gr
-
+from typing import List
 from dotenv import load_dotenv
 import threading
 
 from gradio_demo.utils import contains_chinese, replace_chinese_punctuation
-
-# Create global cleanup thread pool for operations that won't be affected by asyncio.cancel
-cleanup_executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="cleanup")
-
-from src.core.pipeline import (
-    create_pipeline_components, 
-    execute_task_pipeline
-)
+from src.core.pipeline import create_pipeline_components, execute_task_pipeline
 from src.config.settings import expose_sub_agents_as_tools
 from omegaconf import DictConfig
 from hydra import compose, initialize_config_dir
 
+# Create global cleanup thread pool for operations that won't be affected by asyncio.cancel
+cleanup_executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="cleanup")
 
 logger = logging.getLogger(__name__)
-
 
 # Load environment variables from .env file
 load_dotenv()
@@ -41,15 +35,19 @@ def load_mirage_config(config_overrides: Optional[dict] = None) -> DictConfig:
     Load the full Mirage configuration using Hydra, similar to how benchmarks work.
     """
     global _hydra_initialized
-    
+
     # Get the path to the mirage agent config directory
-    mirage_config_dir = Path(__file__).parent.parent.parent.parent / "miroflow-agent" / "conf"
+    mirage_config_dir = (
+        Path(__file__).parent.parent.parent.parent / "miroflow-agent" / "conf"
+    )
     mirage_config_dir = mirage_config_dir.resolve()
-    print("config dir",mirage_config_dir)
-    
+    print("config dir", mirage_config_dir)
+
     if not mirage_config_dir.exists():
-        raise FileNotFoundError(f"Mirage config directory not found: {mirage_config_dir}")
-    
+        raise FileNotFoundError(
+            f"Mirage config directory not found: {mirage_config_dir}"
+        )
+
     # Initialize Hydra if not already done
     if not _hydra_initialized:
         try:
@@ -57,36 +55,44 @@ def load_mirage_config(config_overrides: Optional[dict] = None) -> DictConfig:
             _hydra_initialized = True
         except Exception as e:
             logger.warning(f"Hydra already initialized or error: {e}")
-    
+
     # Compose configuration with environment variable overrides
     overrides = []
-    
+
     # Add environment variable based overrides (refer to scripts/debug.sh)
-    llm_provider = os.getenv("DEFAULT_LLM_PROVIDER", "qwen")  # debug.sh defaults to qwen
-    model_name = os.getenv("DEFAULT_MODEL_NAME", "SOTA_Shawnpo_0731")  # debug.sh default model
+    llm_provider = os.getenv(
+        "DEFAULT_LLM_PROVIDER", "qwen"
+    )  # debug.sh defaults to qwen
+    model_name = os.getenv(
+        "DEFAULT_MODEL_NAME", "SOTA_Shawnpo_0731"
+    )  # debug.sh default model
     agent_set = os.getenv("DEFAULT_AGENT_SET", "evaluation")  # debug.sh uses evaluation
     openai_base_url = os.getenv("OPENAI_BASE_URL", "http://localhost:11434")
-    print("openai_base_url",openai_base_url)
+    print("openai_base_url", openai_base_url)
 
     # Map provider names to config files
     provider_config_map = {
         "anthropic": "claude",
-        "openai": "openai", 
+        "openai": "openai",
         "deepseek": "deepseek",
-        "qwen": "qwen3-32b"
+        "qwen": "qwen3-32b",
     }
-    
-    llm_config = provider_config_map.get(llm_provider, "qwen3-32b")  # default changed to qwen3-32b
-    overrides.extend([
-        f"llm={llm_config}",
-        f"llm.provider={llm_provider}",
-        f"llm.model_name={model_name}",
-        f"llm.openai_base_url={openai_base_url}",
-        f"agent={agent_set}",  # use evaluation instead of default
-        "benchmark=gaia-validation",  # refer to debug.sh
-        "+pricing=default"
-    ])
-    
+
+    llm_config = provider_config_map.get(
+        llm_provider, "qwen3-32b"
+    )  # default changed to qwen3-32b
+    overrides.extend(
+        [
+            f"llm={llm_config}",
+            f"llm.provider={llm_provider}",
+            f"llm.model_name={model_name}",
+            f"llm.openai_base_url={openai_base_url}",
+            f"agent={agent_set}",  # use evaluation instead of default
+            "benchmark=gaia-validation",  # refer to debug.sh
+            "+pricing=default",
+        ]
+    )
+
     # Add config overrides from request
     if config_overrides:
         for key, value in config_overrides.items():
@@ -95,7 +101,7 @@ def load_mirage_config(config_overrides: Optional[dict] = None) -> DictConfig:
                     overrides.append(f"{key}.{subkey}={subvalue}")
             else:
                 overrides.append(f"{key}={value}")
-    
+
     try:
         cfg = compose(config_name="config", overrides=overrides)
         return cfg
@@ -104,53 +110,51 @@ def load_mirage_config(config_overrides: Optional[dict] = None) -> DictConfig:
         os._exit(1)
 
 
-from typing import List, Optional
-
-
-
-
-
 # pre load main agent tool definitions to speed up the first request
 cfg = load_mirage_config(None)
 # Create pipeline components
-main_agent_tool_manager, sub_agent_tool_managers, output_formatter = (create_pipeline_components(cfg))
+main_agent_tool_manager, sub_agent_tool_managers, output_formatter = (
+    create_pipeline_components(cfg)
+)
 tool_definitions = asyncio.run(main_agent_tool_manager.get_all_tool_definitions())
 tool_definitions += expose_sub_agents_as_tools(cfg.agent.sub_agents)
 
 # pre load sub agent tool definitions to speed up the first request
 sub_agent_tool_definitions = {
-        name: asyncio.run(sub_agent_tool_manager.get_all_tool_definitions())
-        for name, sub_agent_tool_manager in sub_agent_tool_managers.items()
+    name: asyncio.run(sub_agent_tool_manager.get_all_tool_definitions())
+    for name, sub_agent_tool_manager in sub_agent_tool_managers.items()
 }
 
 
 class ThreadSafeAsyncQueue:
     """Thread-safe async queue wrapper"""
+
     def __init__(self):
         self._queue = asyncio.Queue()
         self._loop = None
         self._closed = False
-    
+
     def set_loop(self, loop):
         self._loop = loop
-    
+
     async def put(self, item):
         """Put data safely from any thread"""
         if self._closed:
             return
         await self._queue.put(item)
-    
+
     def put_nowait_threadsafe(self, item):
         """Put data from other threads"""
         if self._closed or not self._loop:
             return
         self._loop.call_soon_threadsafe(lambda: asyncio.create_task(self.put(item)))
-    
+
     async def get(self):
         return await self._queue.get()
-    
+
     def close(self):
         self._closed = True
+
 
 def filter_google_search_organic(organic: List[dict]) -> List[dict]:
     """
@@ -158,11 +162,14 @@ def filter_google_search_organic(organic: List[dict]) -> List[dict]:
     """
     result = []
     for item in organic:
-        result.append({
-            "title": item.get("title", ""),
-            "link": item.get("link", ""),
-        })
+        result.append(
+            {
+                "title": item.get("title", ""),
+                "link": item.get("link", ""),
+            }
+        )
     return result
+
 
 def is_scrape_error(result: str) -> bool:
     """
@@ -173,7 +180,7 @@ def is_scrape_error(result: str) -> bool:
         return False
     except json.JSONDecodeError:
         return True
-    
+
 
 def filter_message(message: dict) -> dict:
     """
@@ -182,12 +189,24 @@ def filter_message(message: dict) -> dict:
     if message["event"] == "tool_call":
         tool_name = message["data"].get("tool_name")
         tool_input = message["data"].get("tool_input")
-        if tool_name == "google_search" and isinstance(tool_input, dict) and "result" in tool_input:
+        if (
+            tool_name == "google_search"
+            and isinstance(tool_input, dict)
+            and "result" in tool_input
+        ):
             result_dict = json.loads(tool_input["result"])
             if "organic" in result_dict:
-                new_result = {"organic": filter_google_search_organic(result_dict["organic"])}
-                message["data"]["tool_input"]["result"] = json.dumps(new_result, ensure_ascii=False)
-        if tool_name == "scrape" and isinstance(tool_input, dict) and "result" in tool_input:
+                new_result = {
+                    "organic": filter_google_search_organic(result_dict["organic"])
+                }
+                message["data"]["tool_input"]["result"] = json.dumps(
+                    new_result, ensure_ascii=False
+                )
+        if (
+            tool_name == "scrape"
+            and isinstance(tool_input, dict)
+            and "result" in tool_input
+        ):
             # if error, it can not be json
             if is_scrape_error(tool_input["result"]):
                 message["data"]["tool_input"] = {"error": tool_input["result"]}
@@ -195,48 +214,46 @@ def filter_message(message: dict) -> dict:
                 message["data"]["tool_input"] = {}
     return message
 
+
 async def stream_events_optimized(
-    task_id: str,
-    query: str, 
-    _: Optional[dict] = None,
-    disconnect_check=None
+    task_id: str, query: str, _: Optional[dict] = None, disconnect_check=None
 ) -> AsyncGenerator[dict, None]:
     """Optimized event stream generator that directly outputs structured events, no longer wrapped as SSE strings."""
     workflow_id = task_id
     last_send_time = time.time()
     last_heartbeat_time = time.time()
-    
+
     # Create thread-safe queue
     stream_queue = ThreadSafeAsyncQueue()
     stream_queue.set_loop(asyncio.get_event_loop())
-    
+
     cancel_event = threading.Event()
-    
+
     def run_pipeline_in_thread():
         try:
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
-            
+
             class ThreadQueueWrapper:
                 def __init__(self, thread_queue, cancel_event):
                     self.thread_queue = thread_queue
                     self.cancel_event = cancel_event
-                
+
                 async def put(self, item):
                     if self.cancel_event.is_set():
                         logger.info("Pipeline cancelled, stopping execution")
                         return
                     self.thread_queue.put_nowait_threadsafe(filter_message(item))
-            
+
             wrapper_queue = ThreadQueueWrapper(stream_queue, cancel_event)
-            
+
             global cfg
             global main_agent_tool_manager
             global sub_agent_tool_managers
             global output_formatter
             global tool_definitions
             global sub_agent_tool_definitions
-            
+
             async def pipeline_with_cancellation():
                 pipeline_task = asyncio.create_task(
                     execute_task_pipeline(
@@ -253,19 +270,19 @@ async def stream_events_optimized(
                         sub_agent_tool_definitions=sub_agent_tool_definitions,
                     )
                 )
-                
+
                 async def check_cancellation():
                     while not cancel_event.is_set():
                         await asyncio.sleep(0.5)
                     logger.info("Cancel event detected, cancelling pipeline")
                     pipeline_task.cancel()
-                
+
                 cancel_task = asyncio.create_task(check_cancellation())
-                
+
                 try:
                     done, pending = await asyncio.wait(
-                        [pipeline_task, cancel_task], 
-                        return_when=asyncio.FIRST_COMPLETED
+                        [pipeline_task, cancel_task],
+                        return_when=asyncio.FIRST_COMPLETED,
                     )
                     for task in pending:
                         task.cancel()
@@ -279,23 +296,25 @@ async def stream_events_optimized(
                     logger.error(f"Pipeline execution error: {e}")
                     pipeline_task.cancel()
                     cancel_task.cancel()
-            
+
             loop.run_until_complete(pipeline_with_cancellation())
         except Exception as e:
             if not cancel_event.is_set():
                 logger.error(f"Pipeline error: {e}", exc_info=True)
-                stream_queue.put_nowait_threadsafe({
-                    "event": "error",
-                    "data": {"error": str(e), "workflow_id": workflow_id}
-                })
+                stream_queue.put_nowait_threadsafe(
+                    {
+                        "event": "error",
+                        "data": {"error": str(e), "workflow_id": workflow_id},
+                    }
+                )
         finally:
             stream_queue.put_nowait_threadsafe(None)
-            if 'loop' in locals():
+            if "loop" in locals():
                 loop.close()
-    
+
     executor = ThreadPoolExecutor(max_workers=1)
     future = executor.submit(run_pipeline_in_thread)
-    
+
     try:
         while True:
             try:
@@ -320,25 +339,32 @@ async def stream_events_optimized(
                         if message is not None:
                             yield message
                             continue
-                    except:
+                    except Exception:
                         break
                 if current_time - last_heartbeat_time >= 15:
-                    yield {"event": "heartbeat", "data": {"timestamp": current_time, "workflow_id": workflow_id}}
+                    yield {
+                        "event": "heartbeat",
+                        "data": {"timestamp": current_time, "workflow_id": workflow_id},
+                    }
                     last_heartbeat_time = current_time
     except Exception as e:
         logger.error(f"Stream error: {e}", exc_info=True)
-        yield {"event": "error", "data": {"workflow_id": workflow_id, "error": f"Stream error: {str(e)}"}}
+        yield {
+            "event": "error",
+            "data": {"workflow_id": workflow_id, "error": f"Stream error: {str(e)}"},
+        }
     finally:
         cancel_event.set()
         stream_queue.close()
         try:
             future.result(timeout=1.0)
-        except:
+        except Exception:
             pass
         executor.shutdown(wait=False)
 
 
 # ========================= Gradio Integration =========================
+
 
 def _init_render_state():
     return {
@@ -348,9 +374,11 @@ def _init_render_state():
         "errors": [],
     }
 
+
 def _append_show_text(tool_entry: dict, delta: str):
     existing = tool_entry.get("content", "")
     tool_entry["content"] = existing + delta
+
 
 def _is_empty_payload(value) -> bool:
     if value is None:
@@ -361,6 +389,7 @@ def _is_empty_payload(value) -> bool:
     if isinstance(value, (dict, list, tuple, set)):
         return len(value) == 0
     return False
+
 
 def _render_markdown(state: dict) -> str:
     lines = []
@@ -413,6 +442,7 @@ def _render_markdown(state: dict) -> str:
         lines.append("\n---\n")
     return "\n".join(lines) if lines else "Waiting..."
 
+
 def _update_state_with_event(state: dict, message: dict):
     event = message.get("event")
     data = message.get("data", {})
@@ -423,7 +453,7 @@ def _update_state_with_event(state: dict, message: dict):
             state["agents"][agent_id] = {
                 "agent_name": agent_name,
                 "tool_call_order": [],
-                "tools": {}
+                "tools": {},
             }
             state["agent_order"].append(agent_id)
         state["current_agent_id"] = agent_id
@@ -433,10 +463,14 @@ def _update_state_with_event(state: dict, message: dict):
     elif event == "tool_call":
         tool_call_id = data.get("tool_call_id")
         tool_name = data.get("tool_name", "unknown_tool")
-        agent_id = state.get("current_agent_id") or (state["agent_order"][-1] if state["agent_order"] else None)
+        agent_id = state.get("current_agent_id") or (
+            state["agent_order"][-1] if state["agent_order"] else None
+        )
         if not agent_id:
             return state
-        agent = state["agents"].setdefault(agent_id, {"agent_name": "unknown", "tool_call_order": [], "tools": {}})
+        agent = state["agents"].setdefault(
+            agent_id, {"agent_name": "unknown", "tool_call_order": [], "tools": {}}
+        )
         tools = agent["tools"]
         if tool_call_id not in tools:
             tools[tool_call_id] = {"tool_name": tool_name}
@@ -448,9 +482,13 @@ def _update_state_with_event(state: dict, message: dict):
         elif tool_name == "show_text" and "tool_input" in data:
             ti = data.get("tool_input")
             text = ""
-            if isinstance(ti,dict):
-                text = ti.get("text", "") or ((ti.get('result') or {}).get("text") if isinstance(ti.get('result'),dict) else "")
-            elif isinstance(ti,str):
+            if isinstance(ti, dict):
+                text = ti.get("text", "") or (
+                    (ti.get("result") or {}).get("text")
+                    if isinstance(ti.get("result"), dict)
+                    else ""
+                )
+            elif isinstance(ti, str):
                 text = ti
             if text:
                 _append_show_text(entry, text)
@@ -469,10 +507,14 @@ def _update_state_with_event(state: dict, message: dict):
     elif event == "message":
         # Same incremental text display as show_text, aggregated by message_id
         message_id = data.get("message_id")
-        agent_id = state.get("current_agent_id") or (state["agent_order"][-1] if state["agent_order"] else None)
+        agent_id = state.get("current_agent_id") or (
+            state["agent_order"][-1] if state["agent_order"] else None
+        )
         if not agent_id:
             return state
-        agent = state["agents"].setdefault(agent_id, {"agent_name": "unknown", "tool_call_order": [], "tools": {}})
+        agent = state["agents"].setdefault(
+            agent_id, {"agent_name": "unknown", "tool_call_order": [], "tools": {}}
+        )
         tools = agent["tools"]
         if message_id not in tools:
             tools[message_id] = {"tool_name": "message"}
@@ -495,30 +537,36 @@ def _update_state_with_event(state: dict, message: dict):
         pass
     return state
 
+
 _CANCEL_FLAGS = {}
 _CANCEL_LOCK = threading.Lock()
+
 
 def _set_cancel_flag(task_id: str):
     with _CANCEL_LOCK:
         _CANCEL_FLAGS[task_id] = True
 
+
 def _reset_cancel_flag(task_id: str):
     with _CANCEL_LOCK:
         _CANCEL_FLAGS[task_id] = False
+
 
 async def _disconnect_check_for_task(task_id: str):
     with _CANCEL_LOCK:
         return _CANCEL_FLAGS.get(task_id, False)
 
+
 def _spinner_markup(running: bool) -> str:
     if not running:
         return ""
     return (
-        "\n\n<div style=\"display:flex;align-items:center;gap:8px;color:#555;margin-top:8px;\">"
-        "<div style=\"width:16px;height:16px;border:2px solid #ddd;border-top-color:#3b82f6;border-radius:50%;animation:spin 0.8s linear infinite;\"></div>"
+        '\n\n<div style="display:flex;align-items:center;gap:8px;color:#555;margin-top:8px;">'
+        '<div style="width:16px;height:16px;border:2px solid #ddd;border-top-color:#3b82f6;border-radius:50%;animation:spin 0.8s linear infinite;"></div>'
         "<span>Generating...</span>"
         "</div>\n<style>@keyframes spin{to{transform:rotate(360deg)}}</style>\n"
     )
+
 
 async def gradio_run(query: str, ui_state: Optional[dict]):
     query = replace_chinese_punctuation(query or "")
@@ -527,7 +575,7 @@ async def gradio_run(query: str, ui_state: Optional[dict]):
             "we only support English input for the time being.",
             gr.update(interactive=True),
             gr.update(interactive=False),
-            ui_state or {"task_id": None}
+            ui_state or {"task_id": None},
         )
         return
     task_id = str(uuid.uuid4())
@@ -542,24 +590,27 @@ async def gradio_run(query: str, ui_state: Optional[dict]):
         _render_markdown(state) + _spinner_markup(True),
         gr.update(interactive=False),
         gr.update(interactive=True),
-        ui_state
+        ui_state,
     )
-    async for message in stream_events_optimized(task_id, query, None, lambda: _disconnect_check_for_task(task_id)):
+    async for message in stream_events_optimized(
+        task_id, query, None, lambda: _disconnect_check_for_task(task_id)
+    ):
         state = _update_state_with_event(state, message)
         md = _render_markdown(state)
         yield (
             md + _spinner_markup(True),
             gr.update(interactive=False),
             gr.update(interactive=True),
-            ui_state
+            ui_state,
         )
     # End: enable Run, disable Stop, remove spinner
     yield (
         _render_markdown(state),
         gr.update(interactive=True),
         gr.update(interactive=False),
-        ui_state
+        ui_state,
     )
+
 
 def stop_current(ui_state: Optional[dict]):
     tid = (ui_state or {}).get("task_id")
@@ -570,6 +621,7 @@ def stop_current(ui_state: Optional[dict]):
         gr.update(interactive=True),
         gr.update(interactive=False),
     )
+
 
 def build_demo():
     custom_css = """
@@ -588,12 +640,14 @@ def build_demo():
         out_md = gr.Markdown("", elem_id="log-view")
         ui_state = gr.State({"task_id": None})
         # run: outputs -> markdown, run_btn(update), stop_btn(update), ui_state
-        run_btn.click(fn=gradio_run, inputs=[inp, ui_state], outputs=[out_md, run_btn, stop_btn, ui_state])
+        run_btn.click(
+            fn=gradio_run,
+            inputs=[inp, ui_state],
+            outputs=[out_md, run_btn, stop_btn, ui_state],
+        )
         # stop: outputs -> run_btn(update), stop_btn(update)
         stop_btn.click(fn=stop_current, inputs=[ui_state], outputs=[run_btn, stop_btn])
     return demo
-
-
 
 
 if __name__ == "__main__":
