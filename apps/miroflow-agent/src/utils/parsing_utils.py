@@ -51,7 +51,7 @@ def safe_json_loads(arguments_str: str) -> dict:
         )
         return json.loads(fixed)
     except json.JSONDecodeError:
-        print(f"Error: Still unable to parse JSON after all attempts: {arguments_str}")
+        logger.error(f"Error: Still unable to parse JSON after all attempts: {arguments_str}")
 
     # Step 4: Give up and return error information
     return {
