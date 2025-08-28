@@ -106,6 +106,24 @@ def create_mcp_server_parameters(cfg: DictConfig, agent_cfg: DictConfig):
                 ),
             }
         )
+        
+    if (
+        agent_cfg.get("tools", None) is not None
+        and "tool-sougou-searching" in agent_cfg["tools"]
+    ):
+        
+        configs.append(
+            {
+                "name": "tool-sougou-searching",
+                "params": StdioServerParameters(
+                    command=sys.executable,
+                    args=[
+                        "-m",
+                        "miroflow_tools.mcp_servers.searching_sougou_mcp_server",
+                    ]
+                ),
+            }
+        )
 
     if agent_cfg.get("tools", None) is not None and "tool-python" in agent_cfg["tools"]:
         configs.append(

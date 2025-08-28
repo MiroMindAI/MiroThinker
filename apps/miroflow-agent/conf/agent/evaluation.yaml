@@ -17,7 +17,7 @@ main_agent:
 sub_agents:
   agent-browsing:
     tools:
-      - tool-google-search
+      - tool-sougou-searching
       - tool-vqa
       - tool-reader
       - tool-python
