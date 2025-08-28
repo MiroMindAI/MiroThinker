@@ -629,7 +629,7 @@ def build_demo():
     """
     with gr.Blocks(css=custom_css) as demo:
         gr.Markdown("""
-        **Mirage DeepResearch - Gradio Demo**  
+        **MiroFlow DeepResearch - Gradio Demo**  
         Enter an English question and observe Agents and tool calls in real time (Markdown + collapsible sections).
         """)
         with gr.Row():
