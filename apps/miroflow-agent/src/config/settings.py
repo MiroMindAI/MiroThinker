@@ -42,6 +42,8 @@ REASONING_MODEL_NAME = os.environ.get("REASONING_MODEL_NAME")
 WHISPER_BASE_URL = os.environ.get("WHISPER_BASE_URL")
 WHISPER_API_KEY = os.environ.get("WHISPER_API_KEY")
 WHISPER_MODEL_NAME = os.environ.get("WHISPER_MODEL_NAME")
+TENCENTCLOUD_SECRET_ID = os.environ.get("TENCENTCLOUD_SECRET_ID")
+TENCENTCLOUD_SECRET_KEY = os.environ.get("TENCENTCLOUD_SECRET_KEY")
 
 
 # MCP server configuration generation function
@@ -119,8 +121,12 @@ def create_mcp_server_parameters(cfg: DictConfig, agent_cfg: DictConfig):
                     command=sys.executable,
                     args=[
                         "-m",
-                        "miroflow_tools.mcp_servers.searching_sougou_mcp_server",
-                    ]
+                        "miroflow_tools.mcp_servers.searching_sougou_mcp_server"
+                    ],
+                    env={
+                        "TENCENTCLOUD_SECRET_ID": TENCENTCLOUD_SECRET_ID,
+                        "TENCENTCLOUD_SECRET_KEY": TENCENTCLOUD_SECRET_KEY
+                    }
                 ),
             }
         )
