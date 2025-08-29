@@ -125,7 +125,10 @@ def create_mcp_server_parameters(cfg: DictConfig, agent_cfg: DictConfig):
                     ],
                     env={
                         "TENCENTCLOUD_SECRET_ID": TENCENTCLOUD_SECRET_ID,
-                        "TENCENTCLOUD_SECRET_KEY": TENCENTCLOUD_SECRET_KEY
+                        "TENCENTCLOUD_SECRET_KEY": TENCENTCLOUD_SECRET_KEY,
+                        "JINA_API_KEY": JINA_API_KEY,
+                        "GEMINI_API_KEY": GEMINI_API_KEY,
+                        "SERPER_API_KEY": SERPER_API_KEY,
                     }
                 ),
             }
