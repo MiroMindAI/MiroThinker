@@ -27,7 +27,7 @@ async def sougou_search(
         - Retrieves structured search results with core details like titles, source URLs, summaries
 
     Usage examples:
-        1. Basic natural search: `{"Query": "today's weather in Beijing", "Mode": 0}` returns standard weather information and related web results
+        1. Basic natural search: `{"Query": "today's weather in Beijing", "Cnt": 0}` returns standard weather information and related web results
 
     Args:
         Query: The core search query string. Be specific to improve result relevance (e.g., "2024 World Cup final results"). (Required, no default value)
