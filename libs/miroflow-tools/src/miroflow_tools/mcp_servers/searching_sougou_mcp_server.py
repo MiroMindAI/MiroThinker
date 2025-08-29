@@ -21,7 +21,7 @@ async def sougou_search(
     Cnt: int = 10
 ) -> str:
     '''
-    Performs web searches via Tencent Cloud SearchPro API to retrieve comprehensive web information, including natural search results and multimodal VR results (based on mode selection). Use this tool when you need up-to-date information not in your training data, such as fact-checking, researching current events, finding domain-specific content (via site filtering), or obtaining industry-targeted results.
+    Performs web searches via Tencent Cloud SearchPro API to retrieve comprehensive web information
 
     Capabilities:
         - Retrieves structured search results with core details like titles, source URLs, summaries
