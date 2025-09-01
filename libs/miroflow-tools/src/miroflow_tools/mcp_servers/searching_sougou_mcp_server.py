@@ -1,13 +1,28 @@
-from cgitb import lookup
+# Copyright 2025 Miromind.ai
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#    http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
 import os
-from re import S
 from fastmcp import FastMCP
 import asyncio
 import json
 import requests
+
 from tencentcloud.common.common_client import CommonClient
 from tencentcloud.common import credential
-from tencentcloud.common.exception.tencent_cloud_sdk_exception import TencentCloudSDKException
+from tencentcloud.common.exception.tencent_cloud_sdk_exception import (
+    TencentCloudSDKException,
+)
 from tencentcloud.common.profile.client_profile import ClientProfile
 from tencentcloud.common.profile.http_profile import HttpProfile
 
@@ -15,17 +30,14 @@ from tencentcloud.common.profile.http_profile import HttpProfile
 TENCENTCLOUD_SECRET_ID = os.environ.get("TENCENTCLOUD_SECRET_ID", "")
 TENCENTCLOUD_SECRET_KEY = os.environ.get("TENCENTCLOUD_SECRET_KEY", "")
 JINA_API_KEY = os.environ.get("JINA_API_KEY", "")
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
-SERPER_API_KEY = os.environ.get("SERPER_API_KEY", "")
 
-mcp = FastMCP("searching_sougou_mcp_server")
+# Initialize FastMCP server
+mcp = FastMCP("searching-sougou-mcp-server")
+
 
 @mcp.tool()
-async def sougou_search(
-    Query: str,
-    Cnt: int = 10
-) -> str:
-    '''
+async def sougou_search(Query: str, Cnt: int = 10) -> str:
+    """
     Performs web searches via Tencent Cloud SearchPro API to retrieve comprehensive web information
 
     Capabilities:
@@ -42,25 +54,31 @@ async def sougou_search(
         The search results in JSON format, including the following core fields:
         - Query: The original search query (consistent with the input Query, for request verification)
         - Pages: Array of JSON strings, each containing details of a single search result (e.g., title, url, passage, date, site, favicon)
-    '''
-    
+    """
+
     if TENCENTCLOUD_SECRET_ID == "" or TENCENTCLOUD_SECRET_KEY == "":
-        return "TENCENTCLOUD_SECRET_ID or  TENCENTCLOUD_SECRET_KEY is not set, sougou_search tool is not available."
-    
+        return "TENCENTCLOUD_SECRET_ID or TENCENTCLOUD_SECRET_KEY is not set, sougou_search tool is not available."
+
     retry_count = 0
     max_retries = 3
-    
+
     while retry_count < max_retries:
         try:
-            cred = credential.Credential(TENCENTCLOUD_SECRET_ID, TENCENTCLOUD_SECRET_KEY)
+            cred = credential.Credential(
+                TENCENTCLOUD_SECRET_ID, TENCENTCLOUD_SECRET_KEY
+            )
             httpProfile = HttpProfile()
             httpProfile.endpoint = "wsa.tencentcloudapi.com"
             clientProfile = ClientProfile()
             clientProfile.httpProfile = httpProfile
 
-            params = f"{{\"Query\":\"{Query}\",\"Mode\":0, \"Cnt\":{Cnt}}}"
-            common_client = CommonClient("wsa", "2025-05-08", cred, "", profile=clientProfile)
-            result = common_client.call_json("SearchPro", json.loads(params))['Response']
+            params = f'{{"Query":"{Query}","Mode":0, "Cnt":{Cnt}}}'
+            common_client = CommonClient(
+                "wsa", "2025-05-08", cred, "", profile=clientProfile
+            )
+            result = common_client.call_json("SearchPro", json.loads(params))[
+                "Response"
+            ]
             del result["RequestId"]
             pages = []
             for page in result["Pages"]:
@@ -76,116 +94,15 @@ async def sougou_search(
                 pages.append(new_page)
             result["Pages"] = pages
             return json.dumps(result, ensure_ascii=False)
-        except TencentCloudSDKException as err:
+        except TencentCloudSDKException:
             retry_count += 1
-            
+
             if retry_count >= max_retries:
                 return f"Tool execution failed after {max_retries} connection attempts: Unexpected error occurred."
-            
+
             await asyncio.sleep(
                 min(3 * retry_count, 10)
             )  # Exponential backoff with cap
-            
-
-# @mcp.tool()
-# async def scrape_website(url: str) -> str:
-#     """This tool is used to scrape a website for information. Search engines are not supported by this tool.
-#     Args:
-#         url: The URL of the website to scrape.
-
-#     Returns:
-#         The scraped website content.
-#     """
-#     if SERPER_API_KEY == "":
-#         return "SERPER_API_KEY is not set, scrape_website tool is not available."
-#     server_params = StdioServerParameters(
-#         command="npx",
-#         args=["-y", "serper-search-scrape-mcp-server"],
-#         env={"SERPER_API_KEY": SERPER_API_KEY},
-#     )
-#     tool_name = "scrape"
-#     arguments = {"url": url}
-#     result_content = ""
-#     retry_count = 0
-#     max_retries = 3
-
-#     while retry_count < max_retries:
-#         try:
-#             async with stdio_client(server_params) as (read, write):
-#                 async with ClientSession(
-#                     read, write, sampling_callback=None
-#                 ) as session:
-#                     await session.initialize()
-#                     try:
-#                         tool_result = await session.call_tool(
-#                             tool_name, arguments=arguments
-#                         )
-#                         result_content = (
-#                             tool_result.content[-1].text if tool_result.content else ""
-#                         )
-#                         if (
-#                             "huggingface.co/datasets" in url
-#                             or "huggingface.co/spaces" in url
-#                         ):
-#                             result_content = "You are trying to scrape a Hugging Face dataset for answers, please do not use the scrape tool for this purpose."
-#                         break  # Success, exit retry loop
-#                     except Exception as tool_error:
-#                         error_msg = str(tool_error).lower()
-#                         # Check for non-recoverable errors (404, not found, EPIPE, etc.)
-#                         if any(
-#                             err in error_msg
-#                             for err in [
-#                                 "404",
-#                                 "not found",
-#                                 "epipe",
-#                                 "broken pipe",
-#                                 "connection reset",
-#                                 "connection refused",
-#                             ]
-#                         ):
-#                             # logger.warning(
-#                             #     f"Non-recoverable error in scrape execution: {tool_error}"
-#                             # )
-#                             return f"Tool execution failed: {str(tool_error)}"
-
-#                         retry_count += 1
-#                         # logger.warning(
-#                         #     f"Scrape execution attempt {retry_count} failed: {tool_error}"
-#                         # )
-#                         if retry_count >= max_retries:
-#                             return f"Tool execution failed after {max_retries} attempts: {str(tool_error)}"
-#                         break  # Exit current session, will retry with new session
-
-#         except Exception as outer_error:
-#             error_msg = str(outer_error).lower()
-#             # Check for non-recoverable errors
-#             if any(
-#                 err in error_msg
-#                 for err in [
-#                     "epipe",
-#                     "broken pipe",
-#                     "connection reset",
-#                     "connection refused",
-#                 ]
-#             ):
-#                 # logger.warning(
-#                 #     f"Non-recoverable connection error in scrape: {outer_error}"
-#                 # )
-#                 return f"Tool execution failed: Connection error - {str(outer_error)}"
-
-#             retry_count += 1
-#             # logger.warning(
-#             #     f"Scrape connection attempt {retry_count} failed: {outer_error}"
-#             # )
-#             if retry_count >= max_retries:
-#                 return f"Tool execution failed after {max_retries} connection attempts: Unexpected error occurred."
-
-#             # Wait before retrying
-#             await asyncio.sleep(
-#                 min(3 * retry_count, 10)
-#             )  # Exponential backoff with cap
-
-#     return result_content
 
 
 @mcp.tool()
@@ -221,10 +138,6 @@ async def scrape_website(url: str) -> str:
     # Check for restricted domains
     if "huggingface.co/datasets" in url or "huggingface.co/spaces" in url:
         return "You are trying to scrape a Hugging Face dataset for answers, please do not use the scrape tool for this purpose."
-
-    # Use SERPER scrape for youtube websites
-    if url.startswith("https://www.youtube.com/"):
-        return await scrape_youtube(url)
 
     if JINA_API_KEY == "":
         return "JINA_API_KEY is not set, scrape_website tool is not available."
@@ -269,7 +182,6 @@ async def scrape_website(url: str) -> str:
 
     except Exception as e:
         return f"Unexpected Error: An unexpected error occurred while scraping '{url}': {str(e)}"
-
 
 
 if __name__ == "__main__":

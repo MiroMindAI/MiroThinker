@@ -108,28 +108,25 @@ def create_mcp_server_parameters(cfg: DictConfig, agent_cfg: DictConfig):
                 ),
             }
         )
-        
+
     if (
         agent_cfg.get("tools", None) is not None
-        and "tool-sougou-searching" in agent_cfg["tools"]
+        and "tool-sougou-search" in agent_cfg["tools"]
     ):
-        
         configs.append(
             {
-                "name": "tool-sougou-searching",
+                "name": "tool-sougou-search",
                 "params": StdioServerParameters(
                     command=sys.executable,
                     args=[
                         "-m",
-                        "miroflow_tools.mcp_servers.searching_sougou_mcp_server"
+                        "miroflow_tools.mcp_servers.searching_sougou_mcp_server",
                     ],
                     env={
                         "TENCENTCLOUD_SECRET_ID": TENCENTCLOUD_SECRET_ID,
                         "TENCENTCLOUD_SECRET_KEY": TENCENTCLOUD_SECRET_KEY,
                         "JINA_API_KEY": JINA_API_KEY,
-                        "GEMINI_API_KEY": GEMINI_API_KEY,
-                        "SERPER_API_KEY": SERPER_API_KEY,
-                    }
+                    },
                 ),
             }
         )
