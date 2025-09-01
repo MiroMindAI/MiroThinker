@@ -1,4 +1,4 @@
-# conf/agent/default.yaml
+# conf/agent/evaluation.yaml
 # The name of tools and sub-agents defined in: apps/miroflow-agent/src/config/settings.py
 # Each sub-agent prompt is written in: apps/miroflow-agent/src/utils/prompt_utils.py
 defaults:
