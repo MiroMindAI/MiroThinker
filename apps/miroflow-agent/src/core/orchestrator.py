@@ -14,6 +14,7 @@
 
 import json
 import logging
+import os
 import time
 from datetime import date
 from typing import Any, Dict, List, Optional, Tuple
@@ -476,9 +477,13 @@ class Orchestrator:
                     tool_result = await self.sub_agent_tool_managers[
                         sub_agent_name
                     ].execute_tool_call(server_name, tool_name, arguments)
-                    tool_result = self.post_process_tool_call_result(
-                        tool_name, tool_result
-                    )
+
+                    # Only in demo mode: truncate scrape results to 20,000 chars
+                    # to support more conversation turns. Skipped in perf tests to avoid loss.
+                    if os.environ.get("DEMO_MODE") == "1":
+                        tool_result = self.post_process_tool_call_result(
+                            tool_name, tool_result
+                        )
                     result = (
                         tool_result.get("result")
                         if tool_result.get("result")

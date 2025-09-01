@@ -116,7 +116,7 @@ You can also leverage other frameworks for model serving like Ollama, vLLM, and 
 
 ### 4. **Launch the Application**
    ```bash
-   uv run src/gradio_demo/main.py
+   DEMO_MODE=1 uv run src/gradio_demo/main.py
    ```
 
 ### 5. **Access the Web Interface**

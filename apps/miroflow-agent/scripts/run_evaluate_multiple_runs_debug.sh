@@ -28,10 +28,10 @@ for i in $(seq 1 $NUM_RUNS); do
     echo "Launching experiment $i/$NUM_RUNS"
     echo "Output log: please view $RESULTS_DIR/run_${i}_output.log"
     echo "=========================================="
-
+    
     # Set specific identifier for this run
     RUN_ID="run_$i"
-
+    
     # Run experiment (background execution)
     (
         uv run python benchmarks/common_benchmark.py \
@@ -51,7 +51,7 @@ for i in $(seq 1 $NUM_RUNS); do
             agent=$AGENT_SET \
             hydra.run.dir=${RESULTS_DIR}/$RUN_ID \
             2>&1 | tee "$RESULTS_DIR/${RUN_ID}_output.log" 
-
+        
         # Check if run was successful
         if [ $? -eq 0 ]; then
             echo "Run $i completed successfully"
@@ -65,7 +65,7 @@ for i in $(seq 1 $NUM_RUNS); do
             echo "Run $i failed!"
         fi
     ) &
-
+    
     # Small delay between launches to avoid simultaneous requests
     sleep 2
 done
