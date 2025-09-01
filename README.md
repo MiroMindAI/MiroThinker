@@ -130,8 +130,13 @@ The tool lists for these two settings are shown in the table below:
 Configure the following variables in your `.env` file according to the mode you choose:
 
 ```bash
-# Required APIs
+# APIs for Search Tools
 SERPER_API_KEY=your_serper_key
+JINA_API_KEY=your_jina_key
+TENCENTCLOUD_SECRET_ID=your_tencent_cloud_secret_id
+TENCENTCLOUD_SECRET_KEY=your_tencent_cloud_secret_key
+
+# API for Code Sandbox
 E2B_API_KEY=your_e2b_key
 
 # APIs for Commercial Tools
@@ -142,19 +147,15 @@ OPENAI_API_KEY=your_openai_key
 REASONING_MODEL_NAME="Qwen/Qwen3-235B-A22B-Thinking-2507"
 REASONING_API_KEY=your_reasoning_key
 REASONING_BASE_URL="https://your_reasoning_base_url/v1/chat/completions"
-
 VISION_MODEL_NAME="Qwen/Qwen2.5-VL-72B-Instruct"
 VISION_API_KEY=your_vision_key
 VISION_BASE_URL="https://your_vision_base_url/v1/chat/completions"
-
 WHISPER_MODEL_NAME="openai/whisper-large-v3-turbo"
 WHISPER_API_KEY=your_whisper_key
 WHISPER_BASE_URL="https://your_whisper_base_url/v1"
 
 # Future APIs (Please use dummy values for now)
 GEMINI_API_KEY=your_gemini_key
-JINA_API_KEY=your_jina_key
-FIRECRAWL_API_KEY=your_firecrawl_key
 ```
 
 ### Serve the MiroThinker Model
