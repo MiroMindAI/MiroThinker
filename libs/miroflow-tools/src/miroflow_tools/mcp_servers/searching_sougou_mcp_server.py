@@ -38,7 +38,7 @@ mcp = FastMCP("searching-sougou-mcp-server")
 @mcp.tool()
 async def sougou_search(Query: str, Cnt: int = 10) -> str:
     """
-    Performs web searches via Tencent Cloud SearchPro API to retrieve comprehensive web information
+    Performs web searches using the Tencent Cloud SearchPro API to retrieve comprehensive information, with Sougou search offering superior results for Chinese-language queries.
 
     Capabilities:
         - Retrieves structured search results with core details like titles, source URLs, summaries
