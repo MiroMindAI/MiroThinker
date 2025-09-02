@@ -28,6 +28,7 @@ from google.genai import types
 
 SERPER_API_KEY = os.environ.get("SERPER_API_KEY", "")
 JINA_API_KEY = os.environ.get("JINA_API_KEY", "")
+JINA_BASE_URL = os.environ.get("JINA_BASE_URL", "https://r.jina.ai")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
 
 # Initialize FastMCP server
@@ -813,7 +814,7 @@ async def scrape_website(url: str) -> str:
 
     try:
         # Use Jina.ai reader API to convert URL to LLM-friendly text
-        jina_url = f"https://r.jina.ai/{url}"
+        jina_url = f"{JINA_BASE_URL}/{url}"
 
         # Make request with proper headers
         headers = {"Authorization": f"Bearer {JINA_API_KEY}"}

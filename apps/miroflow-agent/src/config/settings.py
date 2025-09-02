@@ -26,6 +26,9 @@ load_dotenv()
 SERPER_API_KEY = os.environ.get("SERPER_API_KEY")
 JINA_API_KEY = os.environ.get("JINA_API_KEY")
 
+# Get Base URLs from environment variables
+JINA_BASE_URL = os.environ.get("JINA_BASE_URL")
+
 # API Keys for Commercial Tools
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
@@ -101,6 +104,7 @@ def create_mcp_server_parameters(cfg: DictConfig, agent_cfg: DictConfig):
                     env={
                         "SERPER_API_KEY": SERPER_API_KEY,
                         "JINA_API_KEY": JINA_API_KEY,
+                        "JINA_BASE_URL": JINA_BASE_URL,
                         "GEMINI_API_KEY": GEMINI_API_KEY,
                     },
                 ),
