@@ -1,5 +1,5 @@
 version = 1
-revision = 2
+revision = 3
 requires-python = ">=3.12"
 resolution-markers = [
     "python_full_version >= '3.13'",
@@ -1068,6 +1068,15 @@ wheels = [
 ]
 
 [[package]]
+name = "json-repair"
+version = "0.50.0"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/2f/2c/bfdb1886bdda03e248d597922013eeb20d62188cb48d394590ae6e0c8975/json_repair-0.50.0.tar.gz", hash = "sha256:1d42a3f353e389cf6051941b45fa44b6d130af3c91406a749e88586d830adb89", size = 34815, upload-time = "2025-08-20T15:01:58.126Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/35/c2/93368d4c9355e8ad1f6d62b804de241939d0796b2a3a73737f665b802808/json_repair-0.50.0-py3-none-any.whl", hash = "sha256:b15da2c42deb43419b182d97dcfde6cd86d0b18ccd18ed1a887104ce85e7a364", size = 25985, upload-time = "2025-08-20T15:01:56.567Z" },
+]
+
+[[package]]
 name = "jsonlines"
 version = "4.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1345,6 +1354,7 @@ dependencies = [
     { name = "hydra-core" },
     { name = "ipdb" },
     { name = "jinja2" },
+    { name = "json-repair" },
     { name = "jsonlines" },
     { name = "mammoth" },
     { name = "markdownify" },
@@ -1368,6 +1378,7 @@ dependencies = [
     { name = "rich" },
     { name = "speechrecognition" },
     { name = "tenacity" },
+    { name = "tencentcloud-sdk-python" },
     { name = "tiktoken" },
     { name = "transformers" },
     { name = "wikipedia" },
@@ -1400,6 +1411,7 @@ requires-dist = [
     { name = "hydra-core" },
     { name = "ipdb", specifier = ">=0.13.13" },
     { name = "jinja2", specifier = ">=3.1.4" },
+    { name = "json-repair", specifier = ">=0.49.0" },
     { name = "jsonlines", specifier = ">=4.0.0" },
     { name = "mammoth", specifier = ">=1.9.0" },
     { name = "markdownify", specifier = ">=0.14.1" },
@@ -1423,6 +1435,7 @@ requires-dist = [
     { name = "rich", specifier = ">=13.9.4" },
     { name = "speechrecognition" },
     { name = "tenacity", specifier = ">=9.1.2" },
+    { name = "tencentcloud-sdk-python", specifier = ">=3.0.1451" },
     { name = "tiktoken", specifier = ">=0.9.0" },
     { name = "transformers", specifier = ">=4.51.3" },
     { name = "wikipedia" },
@@ -2732,6 +2745,18 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/0a/d4/2b0cd0fe285e14b36db076e78c93766ff1d529d70408bd1d2a5a84f1d929/tenacity-9.1.2.tar.gz", hash = "sha256:1169d376c297e7de388d18b4481760d478b0e99a777cad3a9c86e556f4b697cb", size = 48036, upload-time = "2025-04-02T08:25:09.966Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/e5/30/643397144bfbfec6f6ef821f36f33e57d35946c44a2352d3c9f0ae847619/tenacity-9.1.2-py3-none-any.whl", hash = "sha256:f77bf36710d8b73a50b2dd155c97b870017ad21afe6ab300326b0371b3b05138", size = 28248, upload-time = "2025-04-02T08:25:07.678Z" },
+]
+
+[[package]]
+name = "tencentcloud-sdk-python"
+version = "3.0.1451"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "requests" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/b4/31/2fadce2d3248660dfa052c1d57f8544da587a5f02b90a89ca97ad223e786/tencentcloud-sdk-python-3.0.1451.tar.gz", hash = "sha256:b24b76bb26680bf14bda1aecd853d5585c7ad1d2762d55d0a574c8155846a872", size = 11968285, upload-time = "2025-08-27T20:51:14.674Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/64/b9/82403604e89bd050d89a1f5cff56dab6bc4d6d78d92f8a05a8f52f2e1158/tencentcloud_sdk_python-3.0.1451-py2.py3-none-any.whl", hash = "sha256:ee10b58c2899703a30243f08b6cfe4398877070816c460be23c5e896f9a3fe70", size = 12654727, upload-time = "2025-08-27T20:50:59.16Z" },
 ]
 
 [[package]]

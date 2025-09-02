@@ -202,7 +202,7 @@ def process_input(task_description, task_file_name):
             )
 
     # output format requirement
-    updated_task_description += "\nYou should follow the format instruction in the requestion strictly and wrap the final answer in \\boxed{}."
+    updated_task_description += "\nYou should follow the format instruction in the request strictly and wrap the final answer in \\boxed{}."
     initial_user_content += updated_task_description
 
     return initial_user_content, updated_task_description
