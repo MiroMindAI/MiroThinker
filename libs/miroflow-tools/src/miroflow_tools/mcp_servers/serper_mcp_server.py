@@ -43,7 +43,7 @@ def make_serper_request(
 
 def _is_huggingface_dataset_or_space_url(url):
     """
-    Check if the URL is a Hugging Face dataset or space URL.
+    Check if the URL is a HuggingFace dataset or space URL.
     :param url: The URL to check
     :return: True if it's a HuggingFace dataset or space URL, False otherwise
     """
