@@ -27,7 +27,7 @@ SERPER_API_KEY = os.environ.get("SERPER_API_KEY")
 JINA_API_KEY = os.environ.get("JINA_API_KEY")
 
 # Get Base URLs from environment variables
-JINA_BASE_URL = os.environ.get("JINA_BASE_URL")
+JINA_BASE_URL = os.environ.get("JINA_BASE_URL", "https://r.jina.ai")
 
 # API Keys for Commercial Tools
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
