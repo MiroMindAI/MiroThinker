@@ -129,7 +129,7 @@ def google_search(
         response = make_serper_request(payload, headers)
         data = response.json()
 
-        # filter out huggingface dataset or space urls
+        # filter out HuggingFace dataset or space urls
         organic_results = []
         if "organic" in data:
             for item in data["organic"]:
