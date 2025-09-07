@@ -583,8 +583,13 @@ async def verify_answer_for_datasets(
 
     elif benchmark_name == "simpleqa":
         result = await verify_answer_simpleqa(question, target, predicted_answer)
-        return result, "simpleqa_llm_judge"
+        return result, "simpleqa_judge"
 
+    elif benchmark_name == "xbench_deepresearch":
+        result = await verify_answer_xbench_deepresearch(
+            question, target, predicted_answer
+        )
+        return result, "xbench_deepresearch_judge"
     else:
         result = await verify_answer_hle(question, target, predicted_answer)
-        return result, "hle_llm_judge"
+        return result, "hle_judge"
