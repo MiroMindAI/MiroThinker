@@ -497,23 +497,17 @@ async def verify_answer_xbench_deepresearch(
     if predicted_answer is None:
         return "INCORRECT"
 
-    # If there's direct match, do not need LLM judge
-    simple_match = re.search(r"最终答案:*(.*)", predicted_answer)
-    simple_match = parse_match_result(simple_match)
-    if simple_match == target:
-        return "CORRECT"
-
-    # Otherwise, use LLM Judge
     judge_prompt = JUDGE_PROMPT_XBENCH.format(
         question=question,
         correct_answer=target,
         response=predicted_answer,
     )
     try:
-        judge_response = await evaluation_llm_client.beta.chat.completions.parse(
+        response = await evaluation_llm_client.chat.completions.create(
             model="gpt-4.1-2025-04-14",
             messages=[{"role": "user", "content": judge_prompt}],
         )
+        judge_response = response.choices[0].message.content
     except Exception:
         judge_response = None
     if judge_response is None:
