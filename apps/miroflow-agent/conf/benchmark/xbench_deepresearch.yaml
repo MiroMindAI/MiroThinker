@@ -1,0 +1,15 @@
+# conf/benchmark/xbench_deepresearch.yaml
+defaults:
+  - default
+  - _self_
+
+name: "xbench_deepresearch"
+
+data:
+  data_dir: "../../data/xbench_deepresearch"
+
+execution:
+  max_tasks: null  # null means no limit
+  max_concurrent: 5
+  pass_at_k: 1
+  format_error_retry_limit: 3
