@@ -847,8 +847,12 @@ def main() -> None:
         print("\nArguments:")
         print("  path    Path to XBench-DeepResearch benchmark directory")
         print("\nExamples:")
-        print("  python check_progress_xbench_deepresearch.py logs/xbench_deepresearch/my_evaluation/")
-        print("  python check_progress_xbench_deepresearch.py /path/to/xbench_deepresearch/results")
+        print(
+            "  python check_progress_xbench_deepresearch.py logs/xbench_deepresearch/my_evaluation/"
+        )
+        print(
+            "  python check_progress_xbench_deepresearch.py /path/to/xbench_deepresearch/results"
+        )
         sys.exit(0)
 
     # Get target path from command line arguments
