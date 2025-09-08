@@ -33,7 +33,7 @@ model_as_a_judge_client = OpenAI(api_key=OPENAI_API_KEY, base_url=OPENAI_API_BAS
 
 
 # ================================================
-# verify_answer_llm_simpleqa
+# verify_answer_simpleqa
 # ================================================
 
 EVALUATION_PROMPT_SIMPLEQA = """
@@ -118,7 +118,7 @@ Just return the letters "A", "B", or "C", with no text around it.
 """.strip()
 
 
-async def verify_answer_llm_simpleqa(
+async def verify_answer_simpleqa(
     question: str, target: str, predicted_answer: str
 ) -> str:
     """
@@ -150,10 +150,9 @@ async def verify_answer_llm_simpleqa(
 
 
 # ================================================
-# verify_answer_llm_hle
+# verify_answer_hle
 # ================================================
 
-# HLE Judge prompt and model
 HLE_JUDGE_PROMPT = """Judge whether the following [response] to [question] is correct or not based on the precise and unambiguous [correct_answer] below.
 
 [question]: {question}
@@ -181,9 +180,7 @@ class HLEExtractedAnswer(BaseModel):
     strict: Literal[True] = True  # 100% reliability
 
 
-async def verify_answer_llm_hle(
-    question: str, target: str, predicted_answer: str
-) -> str:
+async def verify_answer_hle(question: str, target: str, predicted_answer: str) -> str:
     """
     Use HLE-style LLM judge to verify if the predicted answer is correct.
     Returns the evaluation result as a string: "CORRECT", "INCORRECT", or "NOT_ATTEMPTED".
@@ -400,6 +397,7 @@ async def verify_answer_gaia_validation_text_103(
 # Prompt from WebAgent
 # https://github.com/Alibaba-NLP/WebAgent/blob/f25dae54daf0ce2874ffd5ed5ffb20feca7c4c4e/WebSailor/src/prompt.py
 # ================================================
+
 JUDGE_PROMPT_BC = """"Judge whether the following [response] to [question] is correct or not based on the precise and unambiguous [correct_answer] below.
 
 [question]: {question}
@@ -454,6 +452,84 @@ async def verify_answer_browsecomp(
 
 
 # ================================================
+# verify_answer_xbench_deepresearch
+
+# Prompt from XBench-Evals
+# https://github.com/xbench-ai/xbench-evals/blob/main/eval_grader.py#L25
+# ================================================
+
+JUDGE_PROMPT_XBENCH = """
+你是一个通用人工智能助手。根据下面给出的[正确答案], 判断以下对[原问题]的[回答]的回答是否正确。
+
+[原问题]: {question}
+
+[正确答案]: {correct_answer}
+
+[回答]:{response}
+
+你的判断必须按照以下格式和标准进行:
+
+最终答案: 从[回答]中提取出的最终准确答案。如果[回答]中没有明确的最终答案, 则填写'无'。
+
+解释: 根据[正确]解释为什么[最终答案]是正确的或错误的。只关注[最终答案]与[正确答案]之间是否存在实质性差异, 不要评论题目的背景, 不要尝试重新解题, 不要为任何不同于[正确答案]的答案辩护, 只专注于判断答案是否一致。
+
+结论: 如果[最终答案]与上方给出的[正确答案]一致, 或者在数值题目中处于可接受的微小误差范围内, 则填写'正确'; 否则（即存在任何不一致、歧义、不等价或提取出的答案错误的情况）填写'错误'。
+""".strip()
+
+
+async def verify_answer_xbench_deepresearch(
+    question: str, target: str, predicted_answer: str
+) -> str:
+    """
+    Use XBench-DeepResearch judge to verify if the predicted answer is correct.
+    """
+
+    def parse_match_result(match):
+        if match is None:
+            return match
+        match = match.group(0)
+        try:
+            target = match.split(":")[1].strip()
+            return target
+        except Exception:
+            return match  # return naive result in case of failed
+
+    if predicted_answer is None:
+        return "INCORRECT"
+
+    judge_prompt = JUDGE_PROMPT_XBENCH.format(
+        question=question,
+        correct_answer=target,
+        response=predicted_answer,
+    )
+    try:
+        response = await evaluation_llm_client.chat.completions.create(
+            model="gpt-4.1-2025-04-14",
+            messages=[{"role": "user", "content": judge_prompt}],
+        )
+        judge_response = response.choices[0].message.content
+    except Exception:
+        judge_response = None
+    if judge_response is None:
+        return "NOT_ATTEMPTED"
+
+    # Extract grader conclusions
+    extract_match = re.search(r"最终答案:*(.*)", judge_response)
+    extract_match = parse_match_result(extract_match)
+
+    correct_match = re.search(r"结论:*.(正确|错误)", judge_response)
+    correct_match = parse_match_result(correct_match)
+
+    explain_match = re.search(r"解释:*(.*)", judge_response)
+    explain_match = parse_match_result(explain_match)
+
+    if correct_match == "正确":
+        return "CORRECT"
+    else:
+        return "INCORRECT"
+
+
+# ================================================
 # verify_answer_for_datasets
 # ================================================
 
@@ -500,9 +576,14 @@ async def verify_answer_for_datasets(
         return result, "browsecomp_judge"
 
     elif benchmark_name == "simpleqa":
-        result = await verify_answer_llm_simpleqa(question, target, predicted_answer)
-        return result, "simpleqa_llm_judge"
+        result = await verify_answer_simpleqa(question, target, predicted_answer)
+        return result, "simpleqa_judge"
 
+    elif benchmark_name == "xbench_deepresearch":
+        result = await verify_answer_xbench_deepresearch(
+            question, target, predicted_answer
+        )
+        return result, "xbench_deepresearch_judge"
     else:
-        result = await verify_answer_llm_hle(question, target, predicted_answer)
-        return result, "hle_llm_judge"
+        result = await verify_answer_hle(question, target, predicted_answer)
+        return result, "hle_judge"

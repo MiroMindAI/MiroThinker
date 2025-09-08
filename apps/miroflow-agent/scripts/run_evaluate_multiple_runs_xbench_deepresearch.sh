@@ -5,8 +5,8 @@ LLM_MODEL=${LLM_MODEL:-"MiroThinker-Models"}
 BASE_URL=${BASE_URL:-"https://your-api.com/v1"}
 
 # Configuration parameters
-NUM_RUNS=${NUM_RUNS:-1}
-BENCHMARK_NAME="browsecomp"
+NUM_RUNS=${NUM_RUNS:-2}
+BENCHMARK_NAME="xbench_deepresearch"
 LLM_PROVIDER=${LLM_PROVIDER:-"qwen"}
 AGENT_SET=${AGENT_SET:-"evaluation"}
 MAX_CONTEXT_LENGTH=${MAX_CONTEXT_LENGTH:-40960}
@@ -47,7 +47,7 @@ for i in $(seq 1 $NUM_RUNS); do
             benchmark.execution.max_tasks=null \
             benchmark.execution.max_concurrent=$MAX_CONCURRENT \
             benchmark.execution.pass_at_k=$PASS_AT_K \
-            benchmark.data.data_dir=../../data/browsecomp \
+            benchmark.data.data_dir=../../data/xbench_deepresearch \
             agent=$AGENT_SET \
             hydra.run.dir=${RESULTS_DIR}/$RUN_ID \
             2>&1 | tee "$RESULTS_DIR/${RUN_ID}_output.log" 

@@ -49,7 +49,6 @@ WHISPER_BASE_URL="https://your_whisper_base_url/v1"
 # Future APIs (Use dummy values for now)
 GEMINI_API_KEY=your_gemini_key
 JINA_API_KEY=your_jina_key
-FIRECRAWL_API_KEY=your_firecrawl_key
 ```
 
 ---
