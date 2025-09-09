@@ -13,6 +13,7 @@
 # limitations under the License.
 
 import os
+import sys
 import requests
 import datetime
 import calendar
@@ -27,6 +28,7 @@ from google.genai import types
 # from miroflow_agent.logging.task_logger import logger
 
 SERPER_API_KEY = os.environ.get("SERPER_API_KEY", "")
+SERPER_BASE_URL = os.environ.get("SERPER_BASE_URL", "https://google.serper.dev")
 JINA_API_KEY = os.environ.get("JINA_API_KEY", "")
 JINA_BASE_URL = os.environ.get("JINA_BASE_URL", "https://r.jina.ai")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
@@ -84,10 +86,15 @@ async def google_search(
     if tbs:
         arguments["tbs"] = tbs
     arguments["autocorrect"] = False
+    # server_params = StdioServerParameters(
+    #     command="npx",
+    #     args=["-y", "serper-search-scrape-mcp-server"],
+    #     env={"SERPER_API_KEY": SERPER_API_KEY},
+    # )
     server_params = StdioServerParameters(
-        command="npx",
-        args=["-y", "serper-search-scrape-mcp-server"],
-        env={"SERPER_API_KEY": SERPER_API_KEY},
+        command=sys.executable,
+        args=["-m", "miroflow_tools.mcp_servers.serper_mcp_server"],
+        env={"SERPER_API_KEY": SERPER_API_KEY, "SERPER_BASE_URL": SERPER_BASE_URL},
     )
     result_content = ""
     retry_count = 0
@@ -694,10 +701,15 @@ async def scrape_youtube(url: str) -> str:
     """
     if SERPER_API_KEY == "":
         return "SERPER_API_KEY is not set, scrape_website tool is not available."
+    # server_params = StdioServerParameters(
+    #     command="npx",
+    #     args=["-y", "serper-search-scrape-mcp-server"],
+    #     env={"SERPER_API_KEY": SERPER_API_KEY},
+    # )
     server_params = StdioServerParameters(
-        command="npx",
-        args=["-y", "serper-search-scrape-mcp-server"],
-        env={"SERPER_API_KEY": SERPER_API_KEY},
+        command=sys.executable,
+        args=["-m", "miroflow_tools.mcp_servers.serper_mcp_server"],
+        env={"SERPER_API_KEY": SERPER_API_KEY, "SERPER_BASE_URL": SERPER_BASE_URL},
     )
     tool_name = "scrape"
     arguments = {"url": url}

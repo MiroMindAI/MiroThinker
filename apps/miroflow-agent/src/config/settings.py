@@ -28,6 +28,7 @@ JINA_API_KEY = os.environ.get("JINA_API_KEY")
 
 # Get Base URLs from environment variables
 JINA_BASE_URL = os.environ.get("JINA_BASE_URL", "https://r.jina.ai")
+SERPER_BASE_URL = os.environ.get("SERPER_BASE_URL", "https://google.serper.dev")
 
 # API Keys for Commercial Tools
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
@@ -77,10 +78,15 @@ def create_mcp_server_parameters(cfg: DictConfig, agent_cfg: DictConfig):
         configs.append(
             {
                 "name": "tool-google-search",
+                # "params": StdioServerParameters(
+                #     command="npx",
+                #     args=["-y", "serper-search-scrape-mcp-server"],
+                #     env={"SERPER_API_KEY": SERPER_API_KEY},
+                # ),
                 "params": StdioServerParameters(
-                    command="npx",
-                    args=["-y", "serper-search-scrape-mcp-server"],
-                    env={"SERPER_API_KEY": SERPER_API_KEY},
+                    command=sys.executable,
+                    args=["-m", "miroflow_tools.mcp_servers.serper_mcp_server"],
+                    env={"SERPER_API_KEY": SERPER_API_KEY, "SERPER_BASE_URL": SERPER_BASE_URL},
                 ),
             }
         )
