@@ -86,7 +86,10 @@ def create_mcp_server_parameters(cfg: DictConfig, agent_cfg: DictConfig):
                 "params": StdioServerParameters(
                     command=sys.executable,
                     args=["-m", "miroflow_tools.mcp_servers.serper_mcp_server"],
-                    env={"SERPER_API_KEY": SERPER_API_KEY, "SERPER_BASE_URL": SERPER_BASE_URL},
+                    env={
+                        "SERPER_API_KEY": SERPER_API_KEY,
+                        "SERPER_BASE_URL": SERPER_BASE_URL,
+                    },
                 ),
             }
         )
