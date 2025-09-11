@@ -35,8 +35,7 @@
 ### MiroThinker-v0.2
 
 <details open>
-  <summary>click to expand</summary>
-<br>
+  <summary>click here</summary>
 In this new version, we introduced three key improvements:
 
 - **Richer training data** from both English and Chinese sources, yielding significant gains in benchmark performance and generalization.
@@ -54,8 +53,7 @@ Compared to v0.1, MiroThinker-v0.2 delivers consistent gains across benchmarks. 
 ### MiroThinker-v0.1
 
 <details>
-  <summary>click to expand</summary>
-<br>
+  <summary>click here</summary>
 <div align="center">
   <img src="assets/gaia_text_103.png" width="98%" alt="MiroFlow Performance on GAIA-Validation" />
   <p><strong>Performance of Open-Source Models on GAIA-Validation Benchmark.</strong></p>
