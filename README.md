@@ -17,6 +17,8 @@
 
 </div>
 
+<img width="2250" height="636" alt="image" src="https://github.com/user-attachments/assets/a95bcf1b-fc31-4af9-8c1f-03829775f3ec" />
+
 ## 📰 News & Updates
 
 - **[2025-09-11]** 🎉🎉 MiroThinker-72B-Preview ranked 4th in this week’s FutureX benchmark.
