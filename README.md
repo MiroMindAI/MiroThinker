@@ -296,7 +296,26 @@ For detailed setup and local deployment instructions, please refer to our docume
 
 ## 📈 Benchmark Performance
 
-### GAIA Benchmark
+### MiroThinker-v0.2
+
+#### Comparison with SOTA Research Agents
+
+<div>
+  <img src="https://huggingface.co/datasets/miromind-ai/MiroFlow-Benchmarks/resolve/main/assets/MiroThinker_v0.2_Performance_0.png" width="100%" alt="MiroThinker" />
+</div>
+
+#### GAIA Benchmark
+
+<div>
+  <img src="https://huggingface.co/datasets/miromind-ai/MiroFlow-Benchmarks/resolve/main/assets/MiroThinker_v0.2_Performance_1.png" width="100%" alt="MiroThinker" />
+</div>
+
+### MiroThinker-v0.1
+
+<details>
+  <summary>click here to open</summary>
+
+#### GAIA Benchmark
 
 | **Method** | Text-103<br>Best Pass@1 | Text-103<br>Pass@1 (Avg@8) | Val-165<br>Best Pass@1 | Val-165<br>Pass@1 (Avg@8) |
 | ----------------------------------------------------------------- | :--: | :--: | :--: | :--: |
@@ -335,7 +354,7 @@ For detailed setup and local deployment instructions, please refer to our docume
 
 4. Replacing these open-source tools with commercial alternatives can yield performance gains. Commercial tools were mainly used for multimodal capabilities and certain complex reasoning subtasks. The majority of tasks, including planning, browsing, refinement, navigation, and more, were handled by our models.
 
-### More Benchmarks
+#### More Benchmarks
 
 | Method                       | HLE<br>Pass@1 | Frames<br>Pass@1 | BrowseComp<br>Pass@1 | BrowseComp-ZH<br>Pass@1 | WebWalkerQA<br>Pass@1 |
 |------------------------------|:-------------:|:----------------:|:--------------------:|:-----------------------:|:---------------------:|
@@ -358,6 +377,8 @@ For detailed setup and local deployment instructions, please refer to our docume
 1. MiroThinker’s performance was tested with this repository and open-source tools; other models’ results are from their papers and official sites.
 
 2. As [MiroVerse-v0.1](https://huggingface.co/datasets/miromind-ai/MiroVerse-v0.1) mainly contains English data, the model’s Chinese capability is limited. We plan to add more Chinese data to improve performance in the next version.
+
+</details>
 
 ## 📊 Trace Collection
 
