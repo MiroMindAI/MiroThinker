@@ -239,33 +239,39 @@ uv run main.py llm=qwen3-32b agent=evaluation llm.openai_base_url=https://your_b
 
 #### 2. **Run comprehensive benchmark evaluation**
 
+- If you want to use open-source tools, set <code>AGENT_SET="evaluation_os"</code> (default).
 - If you want to use commercial tools, set <code>AGENT_SET="evaluation"</code>.<br>
-- If you want to use open-source tools, set <code>AGENT_SET="evaluation_os"</code>.
 
 ```bash
-# GAIA-Validation
-LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="evaluation_os" bash scripts/run_evaluate_multiple_runs_gaia-validation.sh
+# GAIA-Val-165
+LLM_MODEL="xxx" BASE_URL="xxx" bash scripts/run_evaluate_multiple_runs_gaia-validation.sh
 
 # GAIA-Text-103
-LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="evaluation_os" bash scripts/run_evaluate_multiple_runs_gaia-validation-text-103.sh
+LLM_MODEL="xxx" BASE_URL="xxx" bash scripts/run_evaluate_multiple_runs_gaia-validation-text-103.sh
 
 # WebWalkerQA
-LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="evaluation_os" bash scripts/run_evaluate_multiple_runs_webwalkerqa.sh
+LLM_MODEL="xxx" BASE_URL="xxx" bash scripts/run_evaluate_multiple_runs_webwalkerqa.sh
 
 # HLE
-LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="evaluation_os" bash scripts/run_evaluate_multiple_runs_hle.sh
+LLM_MODEL="xxx" BASE_URL="xxx" bash scripts/run_evaluate_multiple_runs_hle.sh
 
 # HLE-Text-500
-LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="evaluation_os" bash scripts/run_evaluate_multiple_runs_hle-text-500.sh
+LLM_MODEL="xxx" BASE_URL="xxx" bash scripts/run_evaluate_multiple_runs_hle-text-500.sh
 
 # FRAMES
-LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="evaluation_os" bash scripts/run_evaluate_multiple_runs_frames.sh
+LLM_MODEL="xxx" BASE_URL="xxx" bash scripts/run_evaluate_multiple_runs_frames.sh
 
 # BrowseComp-EN
-LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="evaluation_os" bash scripts/run_evaluate_multiple_runs_browsecomp.sh
+LLM_MODEL="xxx" BASE_URL="xxx" bash scripts/run_evaluate_multiple_runs_browsecomp.sh
 
 # BrowseComp-ZH
-LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="evaluation_os" bash scripts/run_evaluate_multiple_runs_browsecomp_zh.sh
+LLM_MODEL="xxx" BASE_URL="xxx" bash scripts/run_evaluate_multiple_runs_browsecomp_zh.sh
+
+# XBench-DeepResearch
+LLM_MODEL="xxx" BASE_URL="xxx" bash scripts/run_evaluate_multiple_runs_xbench_deepresearch.sh
+
+# FutureX
+LLM_MODEL="xxx" BASE_URL="xxx" bash scripts/run_evaluate_multiple_runs_futurex.sh
 ```
 
 #### 3. **Monitor evaluation progress**
