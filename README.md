@@ -181,20 +181,20 @@ JINA_BASE_URL="https://r.jina.ai"
 # API for Linux Sandbox (recommend)
 E2B_API_KEY=your_e2b_key
 
-# API for LLM-as-Judge (for benchmark testing)
+# API for LLM-as-Judge (for benchmark testing, optional)
 OPENAI_API_KEY=your_openai_key
 
-# API for Open-Source Audio Transcription Tool (for benchmark testing)
+# API for Open-Source Audio Transcription Tool (for benchmark testing, optional)
 WHISPER_MODEL_NAME="openai/whisper-large-v3-turbo"
 WHISPER_API_KEY=your_whisper_key
 WHISPER_BASE_URL="https://your_whisper_base_url/v1"
 
-# API for Open-Source VQA Tool (for benchmark testing)
+# API for Open-Source VQA Tool (for benchmark testing, optional)
 VISION_MODEL_NAME="Qwen/Qwen2.5-VL-72B-Instruct"
 VISION_API_KEY=your_vision_key
 VISION_BASE_URL="https://your_vision_base_url/v1/chat/completions"
 
-# API for Open-Source Reasoning Tool (for benchmark testing)
+# API for Open-Source Reasoning Tool (for benchmark testing, optional)
 REASONING_MODEL_NAME="Qwen/Qwen3-235B-A22B-Thinking-2507"
 REASONING_API_KEY=your_reasoning_key
 REASONING_BASE_URL="https://your_reasoning_base_url/v1/chat/completions"
