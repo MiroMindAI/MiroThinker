@@ -18,8 +18,6 @@ This project supports **two tool configuration modes** for benchmark testing:
 | Visual Question Answering |       [Qwen2.5-VL-72B-Instruct](https://huggingface.co/Qwen/Qwen2.5-VL-72B-Instruct)       |   [Claude Sonnet 3.7](https://docs.anthropic.com/en/docs/about-claude/models/overview)   |
 |         Reasoning         | [Qwen3-235B-A22B-Thinking-2507](https://huggingface.co/Qwen/Qwen3-235B-A22B-Thinking-2507) |   [Claude Sonnet 3.7](https://docs.anthropic.com/en/docs/about-claude/models/overview)   |
 
----
-
 ## Environment Variables
 
 Configure the following variables in your `apps/miroflow-agent/.env` file according to the mode you choose:
@@ -62,8 +60,6 @@ TENCENTCLOUD_SECRET_ID=your_tencent_cloud_secret_id
 TENCENTCLOUD_SECRET_KEY=your_tencent_cloud_secret_key
 ```
 
----
-
 ## Tool Descriptions and Deployment
 
 ### 1. Visual Question Answering Tool
@@ -76,7 +72,6 @@ Supports local image files and URLs. Automatically encodes local images to Base6
 
 * **Open-Source Mode:** Qwen2.5-VL-72B-Instruct
 * **Commercial Mode:** Claude Sonnet 3.7
-
 
 **Local Deployment (Open-Source Mode):**
 
@@ -110,7 +105,6 @@ python3 -m sglang.launch_server \
   --log-requests --log-requests-level 2 \
   --show-time-cost --context-length 131072
 ```
-
 
 ### 3. Audio Transcription Tool
 
