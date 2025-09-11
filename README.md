@@ -19,8 +19,6 @@
 
 <img width="100%" alt="image" src="https://github.com/user-attachments/assets/a95bcf1b-fc31-4af9-8c1f-03829775f3ec" />
 
-<img src="https://huggingface.co/datasets/miromind-ai/MiroFlow-Benchmarks/resolve/main/assets/MiroThinker_v0.2_Performance_2.png" width="100%" alt="MiroThinker" />
-
 ## 📰 News & Updates
 
 - **[2025-09-11]** 🎉🎉 MiroThinker-72B-Preview ranked 4th in this week’s FutureX benchmark.
@@ -35,6 +33,8 @@
 **MiroThinker** is an open-source agentic model series. Designed as a research agent for complex, long-horizon problem solving, it integrates strong capabilities in task decomposition, multi-hop reasoning, retrieval-augmented generation, code execution, web browsing, and document/file processing, enabling a wide range of real-world applications.
 
 **MiroFlow** is a framework for agent development that supports various language models and provides a comprehensive framework for building intelligent agents. The framework includes enhanced conversation management, flexible tool integration, and extensive benchmark evaluations across multiple datasets. 
+
+<img src="https://huggingface.co/datasets/miromind-ai/MiroFlow-Benchmarks/resolve/main/assets/MiroThinker_v0.2_Performance_2.png" width="100%" alt="MiroThinker" />
 
 ### MiroThinker-v0.2
 
