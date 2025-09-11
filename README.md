@@ -32,8 +32,10 @@
 
 **MiroFlow** is a framework for agent development that supports various language models and provides a comprehensive framework for building intelligent agents. The framework includes enhanced conversation management, flexible tool integration, and extensive benchmark evaluations across multiple datasets. 
 
+### MiroThinker-v0.2
+
 <details open>
-  <summary>MiroThinker-v0.2</summary>
+  <summary>click to expand</summary>
 <br>
 In this new version, we introduced three key improvements:
 
@@ -49,10 +51,10 @@ Compared to v0.1, MiroThinker-v0.2 delivers consistent gains across benchmarks. 
 
 </details>
 
-<br>
+### MiroThinker-v0.1
 
 <details>
-  <summary>MiroThinker-v0.1 (click to expand)</summary>
+  <summary>click to expand</summary>
 <br>
 <div align="center">
   <img src="assets/gaia_text_103.png" width="98%" alt="MiroFlow Performance on GAIA-Validation" />
