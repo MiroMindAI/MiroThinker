@@ -38,8 +38,6 @@
 
 ### MiroThinker-v0.2
 
-<details open>
-  <summary>click here</summary>
 In this new version, we introduced three key improvements:
 
 - **Richer training data** from both English and Chinese sources, yielding significant gains in benchmark performance and generalization.
@@ -61,12 +59,10 @@ Compared to v0.1, MiroThinker-v0.2 delivers consistent gains across benchmarks. 
 | MiroThinker-72B-SFT-v0.2 | Qwen2.5-72B-Instruct  |    64K     |                              Coming Soon                               |
 | MiroThinker-72B-DPO-v0.2 | Qwen2.5-72B-Instruct  |    64K     |                              Coming Soon                               |
 
-</details>
-
 ### MiroThinker-v0.1
 
 <details>
-  <summary>click here</summary>
+  <summary>click here to open</summary>
 <div align="center">
   <img src="assets/gaia_text_103.png" width="98%" alt="MiroFlow Performance on GAIA-Validation" />
   <p><strong>Performance of Open-Source Models on GAIA-Validation Benchmark.</strong></p>
