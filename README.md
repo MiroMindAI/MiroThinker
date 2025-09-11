@@ -153,7 +153,7 @@ cp .env.example .env
 # Edit .env with your actual API keys
 ```
 
-We currently support two tool configurations:
+We currently support two tool configurations for benchmark testing:
 1. Using the default settings of open-source tools as much as possible. ([config](apps/miroflow-agent/conf/agent/evaluation_os.yaml))
 2. Using advanced settings of commercial tools. ([config](apps/miroflow-agent/conf/agent/evaluation.yaml))
    
@@ -170,32 +170,41 @@ The tool lists for these two settings are shown in the table below:
 Configure the following variables in your `.env` file according to the mode you choose:
 
 ```bash
-# APIs for Search Tools
+# API for Google Search (recommend)
 SERPER_API_KEY=your_serper_key
-JINA_API_KEY=your_jina_key
-TENCENTCLOUD_SECRET_ID=your_tencent_cloud_secret_id
-TENCENTCLOUD_SECRET_KEY=your_tencent_cloud_secret_key
+SERPER_BASE_URL="https://google.serper.dev"
 
-# API for Code Sandbox
+# API for Web Scraping (recommend)
+JINA_API_KEY=your_jina_key
+JINA_BASE_URL="https://r.jina.ai"
+
+# API for Linux Sandbox (recommend)
 E2B_API_KEY=your_e2b_key
 
-# APIs for Commercial Tools
-ANTHROPIC_API_KEY=your_anthropic_key
+# API for LLM-as-Judge (for benchmark testing)
 OPENAI_API_KEY=your_openai_key
 
-# APIs for Open-Source Tools
-REASONING_MODEL_NAME="Qwen/Qwen3-235B-A22B-Thinking-2507"
-REASONING_API_KEY=your_reasoning_key
-REASONING_BASE_URL="https://your_reasoning_base_url/v1/chat/completions"
-VISION_MODEL_NAME="Qwen/Qwen2.5-VL-72B-Instruct"
-VISION_API_KEY=your_vision_key
-VISION_BASE_URL="https://your_vision_base_url/v1/chat/completions"
+# API for Open-Source Audio Transcription Tool (for benchmark testing)
 WHISPER_MODEL_NAME="openai/whisper-large-v3-turbo"
 WHISPER_API_KEY=your_whisper_key
 WHISPER_BASE_URL="https://your_whisper_base_url/v1"
 
-# Future APIs (Please use dummy values for now)
-GEMINI_API_KEY=your_gemini_key
+# API for Open-Source VQA Tool (for benchmark testing)
+VISION_MODEL_NAME="Qwen/Qwen2.5-VL-72B-Instruct"
+VISION_API_KEY=your_vision_key
+VISION_BASE_URL="https://your_vision_base_url/v1/chat/completions"
+
+# API for Open-Source Reasoning Tool (for benchmark testing)
+REASONING_MODEL_NAME="Qwen/Qwen3-235B-A22B-Thinking-2507"
+REASONING_API_KEY=your_reasoning_key
+REASONING_BASE_URL="https://your_reasoning_base_url/v1/chat/completions"
+
+# APIs for Claude Sonnet 3.7 as Commercial Tools (optional)
+ANTHROPIC_API_KEY=your_anthropic_key
+
+# API for Sougou Search (optional)
+TENCENTCLOUD_SECRET_ID=your_tencent_cloud_secret_id
+TENCENTCLOUD_SECRET_KEY=your_tencent_cloud_secret_key
 ```
 
 ### Serve the MiroThinker Model
