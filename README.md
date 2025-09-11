@@ -169,16 +169,16 @@ The tool lists for these two settings are shown in the table below:
 
 Configure the following variables in your `.env` file according to the mode you choose:
 
-```bash
-# API for Google Search (recommend)
+```python
+# API for Google Search (recommended)
 SERPER_API_KEY=your_serper_key
 SERPER_BASE_URL="https://google.serper.dev"
 
-# API for Web Scraping (recommend)
+# API for Web Scraping (recommended)
 JINA_API_KEY=your_jina_key
 JINA_BASE_URL="https://r.jina.ai"
 
-# API for Linux Sandbox (recommend)
+# API for Linux Sandbox (recommended)
 E2B_API_KEY=your_e2b_key
 
 # API for LLM-as-Judge (for benchmark testing, optional)
@@ -235,7 +235,6 @@ This will start a server at: `http://0.0.0.0:$PORT$`. Use this as your server ba
 #### Option 2: Quantized Light-Weight Options
 
 We also provide comprehensive guidance for serving MiroThinker models using CPU-optimized and GPU-accelerated quantization techniques, along with detailed analysis and guidelines for deployment with llama.cpp, Ollama, SGLang, and other inference frameworks. A complete guide can be found at [Deployment Documentation](apps/gradio-demo/)
-
 
 ### Basic Usage
 
