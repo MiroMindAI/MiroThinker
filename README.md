@@ -309,13 +309,13 @@ For detailed setup and local deployment instructions, please refer to our docume
 #### Comparison with SOTA Research Agents
 
 <div>
-  <img src="https://huggingface.co/datasets/miromind-ai/MiroFlow-Benchmarks/resolve/main/assets/MiroThinker_v0.2_Performance_0.png" width="100%" alt="MiroThinker" />
+  <img src="https://huggingface.co/datasets/miromind-ai/MiroFlow-Benchmarks/resolve/main/assets/MiroThinker_v0.2_Performance_0.png" width="80%" alt="MiroThinker" />
 </div>
 
 #### GAIA Benchmark
 
 <div>
-  <img src="https://huggingface.co/datasets/miromind-ai/MiroFlow-Benchmarks/resolve/main/assets/MiroThinker_v0.2_Performance_1.png" width="100%" alt="MiroThinker" />
+  <img src="https://huggingface.co/datasets/miromind-ai/MiroFlow-Benchmarks/resolve/main/assets/MiroThinker_v0.2_Performance_1.png" width="80%" alt="MiroThinker" />
 </div>
 
 ### MiroThinker-v0.1
