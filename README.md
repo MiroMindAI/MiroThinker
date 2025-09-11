@@ -26,15 +26,30 @@
 - **[2025-08-22]** Introducing streamlined deployment options for MiroThinker models with optimized resource usage and faster startup times. Experience the interactive demo: [🚀 Try Gradio Demo](apps/gradio-demo)
 - **[2025-08-08]** [MiroThinker-v0.1](https://huggingface.co/collections/miromind-ai/mirothinker-v01-689301b6d0563321862d44a1) released. Models, framework, and data are now fully open-sourced!
 
-<div align="center">
-  <img src="https://github.com/MiroMindAI/miromindai.github.io/blob/assets/gif/MiroFlow-v0.1-deploy-4090.gif?raw=true" width="550" alt="MiroThinker Gradio Demo">
-</div>
-
 ## 📝 Introduction
 
 **MiroThinker** is an open-source agentic model series. Designed as a research agent for complex, long-horizon problem solving, it integrates strong capabilities in task decomposition, multi-hop reasoning, retrieval-augmented generation, code execution, web browsing, and document/file processing, enabling a wide range of real-world applications.
 
-**MiroFlow** is a framework for agent development that supports various language models and provides a comprehensive framework for building intelligent agents. The framework includes enhanced conversation management, flexible tool integration, and extensive benchmark evaluations across multiple datasets. A comprehensive framework for building, testing, and deploying intelligent agents powered by MiroThinker models with **multi-turn conversation capabilities** and **advanced tool integration**.
+**MiroFlow** is a framework for agent development that supports various language models and provides a comprehensive framework for building intelligent agents. The framework includes enhanced conversation management, flexible tool integration, and extensive benchmark evaluations across multiple datasets. 
+
+<details open>
+  <summary>MiroThinker-v0.2 (click to expand)</summary>
+
+In MiroThinker-v0.2, we introduced three key improvements:
+
+- **Richer training data** from both English and Chinese sources, yielding significant gains in benchmark performance and generalization.
+- **Unified DPO training** with a single preference dataset across all models.
+- **Extended context length** from 40k to 64k for more challenging multi-turn tool-use tasks.
+
+Compared to v0.1, MiroThinker-v0.2 delivers consistent gains across benchmarks. For example, scores improved from **57.3 → 64.1** on **GAIA-Text-103** and from **17.0 → 29.4** on **BrowseComp-ZH**, reflecting substantial advancements in the model’s general research agent capabilities.
+
+<div>
+  <img src="https://huggingface.co/datasets/miromind-ai/MiroFlow-Benchmarks/resolve/main/assets/MiroThinker_v0.2_Performance_2.png" width="100%" alt="MiroThinker" />
+</div>
+
+</details>
+
+<br>
 
 <details>
   <summary>MiroThinker-v0.1 (click to expand)</summary>
@@ -88,6 +103,10 @@ Welcome to try out our online demo [here](https://dr.miromind.ai/). In this demo
 MiroThinker is trained on our large-scale, high-quality trajectory and preference datasets [MiroVerse](https://huggingface.co/datasets/miromind-ai/MiroVerse-v0.1), utilizing the efficient training framework [MiroTrain](https://github.com/MiroMindAI/MiroTrain), and enhanced with tool-use capabilities through our agentic framework [MiroFlow](https://github.com/MiroMindAI/MiroFlow).
 
 In this repository, we mainly introduce how to deploy a MiroThinker model and conduct benchmark performance evaluations using the MiroFlow framework.
+
+<div align="center">
+  <img src="https://github.com/MiroMindAI/miromindai.github.io/blob/assets/gif/MiroFlow-v0.1-deploy-4090.gif?raw=true" width="550" alt="MiroThinker Gradio Demo">
+</div>
 
 ### Prerequisites
 
