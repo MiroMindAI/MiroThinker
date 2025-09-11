@@ -19,8 +19,10 @@
 
 ## 📰 News & Updates
 
-- **2025-08-22**: 🎉 **Light-Weight Deployment** - Introducing streamlined deployment options for MiroThinker models with optimized resource usage and faster startup times. Experience the interactive demo: [🚀 Try Gradio Demo](apps/gradio-demo)
-- **2025-08-08**: 🎉 **MiroThinker v0.1 Released** - Models, framework, and data are now fully open-sourced!
+- **2025-09-04**: Our in-development model, MiroThinker-72B-Preview, ranked sixth in this week’s FutureX benchmark. We will release the stable version of MiroThinker-72B soon.
+- **2025-09-07**: We supported more benchmarks, including [BrowseComp-ZH](https://arxiv.org/abs/2504.19314), [XBench-DeepResearch](https://xbench.org/agi/aisearch), and [FutureX](https://futurex-ai.github.io/).
+- **2025-08-22**: **Light-Weight Deployment** - Introducing streamlined deployment options for MiroThinker models with optimized resource usage and faster startup times. Experience the interactive demo: [🚀 Try Gradio Demo](apps/gradio-demo)
+- **2025-08-08**: **MiroThinker v0.1 Released** - Models, framework, and data are now fully open-sourced!
 
 <div align="center">
   <img src="https://github.com/MiroMindAI/miromindai.github.io/blob/assets/gif/MiroFlow-v0.1-deploy-4090.gif?raw=true" width="550" alt="MiroThinker Gradio Demo">
@@ -63,17 +65,20 @@ We have released the **MiroThinker v0.1** series, including both SFT and DPO var
 - **GAIA-Text-103**: A subset of GAIA Validation for text-only tasks. ([paper](https://arxiv.org/abs/2505.22648))
 - **HLE**: Humanity's Last Exam. ([paper](https://arxiv.org/abs/2501.14249))
 - **HLE-Text-500**: A subset of HLE for text-only tasks. ([paper](https://arxiv.org/pdf/2504.21776))
-- **BrowseComp**: Web browsing and comprehension tasks. ([paper](https://arxiv.org/abs/2504.12516))
+- **BrowseComp-EN**: Web browsing and comprehension tasks. ([paper](https://arxiv.org/abs/2504.12516))
+- **BrowseComp-ZH**: A Chinese version of BrowseComp. ([paper](https://arxiv.org/abs/2504.19314))
 - **WebWalkerQA**: Web navigation and question answering. ([paper](https://arxiv.org/abs/2501.07572))
 - **Frames**: Factuality, Retrieval, And reasoning MEasurement Set. ([paper](https://arxiv.org/abs/2409.12941))
+- **XBench-DeepResearch**: A benchmark for deep research agents. ([website](https://xbench.org/agi/aisearch))
+- **FutureX**: A live benchmark designed for predicting unknown future. ([website](https://futurex-ai.github.io/))
 
 ## 🌐 Online Demo
 
-Welcome to try out our online demo [here](https://dr.miromind.ai/). In this demo, we have deployed our [MiroThinker-32B-DPO-v0.1](https://huggingface.co/miromind-ai/MiroThinker-32B-DPO-v0.1) along with commercial tools to deliver an enhanced user experience.
+Welcome to try out our online demo [here](https://dr.miromind.ai/). In this demo, we have deployed our [MiroThinker-32B-DPO-v0.2](https://huggingface.co/miromind-ai/MiroThinker-32B-DPO-v0.2) along with commercial tools to deliver an enhanced user experience.
 
 ## 🚀 Quick Start
 
-MiroThinker-v0.1 is trained on our large-scale, high-quality trajectory and preference datasets [MiroVerse-v0.1](https://huggingface.co/datasets/miromind-ai/MiroVerse-v0.1), utilizing the efficient training framework [MiroTrain](https://github.com/MiroMindAI/MiroTrain), and enhanced with tool-use capabilities through our agentic framework [MiroFlow](https://github.com/MiroMindAI/MiroFlow).
+MiroThinker is trained on our large-scale, high-quality trajectory and preference datasets [MiroVerse](https://huggingface.co/datasets/miromind-ai/MiroVerse-v0.1), utilizing the efficient training framework [MiroTrain](https://github.com/MiroMindAI/MiroTrain), and enhanced with tool-use capabilities through our agentic framework [MiroFlow](https://github.com/MiroMindAI/MiroFlow).
 
 In this repository, we mainly introduce how to deploy a MiroThinker model and conduct benchmark performance evaluations using the MiroFlow framework.
 
@@ -169,7 +174,7 @@ NUM_GPUS=4
 PORT=61002
 
 # Downloading model from HF
-MODEL_PATH=miromind-ai/MiroThinker-32B-DPO-v0.1
+MODEL_PATH=miromind-ai/MiroThinker-32B-DPO-v0.2
 
 python3 -m sglang.launch_server \
     --model-path $MODEL_PATH \
