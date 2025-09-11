@@ -20,7 +20,7 @@
 ## 📰 News & Updates
 
 - **[2025-09-11]** 🎉🎉 MiroThinker-72B-Preview, using the same checkpoint as last week, ranked 4th in this week’s FutureX benchmark.
-- **[2025-09-08]** 🎉 [MiroThinker-v0.2](https://huggingface.co/collections/miromind-ai/mirothinker-v02-68af084a18035f57b17cd902) is now released, achieving open-source SOTA performance across multiple benchmarks.
+- **[2025-09-08]** 🎉 [MiroThinker-v0.2](https://huggingface.co/collections/miromind-ai/mirothinker-v02-68af084a18035f57b17cd902) is now released, achieving open-source SOTA performance across multiple benchmarks. See [here](#Introduction) for more details.
 - **[2025-09-04]** Our in-development model, MiroThinker-72B-Preview, ranked 6th in this week’s [FutureX benchmark](https://futurex-ai.github.io/). We will release the stable version of MiroThinker-72B soon.
 - **[2025-09-07]** We supported more benchmarks, including [BrowseComp-ZH](https://arxiv.org/abs/2504.19314), [XBench-DeepResearch](https://xbench.org/agi/aisearch), and [FutureX](https://futurex-ai.github.io/). We plan to add more benchmarks in the future.
 - **[2025-08-22]** Introducing streamlined deployment options for MiroThinker models with optimized resource usage and faster startup times. Experience the interactive demo: [🚀 Try Gradio Demo](apps/gradio-demo)
