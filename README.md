@@ -135,10 +135,10 @@ cd MiroThinker
 #### 2. **Download Benchmark Data**
 
 ```bash
-wget https://huggingface.co/datasets/miromind-ai/MiroFlow-Benchmarks/resolve/main/data_20250808_password_protected.zip
-unzip data_20250808_password_protected.zip
+wget https://huggingface.co/datasets/miromind-ai/MiroFlow-Benchmarks/resolve/main/data_20250911_password_protected.zip
+unzip data_20250911_password_protected.zip
 # The unzip passcode is: `pf4*`.
-rm data_20250808_password_protected.zip
+rm data_20250911_password_protected.zip
 ```
 
 #### 3. **Setup Environment**
