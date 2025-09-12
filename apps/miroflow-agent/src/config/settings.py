@@ -298,20 +298,6 @@ def create_mcp_server_parameters(cfg: DictConfig, agent_cfg: DictConfig):
 
     if (
         agent_cfg.get("tools", None) is not None
-        and "tool-markitdown" in agent_cfg["tools"]
-    ):
-        configs.append(
-            {
-                "name": "tool-markitdown",
-                "params": StdioServerParameters(
-                    command=sys.executable,
-                    args=["-m", "markitdown_mcp"],
-                ),
-            }
-        )
-
-    if (
-        agent_cfg.get("tools", None) is not None
         and "tool-reading" in agent_cfg["tools"]
     ):
         configs.append(
