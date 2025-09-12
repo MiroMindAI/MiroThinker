@@ -62,7 +62,7 @@ Compared to v0.1, MiroThinker-v0.2 delivers consistent gains across benchmarks. 
 ### MiroThinker-v0.1
 
 <details>
-  <summary>click to open</summary>
+  <summary>Click here to open</summary>
 <div align="center">
   <img src="assets/gaia_text_103.png" width="98%" alt="MiroFlow Performance on GAIA-Validation" />
   <p><strong>Performance of Open-Source Models on GAIA-Validation Benchmark.</strong></p>
