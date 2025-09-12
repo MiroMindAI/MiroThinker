@@ -120,7 +120,7 @@ In this repository, we mainly introduce how to deploy a MiroThinker model and co
 ### Prerequisites
 
 - Python 3.10+
-- [uv](https://docs.astral.sh/uv/) package manager
+- uv package manager
 - Required API keys
 
 ### Installation
