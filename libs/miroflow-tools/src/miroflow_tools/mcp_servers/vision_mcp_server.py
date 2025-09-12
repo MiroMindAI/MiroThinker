@@ -24,7 +24,7 @@ ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 mcp = FastMCP("vision-mcp-server")
 
 
-async def guess_mime_media_type_from_extension(file_path: str) -> str:
+def guess_mime_media_type_from_extension(file_path: str) -> str:
     """Guess the MIME type based on the file extension."""
     _, ext = os.path.splitext(file_path)
     ext = ext.lower()
@@ -72,9 +72,7 @@ async def visual_question_answering(image_path_or_url: str, question: str) -> st
                 image_data = base64.b64encode(image_file.read()).decode("utf-8")
                 messages_for_llm[0]["content"][0]["source"] = dict(
                     type="base64",
-                    media_type=await guess_mime_media_type_from_extension(
-                        image_path_or_url
-                    ),
+                    media_type=guess_mime_media_type_from_extension(image_path_or_url),
                     data=image_data,
                 )
         else:  # Otherwise, assume it's a URL
