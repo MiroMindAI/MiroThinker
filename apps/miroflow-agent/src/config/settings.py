@@ -61,8 +61,8 @@ def create_mcp_server_parameters(cfg: DictConfig, agent_cfg: DictConfig):
         cfg.llm.get("anthropic_base_url") or "https://api.anthropic.com"
     )
 
-    openai_base_url = os.environ.get("OPENAI_BASE_URL")
-    anthropic_base_url = os.environ.get("ANTHROPIC_BASE_URL")
+    OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL")
+    ANTHROPIC_BASE_URL = os.environ.get("ANTHROPIC_BASE_URL")
     ENABLE_CLAUDE_VISION = cfg.agent.tool_config["tool-vqa"]["enable_claude_vision"]
     ENABLE_OPENAI_VISION = cfg.agent.tool_config["tool-vqa"]["enable_openai_vision"]
 
@@ -177,9 +177,9 @@ def create_mcp_server_parameters(cfg: DictConfig, agent_cfg: DictConfig):
                     args=["-m", "miroflow_tools.mcp_servers.vision_mcp_server"],
                     env={
                         "ANTHROPIC_API_KEY": ANTHROPIC_API_KEY,
-                        "ANTHROPIC_BASE_URL": anthropic_base_url,
+                        "ANTHROPIC_BASE_URL": ANTHROPIC_BASE_URL,
                         "OPENAI_API_KEY": OPENAI_API_KEY,
-                        "OPENAI_BASE_URL": openai_base_url,
+                        "OPENAI_BASE_URL": OPENAI_BASE_URL,
                         "ENABLE_CLAUDE_VISION": ENABLE_CLAUDE_VISION,
                         "ENABLE_OPENAI_VISION": ENABLE_OPENAI_VISION,
                     },
@@ -254,9 +254,9 @@ def create_mcp_server_parameters(cfg: DictConfig, agent_cfg: DictConfig):
                     ],
                     env={
                         "ANTHROPIC_API_KEY": ANTHROPIC_API_KEY,
-                        "ANTHROPIC_BASE_URL": anthropic_base_url,
+                        "ANTHROPIC_BASE_URL": ANTHROPIC_BASE_URL,
                         "OPENAI_API_KEY": OPENAI_API_KEY,
-                        "OPENAI_BASE_URL": openai_base_url,
+                        "OPENAI_BASE_URL": OPENAI_BASE_URL,
                     },
                 ),
             }
