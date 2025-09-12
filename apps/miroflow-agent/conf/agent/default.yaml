@@ -3,31 +3,21 @@
 # Each sub-agent prompt is written in: apps/miroflow-agent/src/utils/prompt_utils.py
 main_agent:
   tools:
-    - tool-code
+    - tool-python
     - tool-vqa
     - tool-transcribe
     - tool-reasoning
-    - tool-markitdown
-  # tool_blacklist:
-  #   - ["name-of-tool", "name-of-method"]  # tool blacklist example
+    - tool-reader
   max_turns: 20  # Maximum number of turns for main agent execution
+
 sub_agents:
   agent-browsing:
     tools:
-      - tool-serper-search
+      - tool-google-search
       - tool-vqa
-      - tool-markitdown
-      - tool-code
+      - tool-reader
+      - tool-python
     max_turns: 20
-  # agent-coding:
-  #   tools:
-  #     - tool-code
-  #     - tool-reasoning
-  #   max_turns: 20
-  # agent-reading:
-  #   tools:
-  #     - tool-reading
-  #   max_turns: 20
 
 tool_config:
   tool-vqa:
