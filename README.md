@@ -319,7 +319,12 @@ For detailed setup and local deployment instructions, please refer to our docume
 
 ## 📈 Benchmark Performance
 
-> **⚠️ Note**: To prevent data leakage during searches, we block Hugging Face domains to ensure the model doesn't access answers through shortcuts. For the detailed implementation, see [here](https://github.com/MiroMindAI/mirage/blob/MiroFlow-MiroThinker/libs/miroflow-tools/src/miroflow_tools/manager.py#L277).
+> [!IMPORTANT]
+> <div>
+> To prevent data leakage during searches, we block Hugging Face domains to ensure the model doesn't access answers through shortcuts.
+> For the detailed implementation, see
+> <a href="https://github.com/MiroMindAI/mirage/blob/MiroFlow-MiroThinker/libs/miroflow-tools/src/miroflow_tools/manager.py#L277">here</a>.
+> </div>
 
 ### MiroThinker-v0.2
 
