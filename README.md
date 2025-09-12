@@ -62,7 +62,7 @@ Compared to v0.1, MiroThinker-v0.2 delivers consistent gains across benchmarks. 
 ### MiroThinker-v0.1
 
 <details>
-  <summary>click here to open</summary>
+  <summary>click to open</summary>
 <div align="center">
   <img src="assets/gaia_text_103.png" width="98%" alt="MiroFlow Performance on GAIA-Validation" />
   <p><strong>Performance of Open-Source Models on GAIA-Validation Benchmark.</strong></p>
@@ -180,7 +180,12 @@ JINA_BASE_URL="https://r.jina.ai"
 
 # API for Linux Sandbox (recommended)
 E2B_API_KEY=your_e2b_key
+```
 
+<details> 
+<summary>Optional API keys (click to open)</summary>
+  
+```python
 # API for LLM-as-Judge (for benchmark testing, optional)
 OPENAI_API_KEY=your_openai_key
 
@@ -206,6 +211,8 @@ ANTHROPIC_API_KEY=your_anthropic_key
 TENCENTCLOUD_SECRET_ID=your_tencent_cloud_secret_id
 TENCENTCLOUD_SECRET_KEY=your_tencent_cloud_secret_key
 ```
+
+</details>
 
 ### Serve the MiroThinker Model
 
@@ -253,7 +260,13 @@ uv run main.py llm=qwen3-32b agent=evaluation llm.openai_base_url=https://your_b
 ```bash
 # GAIA-Val-165
 LLM_MODEL="xxx" BASE_URL="xxx" bash scripts/run_evaluate_multiple_runs_gaia-validation.sh
+# Other benchmarks follow the same pattern.
+```
 
+<details>
+  <summary>Show all benchmark commands</summary>
+  
+```bash
 # GAIA-Text-103
 LLM_MODEL="xxx" BASE_URL="xxx" bash scripts/run_evaluate_multiple_runs_gaia-validation-text-103.sh
 
@@ -282,6 +295,8 @@ LLM_MODEL="xxx" BASE_URL="xxx" bash scripts/run_evaluate_multiple_runs_xbench_de
 LLM_MODEL="xxx" BASE_URL="xxx" bash scripts/run_evaluate_multiple_runs_futurex.sh
 ```
 
+</details>
+
 #### 3. **Monitor evaluation progress**
 
 ```bash
@@ -305,7 +320,6 @@ For detailed setup and local deployment instructions, please refer to our docume
 ## 📈 Benchmark Performance
 
 > **⚠️ Note**: To prevent data leakage during searches, we block Hugging Face domains to ensure the model doesn't access answers through shortcuts. For the detailed implementation, see [here](https://github.com/MiroMindAI/mirage/blob/MiroFlow-MiroThinker/libs/miroflow-tools/src/miroflow_tools/manager.py#L277).
-
 
 ### MiroThinker-v0.2
 
