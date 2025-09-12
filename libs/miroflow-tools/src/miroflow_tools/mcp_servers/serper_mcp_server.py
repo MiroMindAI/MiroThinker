@@ -149,8 +149,8 @@ def google_search(
 
         # Build comprehensive response
         response_data = {
-            "organic": organic_results,
             "searchParameters": data.get("searchParameters", {}),
+            "organic": organic_results,
         }
 
         return response_data
