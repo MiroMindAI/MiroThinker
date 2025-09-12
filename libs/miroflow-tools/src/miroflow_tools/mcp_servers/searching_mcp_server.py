@@ -127,15 +127,9 @@ async def google_search(
                                 "connection refused",
                             ]
                         ):
-                            # logger.warning(
-                            #     f"Non-recoverable error in tool execution: {tool_error}"
-                            # )
                             return f"Tool execution failed: {str(tool_error)}"
 
                         retry_count += 1
-                        # logger.warning(
-                        #     f"Tool execution attempt {retry_count} failed: {tool_error}"
-                        # )
                         if retry_count >= max_retries:
                             return f"Tool execution failed after {max_retries} attempts: {str(tool_error)}"
                         break  # Exit current session, will retry with new session
@@ -591,107 +585,6 @@ async def search_archived_webpage(url: str, date: str = "") -> str:
 
     except Exception as e:
         return f"Unexpected Error: An unexpected error occurred: {str(e)}"
-
-
-# @mcp.tool()
-# async def scrape_website(url: str) -> str:
-#     """This tool is used to scrape a website for information. Search engines are not supported by this tool.
-#     Args:
-#         url: The URL of the website to scrape.
-
-#     Returns:
-#         The scraped website content.
-#     """
-#     if SERPER_API_KEY == "":
-#         return "SERPER_API_KEY is not set, scrape_website tool is not available."
-#     server_params = StdioServerParameters(
-#         command="npx",
-#         args=["-y", "serper-search-scrape-mcp-server"],
-#         env={"SERPER_API_KEY": SERPER_API_KEY},
-#     )
-#     tool_name = "scrape"
-#     arguments = {"url": url}
-#     result_content = ""
-#     retry_count = 0
-#     max_retries = 3
-
-#     while retry_count < max_retries:
-#         try:
-#             async with stdio_client(server_params) as (read, write):
-#                 async with ClientSession(
-#                     read, write, sampling_callback=None
-#                 ) as session:
-#                     await session.initialize()
-#                     try:
-#                         tool_result = await session.call_tool(
-#                             tool_name, arguments=arguments
-#                         )
-#                         result_content = (
-#                             tool_result.content[-1].text if tool_result.content else ""
-#                         )
-#                         if (
-#                             "huggingface.co/datasets" in url
-#                             or "huggingface.co/spaces" in url
-#                         ):
-#                             result_content = "You are trying to scrape a Hugging Face dataset for answers, please do not use the scrape tool for this purpose."
-#                         break  # Success, exit retry loop
-#                     except Exception as tool_error:
-#                         error_msg = str(tool_error).lower()
-#                         # Check for non-recoverable errors (404, not found, EPIPE, etc.)
-#                         if any(
-#                             err in error_msg
-#                             for err in [
-#                                 "404",
-#                                 "not found",
-#                                 "epipe",
-#                                 "broken pipe",
-#                                 "connection reset",
-#                                 "connection refused",
-#                             ]
-#                         ):
-#                             # logger.warning(
-#                             #     f"Non-recoverable error in scrape execution: {tool_error}"
-#                             # )
-#                             return f"Tool execution failed: {str(tool_error)}"
-
-#                         retry_count += 1
-#                         # logger.warning(
-#                         #     f"Scrape execution attempt {retry_count} failed: {tool_error}"
-#                         # )
-#                         if retry_count >= max_retries:
-#                             return f"Tool execution failed after {max_retries} attempts: {str(tool_error)}"
-#                         break  # Exit current session, will retry with new session
-
-#         except Exception as outer_error:
-#             error_msg = str(outer_error).lower()
-#             # Check for non-recoverable errors
-#             if any(
-#                 err in error_msg
-#                 for err in [
-#                     "epipe",
-#                     "broken pipe",
-#                     "connection reset",
-#                     "connection refused",
-#                 ]
-#             ):
-#                 # logger.warning(
-#                 #     f"Non-recoverable connection error in scrape: {outer_error}"
-#                 # )
-#                 return f"Tool execution failed: Connection error - {str(outer_error)}"
-
-#             retry_count += 1
-#             # logger.warning(
-#             #     f"Scrape connection attempt {retry_count} failed: {outer_error}"
-#             # )
-#             if retry_count >= max_retries:
-#                 return f"Tool execution failed after {max_retries} connection attempts: Unexpected error occurred."
-
-#             # Wait before retrying
-#             await asyncio.sleep(
-#                 min(3 * retry_count, 10)
-#             )  # Exponential backoff with cap
-
-#     return result_content
 
 
 async def scrape_youtube(url: str) -> str:
