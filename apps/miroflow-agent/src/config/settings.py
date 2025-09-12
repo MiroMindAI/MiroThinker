@@ -156,6 +156,18 @@ def create_mcp_server_parameters(cfg: DictConfig, agent_cfg: DictConfig):
             }
         )
 
+    if agent_cfg.get("tools", None) is not None and "tool-code" in agent_cfg["tools"]:
+        configs.append(
+            {
+                "name": "tool-code",
+                "params": StdioServerParameters(
+                    command=sys.executable,
+                    args=["-m", "miroflow_tools.mcp_servers.python_server"],
+                    env={"E2B_API_KEY": E2B_API_KEY},
+                ),
+            }
+        )
+
     if agent_cfg.get("tools", None) is not None and "tool-vqa" in agent_cfg["tools"]:
         configs.append(
             {
@@ -223,18 +235,6 @@ def create_mcp_server_parameters(cfg: DictConfig, agent_cfg: DictConfig):
                         "WHISPER_API_KEY": WHISPER_API_KEY,
                         "WHISPER_MODEL_NAME": WHISPER_MODEL_NAME,
                     },
-                ),
-            }
-        )
-
-    if agent_cfg.get("tools", None) is not None and "tool-code" in agent_cfg["tools"]:
-        configs.append(
-            {
-                "name": "tool-code",
-                "params": StdioServerParameters(
-                    command=sys.executable,
-                    args=["-m", "miroflow_tools.mcp_servers.python_server"],
-                    env={"E2B_API_KEY": E2B_API_KEY},
                 ),
             }
         )
