@@ -338,7 +338,7 @@ For detailed setup and local deployment instructions, please refer to our docume
 ### MiroThinker-v0.1
 
 <details>
-  <summary>click here to open</summary>
+  <summary>Click here to open</summary>
 
 #### GAIA Benchmark
 
