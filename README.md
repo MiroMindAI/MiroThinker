@@ -199,7 +199,7 @@ REASONING_MODEL_NAME="Qwen/Qwen3-235B-A22B-Thinking-2507"
 REASONING_API_KEY=your_reasoning_key
 REASONING_BASE_URL="https://your_reasoning_base_url/v1/chat/completions"
 
-# APIs for Claude Sonnet 3.7 as Commercial Tools (optional)
+# API for Claude Sonnet 3.7 as Commercial Tools (optional)
 ANTHROPIC_API_KEY=your_anthropic_key
 
 # API for Sougou Search (optional)

@@ -48,7 +48,7 @@ REASONING_API_KEY = os.environ.get("REASONING_API_KEY")
 REASONING_BASE_URL = os.environ.get("REASONING_BASE_URL")
 REASONING_MODEL_NAME = os.environ.get("REASONING_MODEL_NAME")
 
-# APIs for Claude Sonnet 3.7 as Commercial Tools
+# API for Claude Sonnet 3.7 as Commercial Tools
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 
 # API Keys for Commercial Tools
