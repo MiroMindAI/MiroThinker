@@ -19,10 +19,6 @@ from fastmcp import FastMCP
 import aiohttp
 import requests
 
-import logging
-
-logger = logging.getLogger("miroflow")
-
 VISION_API_KEY = os.environ.get("VISION_API_KEY")
 VISION_BASE_URL = os.environ.get("VISION_BASE_URL")
 VISION_MODEL_NAME = os.environ.get("VISION_MODEL_NAME")
@@ -56,7 +52,6 @@ async def visual_question_answering(image_path_or_url: str, question: str) -> st
     Returns:
         The answer to the image-related question.
     """
-
     messages_for_llm = [
         {
             "role": "user",
@@ -103,7 +98,6 @@ async def visual_question_answering(image_path_or_url: str, question: str) -> st
         payload = {"model": VISION_MODEL_NAME, "messages": messages_for_llm}
 
         response = requests.post(VISION_BASE_URL, json=payload, headers=headers)
-        logger.info(response)
 
     except Exception as e:
         return f"Error: {e}"

@@ -50,7 +50,6 @@ async def visual_question_answering(image_path_or_url: str, question: str) -> st
     Returns:
         The answer to the image-related question.
     """
-
     messages_for_llm = [
         {
             "role": "user",

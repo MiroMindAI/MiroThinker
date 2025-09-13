@@ -73,7 +73,6 @@ async def reasoning(question: str) -> str:
     Returns:
         The answer to the question.
     """
-
     payload = {
         "model": REASONING_MODEL_NAME,
         "messages": [{"role": "user", "content": question}],

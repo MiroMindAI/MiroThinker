@@ -29,10 +29,11 @@ from tenacity import (
     wait_exponential,
 )
 
-# Initialize FastMCP server
-mcp = FastMCP("search_and_scrape_webpage")
 SERPER_BASE_URL = os.getenv("SERPER_BASE_URL", "https://google.serper.dev")
 SERPER_API_KEY = os.getenv("SERPER_API_KEY", "")
+
+# Initialize FastMCP server
+mcp = FastMCP("serper-mcp-server")
 
 
 @retry(
@@ -91,9 +92,8 @@ def google_search(
         autocorrect: Whether to autocorrect spelling in query
 
     Returns:
-        Dictionary containing search results and metadata
+        Dictionary containing search results and metadata.
     """
-
     # Check for API key
     if not SERPER_API_KEY:
         return {
@@ -147,11 +147,9 @@ def google_search(
                     continue
                 organic_results.append(item)
 
-        # Build comprehensive response
-        response_data = {
-            "searchParameters": data.get("searchParameters", {}),
-            "organic": organic_results,
-        }
+        # Keep all original fields, but overwrite "organic"
+        response_data = dict(data)
+        response_data["organic"] = organic_results
 
         return response_data
 
