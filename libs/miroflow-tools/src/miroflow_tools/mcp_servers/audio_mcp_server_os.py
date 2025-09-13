@@ -161,7 +161,9 @@ async def audio_transcription(audio_path_or_url: str) -> str:
 
                 # Basic content validation - check if response has content
                 if not response.content:
-                    return "[ERROR]: Audio transcription failed: Downloaded file is empty"
+                    return (
+                        "[ERROR]: Audio transcription failed: Downloaded file is empty"
+                    )
 
                 # Check content type if available
                 content_type = response.headers.get("content-type", "").lower()
