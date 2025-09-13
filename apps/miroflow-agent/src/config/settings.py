@@ -22,30 +22,39 @@ from omegaconf import DictConfig
 # Load environment variables from .env file
 load_dotenv()
 
-# Get API Keys from environment variables
+# API for Google Search
 SERPER_API_KEY = os.environ.get("SERPER_API_KEY")
-JINA_API_KEY = os.environ.get("JINA_API_KEY")
-
-# Get Base URLs from environment variables
-JINA_BASE_URL = os.environ.get("JINA_BASE_URL", "https://r.jina.ai")
 SERPER_BASE_URL = os.environ.get("SERPER_BASE_URL", "https://google.serper.dev")
 
-# API Keys for Commercial Tools
-ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
-OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-E2B_API_KEY = os.environ.get("E2B_API_KEY")
-GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
+# API for Web Scraping
+JINA_API_KEY = os.environ.get("JINA_API_KEY")
+JINA_BASE_URL = os.environ.get("JINA_BASE_URL", "https://r.jina.ai")
 
-# APIs for Open-Source Tools
-VISION_API_KEY = os.environ.get("VISION_API_KEY")
-VISION_BASE_URL = os.environ.get("VISION_BASE_URL")
-VISION_MODEL_NAME = os.environ.get("VISION_MODEL_NAME")
-REASONING_API_KEY = os.environ.get("REASONING_API_KEY")
-REASONING_BASE_URL = os.environ.get("REASONING_BASE_URL")
-REASONING_MODEL_NAME = os.environ.get("REASONING_MODEL_NAME")
+# API for Linux Sandbox
+E2B_API_KEY = os.environ.get("E2B_API_KEY")
+
+# API for Open-Source Audio Transcription Tool
 WHISPER_BASE_URL = os.environ.get("WHISPER_BASE_URL")
 WHISPER_API_KEY = os.environ.get("WHISPER_API_KEY")
 WHISPER_MODEL_NAME = os.environ.get("WHISPER_MODEL_NAME")
+
+# API for Open-Source VQA Tool
+VISION_API_KEY = os.environ.get("VISION_API_KEY")
+VISION_BASE_URL = os.environ.get("VISION_BASE_URL")
+VISION_MODEL_NAME = os.environ.get("VISION_MODEL_NAME")
+
+# API for Open-Source Reasoning Tool
+REASONING_API_KEY = os.environ.get("REASONING_API_KEY")
+REASONING_BASE_URL = os.environ.get("REASONING_BASE_URL")
+REASONING_MODEL_NAME = os.environ.get("REASONING_MODEL_NAME")
+
+# APIs for Claude Sonnet 3.7 as Commercial Tools
+ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
+
+# API Keys for Commercial Tools
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+
+# API for Sougou Search
 TENCENTCLOUD_SECRET_ID = os.environ.get("TENCENTCLOUD_SECRET_ID")
 TENCENTCLOUD_SECRET_KEY = os.environ.get("TENCENTCLOUD_SECRET_KEY")
 
@@ -63,8 +72,6 @@ def create_mcp_server_parameters(cfg: DictConfig, agent_cfg: DictConfig):
 
     OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL")
     ANTHROPIC_BASE_URL = os.environ.get("ANTHROPIC_BASE_URL")
-    ENABLE_CLAUDE_VISION = cfg.agent.tool_config["tool-vqa"]["enable_claude_vision"]
-    ENABLE_OPENAI_VISION = cfg.agent.tool_config["tool-vqa"]["enable_openai_vision"]
 
     if (
         agent_cfg.get("tools", None) is not None
@@ -78,45 +85,17 @@ def create_mcp_server_parameters(cfg: DictConfig, agent_cfg: DictConfig):
         configs.append(
             {
                 "name": "tool-google-search",
-                # "params": StdioServerParameters(
-                #     command="npx",
-                #     args=["-y", "serper-search-scrape-mcp-server"],
-                #     env={"SERPER_API_KEY": SERPER_API_KEY},
-                # ),
-                "params": StdioServerParameters(
-                    command=sys.executable,
-                    args=["-m", "miroflow_tools.mcp_servers.serper_mcp_server"],
-                    env={
-                        "SERPER_API_KEY": SERPER_API_KEY,
-                        "SERPER_BASE_URL": SERPER_BASE_URL,
-                    },
-                ),
-            }
-        )
-
-    if (
-        agent_cfg.get("tools", None) is not None
-        and "tool-searching" in agent_cfg["tools"]
-    ):
-        if not SERPER_API_KEY or not JINA_API_KEY or not GEMINI_API_KEY:
-            raise ValueError(
-                "SERPER_API_KEY or JINA_API_KEY or GEMINI_API_KEY not set, tool-searching will be unavailable."
-            )
-
-        configs.append(
-            {
-                "name": "tool-searching",
                 "params": StdioServerParameters(
                     command=sys.executable,
                     args=[
                         "-m",
-                        "miroflow_tools.mcp_servers.searching_mcp_server",
+                        "miroflow_tools.mcp_servers.searching_google_mcp_server",
                     ],
                     env={
                         "SERPER_API_KEY": SERPER_API_KEY,
+                        "SERPER_BASE_URL": SERPER_BASE_URL,
                         "JINA_API_KEY": JINA_API_KEY,
                         "JINA_BASE_URL": JINA_BASE_URL,
-                        "GEMINI_API_KEY": GEMINI_API_KEY,
                     },
                 ),
             }
@@ -139,6 +118,7 @@ def create_mcp_server_parameters(cfg: DictConfig, agent_cfg: DictConfig):
                         "TENCENTCLOUD_SECRET_ID": TENCENTCLOUD_SECRET_ID,
                         "TENCENTCLOUD_SECRET_KEY": TENCENTCLOUD_SECRET_KEY,
                         "JINA_API_KEY": JINA_API_KEY,
+                        "JINA_BASE_URL": JINA_BASE_URL,
                     },
                 ),
             }
@@ -150,7 +130,7 @@ def create_mcp_server_parameters(cfg: DictConfig, agent_cfg: DictConfig):
                 "name": "tool-python",
                 "params": StdioServerParameters(
                     command=sys.executable,
-                    args=["-m", "miroflow_tools.mcp_servers.python_server"],
+                    args=["-m", "miroflow_tools.mcp_servers.python_mcp_server"],
                     env={"E2B_API_KEY": E2B_API_KEY},
                 ),
             }
@@ -162,7 +142,7 @@ def create_mcp_server_parameters(cfg: DictConfig, agent_cfg: DictConfig):
                 "name": "tool-code",
                 "params": StdioServerParameters(
                     command=sys.executable,
-                    args=["-m", "miroflow_tools.mcp_servers.python_server"],
+                    args=["-m", "miroflow_tools.mcp_servers.python_mcp_server"],
                     env={"E2B_API_KEY": E2B_API_KEY},
                 ),
             }
@@ -178,10 +158,6 @@ def create_mcp_server_parameters(cfg: DictConfig, agent_cfg: DictConfig):
                     env={
                         "ANTHROPIC_API_KEY": ANTHROPIC_API_KEY,
                         "ANTHROPIC_BASE_URL": ANTHROPIC_BASE_URL,
-                        "OPENAI_API_KEY": OPENAI_API_KEY,
-                        "OPENAI_BASE_URL": OPENAI_BASE_URL,
-                        "ENABLE_CLAUDE_VISION": ENABLE_CLAUDE_VISION,
-                        "ENABLE_OPENAI_VISION": ENABLE_OPENAI_VISION,
                     },
                 ),
             }
@@ -215,6 +191,7 @@ def create_mcp_server_parameters(cfg: DictConfig, agent_cfg: DictConfig):
                     args=["-m", "miroflow_tools.mcp_servers.audio_mcp_server"],
                     env={
                         "OPENAI_API_KEY": OPENAI_API_KEY,
+                        "OPENAI_BASE_URL": OPENAI_BASE_URL,
                     },
                 ),
             }
@@ -255,8 +232,6 @@ def create_mcp_server_parameters(cfg: DictConfig, agent_cfg: DictConfig):
                     env={
                         "ANTHROPIC_API_KEY": ANTHROPIC_API_KEY,
                         "ANTHROPIC_BASE_URL": ANTHROPIC_BASE_URL,
-                        "OPENAI_API_KEY": OPENAI_API_KEY,
-                        "OPENAI_BASE_URL": OPENAI_BASE_URL,
                     },
                 ),
             }
@@ -343,73 +318,6 @@ def expose_sub_agents_as_tools(sub_agents_cfg: DictConfig):
     return sub_agents_server_params
 
 
-def expose_sub_agents_as_tools_old(sub_agents_cfg: DictConfig):
-    """Expose sub-agents as tools"""
-    sub_agents_server_params = []
-    for sub_agent in sub_agents_cfg.keys():
-        if "agent-browsing" in sub_agent:
-            sub_agents_server_params.append(
-                dict(
-                    name="agent-browsing",
-                    tools=[
-                        dict(
-                            name="search_and_browse",
-                            description="This tool is an agent that performs the subtask of searching and browsing the web for specific missing information and generating the desired answer. The subtask should be clearly defined, include relevant background, and focus on factual gaps. It does not perform vague or speculative subtasks. \nArgs: \n\tsubtask: the subtask to be performed. \nReturns: \n\tthe result of the subtask. ",
-                            schema={
-                                "type": "object",
-                                "properties": {
-                                    "subtask": {"title": "Subtask", "type": "string"}
-                                },
-                                "required": ["subtask"],
-                                "title": "search_and_browseArguments",
-                            },
-                        )
-                    ],
-                )
-            )
-        if "agent-coding" in sub_agent:
-            sub_agents_server_params.append(
-                dict(
-                    name="agent-coding",
-                    tools=[
-                        dict(
-                            name="solve_problem",
-                            description="This tool is an agent that could solve the given subtask by python-coding or command-executing and running the the code on Linux system. The subtask should be clearly defined, include relevant background, and desired output format. It does not perform vague or speculative subtasks. \nArgs: \n\tsubtask: the subtask to be performed. \nReturns: \n\tthe result of the subtask. ",
-                            schema={
-                                "type": "object",
-                                "properties": {
-                                    "subtask": {"title": "Subtask", "type": "string"}
-                                },
-                                "required": ["subtask"],
-                                "title": "solve_problemArguments",
-                            },
-                        )
-                    ],
-                )
-            )
-        if "agent-reading" in sub_agent:
-            sub_agents_server_params.append(
-                dict(
-                    name="agent-reading",
-                    tools=[
-                        dict(
-                            name="read_and_summarize",
-                            description="This tool is an agent that performs the subtask of reading documents (not websites) and providing desired summary of the content. The subtask should be clearly defined, include relevant background, and focus of the information. It does not perform vague or speculative subtasks. \nArgs: \n\tsubtask: the subtask to be performed. \nReturns: \n\tthe result of the subtask. ",
-                            schema={
-                                "type": "object",
-                                "properties": {
-                                    "subtask": {"title": "Subtask", "type": "string"}
-                                },
-                                "required": ["subtask"],
-                                "title": "read_and_summarizeArguments",
-                            },
-                        )
-                    ],
-                )
-            )
-    return sub_agents_server_params
-
-
 def get_env_info(cfg: DictConfig) -> dict:
     """Collect current configuration environment variable information for logging"""
     return {
@@ -434,7 +342,6 @@ def get_env_info(cfg: DictConfig) -> dict:
         "has_jina_api_key": bool(JINA_API_KEY),
         "has_anthropic_api_key": bool(ANTHROPIC_API_KEY),
         "has_openai_api_key": bool(OPENAI_API_KEY),
-        "has_gemini_api_key": bool(GEMINI_API_KEY),
         "has_e2b_api_key": bool(E2B_API_KEY),
         # Base URLs
         "openai_base_url": os.environ.get("OPENAI_BASE_URL"),

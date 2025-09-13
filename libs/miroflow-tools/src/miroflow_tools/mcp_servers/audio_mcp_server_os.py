@@ -23,6 +23,7 @@ import mimetypes
 import wave
 import contextlib
 from mutagen import File as MutagenFile
+import asyncio
 
 WHISPER_API_KEY = os.environ.get("WHISPER_API_KEY")
 WHISPER_BASE_URL = os.environ.get("WHISPER_BASE_URL")
@@ -102,7 +103,7 @@ def _get_audio_duration(audio_path: str) -> float:
             if duration > 0:
                 return duration
     except Exception as e:
-        return f"Failed to get audio duration: {e}"
+        return f"[ERROR]: Failed to get audio duration: {e}"
 
 
 def _encode_audio_file(audio_path: str) -> tuple[str, str]:
@@ -134,61 +135,73 @@ async def audio_transcription(audio_path_or_url: str) -> str:
     """
     Transcribe audio file to text and return the transcription.
     Args:
-        audio_path_or_url: The path of the audio file locally or its URL.
+        audio_path_or_url: The path of the audio file locally or its URL. Path from sandbox is not supported. YouTube URL is not supported.
 
     Returns:
         The transcription of the audio file.
     """
+    max_retries = 3
+    retry = 0
+    transcription = None
 
-    client = OpenAI(base_url=WHISPER_BASE_URL, api_key=WHISPER_API_KEY)
-
-    try:
-        if os.path.exists(audio_path_or_url):  # Check if the file exists locally
-            with open(audio_path_or_url, "rb") as audio_file:
-                transcription = client.audio.transcriptions.create(
-                    model=WHISPER_MODEL_NAME, file=audio_file
-                )
-        else:
-            # download the audio file from the URL
-            response = requests.get(audio_path_or_url)
-            response.raise_for_status()  # Raise an exception for bad status codes
-
-            # Basic content validation - check if response has content
-            if not response.content:
-                return "Audio transcription failed: Downloaded file is empty"
-
-            # Check content type if available
-            content_type = response.headers.get("content-type", "").lower()
-            if content_type and not any(
-                media_type in content_type
-                for media_type in ["audio", "video", "application/octet-stream"]
-            ):
-                return f"Audio transcription failed: Invalid content type '{content_type}'. Expected audio file."
-
-            # Get proper extension for the temporary file
-            file_extension = _get_audio_extension(audio_path_or_url, content_type)
-
-            # Use proper temporary file handling with correct extension
-            with tempfile.NamedTemporaryFile(
-                delete=False, suffix=file_extension
-            ) as temp_file:
-                temp_file.write(response.content)
-                temp_audio_path = temp_file.name
-
-            try:
-                with open(temp_audio_path, "rb") as audio_file:
+    while retry < max_retries:
+        try:
+            client = OpenAI(base_url=WHISPER_BASE_URL, api_key=WHISPER_API_KEY)
+            if os.path.exists(audio_path_or_url):  # Check if the file exists locally
+                with open(audio_path_or_url, "rb") as audio_file:
                     transcription = client.audio.transcriptions.create(
                         model=WHISPER_MODEL_NAME, file=audio_file
                     )
-            finally:
-                # Clean up the temp file
-                if os.path.exists(temp_audio_path):
-                    os.remove(temp_audio_path)
+            elif "home/user" in audio_path_or_url:
+                return "The audio_transcription tool cannot access to sandbox file, please use the local path provided by original instruction"
+            else:
+                # download the audio file from the URL
+                response = requests.get(audio_path_or_url)
+                response.raise_for_status()  # Raise an exception for bad status codes
 
-    except requests.RequestException as e:
-        return f"Audio transcription failed: Failed to download audio file - {e}"
-    except Exception as e:
-        return f"Audio transcription failed: {e}"
+                # Basic content validation - check if response has content
+                if not response.content:
+                    return "Audio transcription failed: Downloaded file is empty"
+
+                # Check content type if available
+                content_type = response.headers.get("content-type", "").lower()
+                if content_type and not any(
+                    media_type in content_type
+                    for media_type in ["audio", "video", "application/octet-stream"]
+                ):
+                    return f"Audio transcription failed: Invalid content type '{content_type}'. Expected audio file."
+
+                # Get proper extension for the temporary file
+                file_extension = _get_audio_extension(audio_path_or_url, content_type)
+
+                # Use proper temporary file handling with correct extension
+                with tempfile.NamedTemporaryFile(
+                    delete=False, suffix=file_extension
+                ) as temp_file:
+                    temp_file.write(response.content)
+                    temp_audio_path = temp_file.name
+
+                try:
+                    with open(temp_audio_path, "rb") as audio_file:
+                        transcription = client.audio.transcriptions.create(
+                            model=WHISPER_MODEL_NAME, file=audio_file
+                        )
+                finally:
+                    # Clean up the temp file
+                    if os.path.exists(temp_audio_path):
+                        os.remove(temp_audio_path)
+            break
+
+        except requests.RequestException as e:
+            retry += 1
+            if retry >= max_retries:
+                return f"[ERROR]: Audio transcription failed: Failed to download audio file - {e}.\nNote: Files from sandbox are not available. You should use local path given in the instruction. \nURLs must include the proper scheme (e.g., 'https://') and be publicly accessible. The file should be in a common audio format such as MP3, WAV, or M4A.\nNote: YouTube video URL is not supported."
+            await asyncio.sleep(5 * (2**retry))
+        except Exception as e:
+            retry += 1
+            if retry >= max_retries:
+                return f"[ERROR]: Audio transcription failed: {e}\nNote: Files from sandbox are not available. You should use local path given in the instruction. The file should be in a common audio format such as MP3, WAV, or M4A.\nNote: YouTube video URL is not supported."
+            await asyncio.sleep(5 * (2**retry))
 
     return transcription.text
 
