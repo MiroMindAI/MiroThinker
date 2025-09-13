@@ -50,7 +50,7 @@ async def reasoning(question: str) -> str:
         }
     ]
 
-    client = Anthropic()
+    client = Anthropic(api_key=ANTHROPIC_API_KEY, base_url=ANTHROPIC_BASE_URL)
     response = client.messages.create(
         model="claude-3-7-sonnet-20250219",
         max_tokens=21000,
