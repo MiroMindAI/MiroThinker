@@ -19,9 +19,4 @@ sub_agents:
       - tool-python
     max_turns: 20
 
-tool_config:
-  tool-vqa:
-    enable_claude_vision: "true"
-    enable_openai_vision: "true"
-
 keep_tool_result: -1 
