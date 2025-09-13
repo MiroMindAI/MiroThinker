@@ -19,6 +19,7 @@ from anthropic import Anthropic
 from fastmcp import FastMCP
 
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+ANTHROPIC_BASE_URL = os.environ.get("ANTHROPIC_BASE_URL", "https://api.anthropic.com")
 
 # Initialize FastMCP server
 mcp = FastMCP("vision-mcp-server")
@@ -80,7 +81,7 @@ async def visual_question_answering(image_path_or_url: str, question: str) -> st
                 type="url", url=image_path_or_url
             )
 
-        client = Anthropic()
+        client = Anthropic(api_key=ANTHROPIC_API_KEY, base_url=ANTHROPIC_BASE_URL)
         response = client.messages.create(
             model="claude-3-7-sonnet-20250219",
             max_tokens=1024,
