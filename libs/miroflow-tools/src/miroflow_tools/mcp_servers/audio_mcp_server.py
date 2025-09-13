@@ -152,7 +152,7 @@ async def audio_transcription(audio_path_or_url: str) -> str:
                         model="gpt-4o-transcribe", file=audio_file
                     )
             elif "home/user" in audio_path_or_url:
-                return "The audio_transcription tool cannot access to sandbox file, please use the local path provided by original instruction"
+                return "[ERROR]: The audio_transcription tool cannot access to sandbox file, please use the local path provided by original instruction"
             else:
                 # download the audio file from the URL
                 response = requests.get(audio_path_or_url)
@@ -160,7 +160,7 @@ async def audio_transcription(audio_path_or_url: str) -> str:
 
                 # Basic content validation - check if response has content
                 if not response.content:
-                    return "Audio transcription failed: Downloaded file is empty"
+                    return "[ERROR]: Audio transcription failed: Downloaded file is empty"
 
                 # Check content type if available
                 content_type = response.headers.get("content-type", "").lower()

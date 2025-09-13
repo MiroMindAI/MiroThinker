@@ -153,7 +153,7 @@ async def audio_transcription(audio_path_or_url: str) -> str:
                         model=WHISPER_MODEL_NAME, file=audio_file
                     )
             elif "home/user" in audio_path_or_url:
-                return "The audio_transcription tool cannot access to sandbox file, please use the local path provided by original instruction"
+                return "[ERROR]: The audio_transcription tool cannot access to sandbox file, please use the local path provided by original instruction"
             else:
                 # download the audio file from the URL
                 response = requests.get(audio_path_or_url)
@@ -161,7 +161,7 @@ async def audio_transcription(audio_path_or_url: str) -> str:
 
                 # Basic content validation - check if response has content
                 if not response.content:
-                    return "Audio transcription failed: Downloaded file is empty"
+                    return "[ERROR]: Audio transcription failed: Downloaded file is empty"
 
                 # Check content type if available
                 content_type = response.headers.get("content-type", "").lower()
@@ -169,7 +169,7 @@ async def audio_transcription(audio_path_or_url: str) -> str:
                     media_type in content_type
                     for media_type in ["audio", "video", "application/octet-stream"]
                 ):
-                    return f"Audio transcription failed: Invalid content type '{content_type}'. Expected audio file."
+                    return f"[ERROR]: Audio transcription failed: Invalid content type '{content_type}'. Expected audio file."
 
                 # Get proper extension for the temporary file
                 file_extension = _get_audio_extension(audio_path_or_url, content_type)
