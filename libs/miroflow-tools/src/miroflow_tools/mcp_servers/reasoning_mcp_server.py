@@ -29,7 +29,7 @@ mcp = FastMCP("reasoning-mcp-server")
 
 @mcp.tool()
 async def reasoning(question: str) -> str:
-    """You can use this tool use solve hard math problem, puzzle, riddle and IQ test question that requires a lot of chain of thought efforts.
+    """You can use this tool to solve hard math problem, puzzle, riddle and IQ test question that requires a lot of chain of thought efforts.
     DO NOT use this tool for simple and obvious question.
 
     Args:
