@@ -21,6 +21,7 @@ import logging
 logger = logging.getLogger("miroflow")
 
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+ANTHROPIC_BASE_URL = os.environ.get("ANTHROPIC_BASE_URL", "https://api.anthropic.com")
 
 # Initialize FastMCP server
 mcp = FastMCP("reasoning-mcp-server")
@@ -28,7 +29,7 @@ mcp = FastMCP("reasoning-mcp-server")
 
 @mcp.tool()
 async def reasoning(question: str) -> str:
-    """You can use this tool use solve hard math problem, puzzle, riddle and IQ test question that requries a lot of chain of thought efforts.
+    """You can use this tool to solve hard math problem, puzzle, riddle and IQ test question that requires a lot of chain of thought efforts.
     DO NOT use this tool for simple and obvious question.
 
     Args:
@@ -37,7 +38,6 @@ async def reasoning(question: str) -> str:
     Returns:
         The answer to the question.
     """
-
     messages_for_llm = [
         {
             "role": "user",
@@ -65,7 +65,6 @@ async def reasoning(question: str) -> str:
     try:
         return response.content[-1].text
     except Exception:
-        # Handle the case where the text just missing
         logger.info("Reasoning Error: only thinking content is returned")
         return response.content[-1].thinking
 
