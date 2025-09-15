@@ -24,7 +24,7 @@ mcp = FastMCP("e2b-python-interpreter")
 # API keys
 E2B_API_KEY = os.environ.get("E2B_API_KEY")
 LOGS_DIR = os.environ.get(
-    "LOGS_DIR", "./logs"
+    "LOGS_DIR", "../../logs"
 )  # Directory where benchmark logs are stored
 
 # DEFAULT TEMPLATE ID
