@@ -28,6 +28,8 @@ from tenacity import (
     stop_after_attempt,
     wait_exponential,
 )
+from utils import decode_http_urls_in_dict
+
 
 SERPER_BASE_URL = os.getenv("SERPER_BASE_URL", "https://google.serper.dev")
 SERPER_API_KEY = os.getenv("SERPER_API_KEY", "")
@@ -150,6 +152,7 @@ def google_search(
         # Keep all original fields, but overwrite "organic"
         response_data = dict(data)
         response_data["organic"] = organic_results
+        response_data = decode_http_urls_in_dict(response_data)
 
         return response_data
 
