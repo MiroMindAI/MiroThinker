@@ -28,7 +28,6 @@ LOGS_DIR = os.environ.get(
 )  # Directory where benchmark logs are stored
 
 # DEFAULT TEMPLATE ID
-# see README.md on how to build this
 DEFAULT_TEMPLATE_ID = "all_pip_apt_pkg"
 
 # DEFAULT CONFS
@@ -305,9 +304,9 @@ async def upload_file_from_local_to_sandbox(
         with open(local_file_path, "rb") as f:
             sandbox.files.write(uploaded_file_path, f)
 
-        return f"File uploaded to {uploaded_file_path}\n\n[INFO]: For directly reading local files without uploading to sandbox, consider using the `read_file` tool which can read various file types (Doc, PPT, PDF, Excel, CSV, ZIP, etc.) directly from local paths or URLs. Note that `read_file` doesn't support files already in the sandbox."
+        return f"File uploaded to {uploaded_file_path}\n\n[INFO]: For directly reading local files without uploading to sandbox, consider using the `convert_to_markdown` tool which can read various file types (Doc, PPT, PDF, Excel, CSV, ZIP, etc.) directly from local paths or URLs. Note that `convert_to_markdown` doesn't support files already in the sandbox."
     except Exception as e:
-        return f"[ERROR]: Failed to upload file {local_file_path} to sandbox {sandbox_id}: {e}\n\n[INFO]: This tool is for uploading local files to the sandbox. For security reasons, downloading files from sandbox to local system is not supported. Alternatively, consider using the `read_file` tool which can directly read various file types (Doc, PPT, PDF, Excel, CSV, ZIP, etc.) from local paths or URLs without uploading to sandbox."
+        return f"[ERROR]: Failed to upload file {local_file_path} to sandbox {sandbox_id}: {e}\n\n[INFO]: This tool is for uploading local files to the sandbox. For security reasons, downloading files from sandbox to local system is not supported. Alternatively, consider using the `convert_to_markdown` tool which can directly read various file types (Doc, PPT, PDF, Excel, CSV, ZIP, etc.) from local paths or URLs without uploading to sandbox."
     finally:
         # Set timeout before exit to prevent timeout after function exits
         try:
@@ -349,14 +348,14 @@ async def download_file_from_internet_to_sandbox(
         for attempt in range(1, max_retries + 1):
             result = sandbox.commands.run(f"wget {url} -O {downloaded_file_path}")
             if result.exit_code == 0:
-                return f"File downloaded to {downloaded_file_path}\n\n[INFO]: For directly reading files from internet URLs without downloading to sandbox, consider using the `read_file` tool which can read various file types (Doc, PPT, PDF, Excel, CSV, ZIP, etc.) directly from URLs. Note that `read_file` doesn't support files already in the sandbox."
+                return f"File downloaded to {downloaded_file_path}\n\n[INFO]: For directly reading files from internet URLs without downloading to sandbox, consider using the `convert_to_markdown` tool which can read various file types (Doc, PPT, PDF, Excel, CSV, ZIP, etc.) directly from URLs. Note that `convert_to_markdown` doesn't support files already in the sandbox."
             elif attempt < max_retries:
                 await asyncio.sleep(4**attempt)
                 continue  # Retry
             else:
-                return f"[ERROR]: Failed to download file from {url} to {downloaded_file_path} after {max_retries} attempts: {result}.\n\n[INFO]: This tool is for downloading files from the internet to the sandbox. To upload local files to the sandbox, use `upload_file_from_local_to_sandbox` instead. Alternatively, consider using the `read_file` tool which can directly read various file types (Doc, PPT, PDF, Excel, CSV, ZIP, etc.) from internet URLs without downloading to sandbox."
+                return f"[ERROR]: Failed to download file from {url} to {downloaded_file_path} after {max_retries} attempts: {result}.\n\n[INFO]: This tool is for downloading files from the internet to the sandbox. To upload local files to the sandbox, use `upload_file_from_local_to_sandbox` instead. Alternatively, consider using the `convert_to_markdown` tool which can directly read various file types (Doc, PPT, PDF, Excel, CSV, ZIP, etc.) from internet URLs without downloading to sandbox."
     except Exception as e:
-        return f"[ERROR]: Failed to download file from {url}: {e}\n\n[INFO]: This tool is for downloading files from the internet to the sandbox. To upload local files to the sandbox, use `upload_file_from_local_to_sandbox` instead. Alternatively, consider using the `read_file` tool which can directly read various file types (Doc, PPT, PDF, Excel, CSV, ZIP, etc.) from internet URLs without downloading to sandbox."
+        return f"[ERROR]: Failed to download file from {url}: {e}\n\n[INFO]: This tool is for downloading files from the internet to the sandbox. To upload local files to the sandbox, use `upload_file_from_local_to_sandbox` instead. Alternatively, consider using the `convert_to_markdown` tool which can directly read various file types (Doc, PPT, PDF, Excel, CSV, ZIP, etc.) from internet URLs without downloading to sandbox."
     finally:
         # Set timeout before exit to prevent timeout after function exits
         try:
