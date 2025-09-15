@@ -140,7 +140,7 @@ async def google_search(
     result_content = ""
 
     retry_count = 0
-    max_retries = 5
+    max_retries = 3
 
     while retry_count < max_retries:
         try:

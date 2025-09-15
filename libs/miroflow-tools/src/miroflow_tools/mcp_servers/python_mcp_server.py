@@ -151,7 +151,7 @@ async def create_sandbox() -> str:
     Returns:
         The `sandbox_id` of the newly created sandbox. You should use this `sandbox_id` to run other tools in the sandbox.
     """
-    max_retries = 5
+    max_retries = 3
     for attempt in range(1, max_retries + 1):
         sandbox = None
         try:
@@ -198,7 +198,7 @@ async def run_command(command: str, sandbox_id: str) -> str:
     except Exception:
         return f"[ERROR]: Failed to connect to sandbox {sandbox_id}, retry later. Make sure the sandbox is created and the id is correct."
 
-    max_retries = 5
+    max_retries = 3
     for attempt in range(1, max_retries + 1):
         try:
             sandbox.set_timeout(
@@ -248,7 +248,7 @@ async def run_python_code(code_block: str, sandbox_id: str) -> str:
     except Exception:
         return f"[ERROR]: Failed to connect to sandbox {sandbox_id}, retry later. Make sure the sandbox is created and the id is correct."
 
-    max_retries = 5
+    max_retries = 3
     for attempt in range(1, max_retries + 1):
         try:
             sandbox.set_timeout(

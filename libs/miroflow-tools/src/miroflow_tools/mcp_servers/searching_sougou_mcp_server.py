@@ -52,7 +52,7 @@ async def sougou_search(Query: str, Cnt: int = 10) -> str:
         return "[ERROR]: TENCENTCLOUD_SECRET_ID or TENCENTCLOUD_SECRET_KEY is not set, sougou_search tool is not available."
 
     retry_count = 0
-    max_retries = 5
+    max_retries = 3
 
     while retry_count < max_retries:
         try:
