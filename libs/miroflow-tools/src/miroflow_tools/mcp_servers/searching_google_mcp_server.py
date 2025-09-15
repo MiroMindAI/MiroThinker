@@ -171,7 +171,7 @@ async def google_search(
     return "[ERROR]: Unknown error occurred in google_search tool, please try again."
 
 
-@mcp.tool()
+# @mcp.tool()
 async def wiki_get_page_content(entity: str, first_sentences: int = 10) -> str:
     """Get specific Wikipedia page content for the specific entity (people, places, concepts, events) and return structured information.
 
@@ -280,7 +280,7 @@ async def wiki_get_page_content(entity: str, first_sentences: int = 10) -> str:
         return f"Unexpected Error: An unexpected error occurred: {str(e)}"
 
 
-@mcp.tool()
+# @mcp.tool()
 async def search_wiki_revision(
     entity: str, year: int, month: int, max_revisions: int = 50
 ) -> str:
@@ -437,7 +437,7 @@ async def search_wiki_revision(
         return f"[ERROR]: Unexpected Error: An unexpected error occurred: {str(e)}"
 
 
-@mcp.tool()
+# @mcp.tool()
 async def search_archived_webpage(url: str, year: int, month: int, day: int) -> str:
     """Search the Wayback Machine (archive.org) for archived versions of a webpage, optionally for a specific date.
 
