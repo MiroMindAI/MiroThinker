@@ -76,7 +76,7 @@ async def run_command(command: str, sandbox_id: str) -> str:
     """Execute a command in the linux sandbox.
 
     Args:
-        command: The command to execute
+        command: The command to execute.
         sandbox_id: The id of the sandbox to execute the command in. To create a new sandbox, use tool `create_sandbox`.
 
     Returns:
