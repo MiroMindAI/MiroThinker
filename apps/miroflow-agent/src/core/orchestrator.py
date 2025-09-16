@@ -85,7 +85,7 @@ class Orchestrator:
         self.sub_agent_tool_definitions = sub_agent_tool_definitions
         # call this once, then use cache value
         self._list_sub_agent_tools = _list_tools(sub_agent_tool_managers)
-        self.max_repeat_queries = 4
+        self.max_repeat_queries = 3
 
         # Pass task_log to llm_client
         if self.llm_client and task_log:
@@ -874,6 +874,7 @@ class Orchestrator:
                                 sub_agent_result = await self.run_sub_agent(
                                     server_name, arguments["subtask"], keep_tool_result
                                 )
+                            self.used_queries[tool_name][query_str] += 1
                         else:
                             sub_agent_result = await self.run_sub_agent(
                                 server_name, arguments["subtask"], keep_tool_result
@@ -911,6 +912,8 @@ class Orchestrator:
                                     tool_name=tool_name,
                                     arguments=arguments,
                                 )
+                            if "error" not in tool_result:
+                                self.used_queries[tool_name][query_str] += 1
                         else:
                             tool_result = (
                                 await self.main_agent_tool_manager.execute_tool_call(
