@@ -33,124 +33,16 @@ DEFAULT_TEMPLATE_ID = "all_pip_apt_pkg"
 # DEFAULT CONFS
 DEFAULT_TIMEOUT = 1800  # seconds
 
-# Common packages to install in sandbox
-COMMON_PACKAGES = [
-    "PyPDF2",  # for PyPDF2 import
-    "geopy",  # for geopy import
-    "PyMuPDF",  # for fitz import
-    "docx2txt",  # for docx2txt import
-    "pdfminer.six",  # for pdfminer import
-    "rdkit",  # for rdkit import
-    "pytesseract",  # for pytesseract import
-    "python-chess",  # for python-chess import
-    "stockfish",  # for stockfish import
-    "yfinance",  # for yfinance import
-    "CoolProp",  # for CoolProp import
-    "seaborn",  # for seaborn import
-    "python-pptx",  # for python-pptx import
-    "python-docx",  # for python-docx import
-    "pdfplumber",  # for pdfplumber import
-    "geopandas",  # for geopandas import
-    "yt-dlp",  # for yt-dlp import
-    "pydub",  # for pydub import
-    "pyaudio",  # for pyaudio import
-    "biopython",  # for biopython import
-    "pubchempy",  # for pubchempy import
-    "googletrans",  # for googletrans import
-    "pyshp",  # for pyshp import
-    "SpeechRecognition",  # for SpeechRecognition import
-    "opencv-python",  # for opencv-python import
-    "selenium",  # for selenium import
-    "waybackpy",  # for waybackpy import
-    "networkx",  # for networkx import
-    "wbdata",  # for wbdata import
-]
-
-# System packages to install in sandbox
-SYSTEM_PACKAGES = [
-    "poppler-utils",  # for pdfinfo, pdftotext, pdfimages, pdftoppm commands
-    "pdfgrep",  # for pdfgrep command (PDF text search)
-    "libimage-exiftool-perl",  # for exiftool command (image metadata)
-    "unlambda",  # for unlambda interpreter
-    "stockfish",  # for stockfish chess engine
-]
-
-
-async def _install_common_packages(sandbox, sandbox_id: str) -> bool:
-    """Install common Python packages in the sandbox.
-
-    Args:
-        sandbox: The connected sandbox instance
-        sandbox_id: The sandbox ID for error messages
-
-    Returns:
-        True if installation successful, False otherwise
-    """
-    # Install system packages first (pdfinfo, pdftotext, etc.)
-    try:
-        # Update package list
-        update_result = sandbox.commands.run("sudo apt-get update")
-        if update_result.exit_code != 0:
-            print(
-                f"Warning: Failed to update package list in sandbox {sandbox_id}: {update_result.stderr}"
-            )
-
-        # Install system packages one by one
-        for package in SYSTEM_PACKAGES:
-            install_cmd = f"sudo apt-get install -y {package}"
-            install_result = sandbox.commands.run(install_cmd)
-
-            if install_result.exit_code != 0:
-                print(
-                    f"Warning: Failed to install system package {package} in sandbox {sandbox_id}: {install_result.stderr}"
-                )
-                # Continue installing other packages even if one fails
-            else:
-                print(
-                    f"Successfully installed system package {package} in sandbox {sandbox_id}"
-                )
-
-    except Exception as e:
-        print(f"Warning: Error installing system packages in sandbox {sandbox_id}: {e}")
-
-    # Update pip
-    install_result = sandbox.commands.run("pip install --upgrade pip")
-    if install_result.exit_code != 0:
-        print(
-            f"Warning: Failed to update pip in sandbox {sandbox_id}: {install_result.stderr}"
-        )
-    try:
-        # Install packages one by one to avoid one failure affecting others
-        for package in COMMON_PACKAGES:
-            install_cmd = f"pip install {package}"
-            install_result = sandbox.commands.run(install_cmd)
-
-            if install_result.exit_code != 0:
-                print(
-                    f"Warning: Failed to install package {package} in sandbox {sandbox_id}: {install_result.stderr}"
-                )
-                # Continue installing other packages even if one fails
-            else:
-                print(
-                    f"Successfully installed package {package} in sandbox {sandbox_id}"
-                )
-
-        return True
-    except Exception as e:
-        print(f"Warning: Error installing common packages in sandbox {sandbox_id}: {e}")
-        return False
-
 
 @mcp.tool()
 async def create_sandbox() -> str:
-    """Create a linux sandbox and get the `sandbox_id` for safely executing commands and running python code. Note that the `sandbox_id` can only be assigned and cannot be manually specified.
+    """Create a linux sandbox.
 
-    The sandbox may timeout and automatically shutdown. If so, you will need to create a new sandbox.
-
-    IMPORTANT: Do not execute `create_sandbox` and other sandbox tools in the same message. You must wait for `create_sandbox` to return the `sandbox_id`, then use that `sandbox_id` to specify the working sandbox in subsequent messages.
+    Args:
+        timeout: Time in seconds before the sandbox is automatically shutdown. The default is 300 seconds.
 
     Returns:
-        The `sandbox_id` of the newly created sandbox. You should use this `sandbox_id` to run other tools in the sandbox.
+        The id of the newly created sandbox. You should use this sandbox_id to run other tools in the sandbox.
     """
     max_retries = 3
     for attempt in range(1, max_retries + 1):
@@ -163,8 +55,6 @@ async def create_sandbox() -> str:
             )
             info = sandbox.get_info()
 
-            # Install common packages before running code
-            # await _install_common_packages(sandbox, info.sandbox_id)
             tmpfiles_dir = os.path.join(LOGS_DIR, "tmpfiles")
             os.makedirs(tmpfiles_dir, exist_ok=True)
 
@@ -183,15 +73,14 @@ async def create_sandbox() -> str:
 
 @mcp.tool()
 async def run_command(command: str, sandbox_id: str) -> str:
-    """Execute a shell command in the linux sandbox.
-    The sandbox is already installed with common system packages for the task.
+    """Execute a command in the linux sandbox.
 
     Args:
-        command: The shell command to execute.
-        sandbox_id: The id of the existing sandbox to execute the command in. (must be created first via `create_sandbox`).
+        command: The command to execute
+        sandbox_id: The id of the sandbox to execute the command in. To create a new sandbox, use tool `create_sandbox`.
 
     Returns:
-        A result of the command execution, format like (stderr=..., stdout=..., exit_code=..., error=...)
+        A CommandResult object containing the result of the command execution, format like CommandResult(stderr=..., stdout=..., exit_code=..., error=...)
     """
     sandbox = None
     try:
@@ -233,15 +122,14 @@ async def run_command(command: str, sandbox_id: str) -> str:
 
 @mcp.tool()
 async def run_python_code(code_block: str, sandbox_id: str) -> str:
-    """Run python code in the sandbox and return the execution result.
-    The sandbox is already installed with common python packages for the task.
+    """Run python code in an interpreter and return the execution result.
 
     Args:
         code_block: The python code to run.
-        sandbox_id: The id of the existing sandbox to run the code in. (must be created first via `create_sandbox`).
+        sandbox_id: The id of the sandbox to run the code in. Reuse existing sandboxes whenever possible. To create a new sandbox, use tool `create_sandbox`.
 
     Returns:
-        A result of the command execution, format like (stderr=..., stdout=..., exit_code=..., error=...)
+        A CommandResult object containing the result of the command execution, format like CommandResult(stderr=..., stdout=..., exit_code=..., error=...)
     """
     sandbox = None
     try:
@@ -274,15 +162,15 @@ async def run_python_code(code_block: str, sandbox_id: str) -> str:
 async def upload_file_from_local_to_sandbox(
     sandbox_id: str, local_file_path: str, sandbox_file_path: str = "/home/user"
 ) -> str:
-    """Upload a local file to the `/home/user` dir of the sandbox.
+    """Upload a local file to the `/home/user` dir of the remote python interpreter.
 
     Args:
-        sandbox_id: The id of the existing sandbox to update files in. To have a sandbox, use tool `create_sandbox`.
-        local_file_path: The local path of the file to upload.
+        sandbox_id: The id of the sandbox to run the code in. Reuse existing sandboxes whenever possible. To create a new sandbox, use tool `create_sandbox`.
+        local_file_path: The path of the file on local machine to upload.
         sandbox_file_path: The path of directory to upload the file to in the sandbox. Default is `/home/user/`.
 
     Returns:
-        The path of the uploaded file in the sandbox if the upload is successful.
+        The path of the uploaded file in the remote python interpreter if the upload is successful.
     """
     sandbox = None
     try:
@@ -319,16 +207,15 @@ async def upload_file_from_local_to_sandbox(
 async def download_file_from_internet_to_sandbox(
     sandbox_id: str, url: str, sandbox_file_path: str = "/home/user"
 ) -> str:
-    """Download a file from the internet to the `/home/user` dir of the sandbox.
-    You should use this tool to download files from the internet.
+    """Download a file from the internet to the `/home/user` dir of the remote python interpreter.
 
     Args:
-        sandbox_id: The id of the existing sandbox to download the file to. To have a sandbox, use tool `create_sandbox`.
+        sandbox_id: The id of the sandbox to run the code in. Reuse existing sandboxes whenever possible. To create a new sandbox, use tool `create_sandbox`.
         url: The URL of the file to download.
         sandbox_file_path: The path of directory to download the file to in the sandbox. Default is `/home/user/`.
 
     Returns:
-        The path of the downloaded file in the sandbox if the download is successful.
+        The path of the downloaded file in the python interpreter if the download is successful.
     """
     sandbox = None
     try:
