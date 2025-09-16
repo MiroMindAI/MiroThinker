@@ -326,6 +326,10 @@ For detailed setup and local deployment instructions, please refer to our docume
 > <a href="https://github.com/MiroMindAI/mirage/blob/MiroFlow-MiroThinker/libs/miroflow-tools/src/miroflow_tools/manager.py#L277">here</a>.
 > </div>
 
+> [!WARNING]
+> To reduce evaluation costs, starting from September 10 we replaced the tool for scraping websites from Serper to Jina. This change may cause a slight decrease in benchmark scores for the already released versions v0.1 and v0.2. If you wish to better reproduce the previously reported performance, please switch to the v0.2 branch.
+
+
 ### MiroThinker-v0.2
 
 #### Comparison with SOTA Research Agents
