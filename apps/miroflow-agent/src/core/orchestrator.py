@@ -242,7 +242,7 @@ class Orchestrator:
 
     def post_process_tool_call_result(self, tool_name, tool_call_result: dict):
         """Process tool call results"""
-        if "result" in tool_call_result and tool_name == "scrape":
+        if "result" in tool_call_result and tool_name in ["scrape", "scrape_website"]:
             tool_call_result["result"] = self.get_scrape_result(
                 tool_call_result["result"]
             )
