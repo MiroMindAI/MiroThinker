@@ -55,79 +55,59 @@ def decode_http_urls_in_dict(data):
 
 
 md = MarkdownIt("commonmark")
-url_pattern = re.compile(r"\[([^\]]+)\]\(([^)]+)\)|<([^>]+)>")
 
 
-def extract_urls_from_markdown(text: str, encoding: str = "utf-8"):
-    """
-    Robust markdown URL extraction:
-    - Use markdown-it syntax parsing
-    - Preserve the original markdown URL expression
-    - Handle exceptions and escaping
-    """
-    tokens = md.parse(text)
-    results = []
-    raw_matches = []
+def strip_markdown_links(markdown: str) -> str:
+    tokens = md.parse(markdown)
 
-    for match in url_pattern.finditer(text):
-        if match.group(2):  # [text](url)
-            raw_matches.append(
-                {
-                    "text": match.group(1),
-                    "url": match.group(2),
-                    "original": match.group(0),
-                }
-            )
+    def render(ts):
+        out = []
+        for tok in ts:
+            t = tok.type
 
-    def handle_tokens(token_list):
-        stack = []
-        for tok in token_list:
-            if tok.type == "image":  # Skip images completely
+            # 1) Links: drop the wrapper, keep inner text (children will be rendered)
+            if t == "link_open" or t == "link_close":
                 continue
-            if tok.type == "link_open":
-                attrs = dict(tok.attrs or [])
-                href = attrs.get("href")
-                stack.append({"href": href, "text": ""})
-            elif tok.type == "text" and stack:
-                stack[-1]["text"] += tok.content
-            elif tok.type == "link_close" and stack:
-                item = stack.pop()
-                href = item["href"]
-                link_text = item["text"]
 
-                match = next(
-                    (
-                        m
-                        for m in raw_matches
-                        if m["url"] == href and m["text"] == link_text
-                    ),
-                    None,
-                )
-                if match:
-                    original = match["original"]
-                else:
-                    original = f"[{link_text}]({href})" if link_text else f"<{href}>"
+            # 2) Images: skip the entire image block
+            if t == "image":
+                continue
 
-                results.append(
-                    {
-                        "original": original,
-                        "url": href,
-                        "text": link_text,
-                    }
-                )
+            # 3) Line breaks and block closings
+            if t == "softbreak":  # inline single line break
+                out.append("\n")
+                continue
+            if (
+                t == "hardbreak"
+            ):  # explicit line break (two spaces + newline in Markdown)
+                out.append("\n")
+                continue
+            if t in ("paragraph_close", "heading_close", "blockquote_close"):
+                out.append("\n\n")
+                continue
+            if t in ("list_item_close", "bullet_list_close", "ordered_list_close"):
+                out.append("\n")
+                continue
+            if t == "hr":
+                out.append("\n\n")
+                continue
 
+            # 4) Inline or nested tokens
             if tok.children:
-                handle_tokens(tok.children)
+                out.append(render(tok.children))
+                continue
 
-    handle_tokens(tokens)
+            # Preserve inline code style
+            if t == "code_inline":
+                out.append(f"`{tok.content}`")
+            else:
+                out.append(tok.content or "")
 
-    return results
+        return "".join(out)
 
+    text = render(tokens)
 
-def strip_markdown_links(markdown: str):
-    urls = extract_urls_from_markdown(markdown)
-    for url_dict in urls:
-        original = url_dict["original"]
-        text = url_dict["text"]
-        markdown = markdown.replace(original, text)
-    return markdown
+    # normalize excessive blank lines (avoid more than 2 consecutive newlines)
+    text = re.sub(r"\n{3,}", "\n\n", text).rstrip() + "\n"
+
+    return text.strip()
