@@ -24,6 +24,8 @@ from mcp import ClientSession, StdioServerParameters  # (already imported in con
 import wikipedia
 import asyncio
 
+from .utils import strip_markdown_links
+
 SERPER_API_KEY = os.environ.get("SERPER_API_KEY", "")
 SERPER_BASE_URL = os.environ.get("SERPER_BASE_URL", "https://google.serper.dev")
 JINA_API_KEY = os.environ.get("JINA_API_KEY", "")
@@ -685,6 +687,7 @@ async def scrape_website(url: str) -> str:
 
         # Get the content
         content = response.text.strip()
+        content = strip_markdown_links(content)
 
         if not content:
             return f"No content retrieved from URL: {url}"

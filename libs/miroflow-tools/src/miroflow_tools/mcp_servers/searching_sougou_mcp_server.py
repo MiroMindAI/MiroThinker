@@ -26,6 +26,8 @@ from tencentcloud.common.exception.tencent_cloud_sdk_exception import (
 from tencentcloud.common.profile.client_profile import ClientProfile
 from tencentcloud.common.profile.http_profile import HttpProfile
 
+from .utils import strip_markdown_links
+
 TENCENTCLOUD_SECRET_ID = os.environ.get("TENCENTCLOUD_SECRET_ID", "")
 TENCENTCLOUD_SECRET_KEY = os.environ.get("TENCENTCLOUD_SECRET_KEY", "")
 JINA_API_KEY = os.environ.get("JINA_API_KEY", "")
@@ -128,6 +130,7 @@ async def scrape_website(url: str) -> str:
 
         # Get the content
         content = response.text.strip()
+        content = strip_markdown_links(content)
 
         if not content:
             return f"No content retrieved from URL: {url}"
