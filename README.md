@@ -327,8 +327,7 @@ For detailed setup and local deployment instructions, please refer to our docume
 > </div>
 
 > [!WARNING]
-> To reduce evaluation costs, starting from September 10 we replaced the tool for scraping websites from Serper to Jina. This may cause a slight decrease in benchmark scores for MiroThinker v0.1 and v0.2 models. If you wish to better reproduce the previously reported performance, please switch to the v0.2 branch.
-
+> To reduce evaluation costs, starting from September 10 we replaced the tool for scraping websites from [Serper](https://serper.dev/) to [Jina](https://jina.ai/). This may cause a slight decrease in benchmark scores for MiroThinker v0.1 and v0.2 models. If you wish to better reproduce the previously reported performance, please switch to the v0.2 branch.
 
 ### MiroThinker-v0.2
 
