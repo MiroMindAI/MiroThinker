@@ -17,6 +17,7 @@ import logging
 import os
 import time
 from datetime import date
+from collections import defaultdict
 from typing import Any, Dict, List, Optional, Tuple
 import uuid
 
@@ -84,10 +85,18 @@ class Orchestrator:
         self.sub_agent_tool_definitions = sub_agent_tool_definitions
         # call this once, then use cache value
         self._list_sub_agent_tools = _list_tools(sub_agent_tool_managers)
+        self.max_repeat_queries = 4
 
         # Pass task_log to llm_client
         if self.llm_client and task_log:
             self.llm_client.task_log = task_log
+
+        # Record used subtask / q / Query
+        self.used_queries = {
+            "search_and_browse": defaultdict(int),
+            "google_search": defaultdict(int),
+            "sougou_search": defaultdict(int),
+        }
 
     async def _stream_update(self, event_type: str, data: dict):
         """Send streaming update in new SSE protocol format"""
@@ -242,11 +251,32 @@ class Orchestrator:
 
     def post_process_tool_call_result(self, tool_name, tool_call_result: dict):
         """Process tool call results"""
-        if "result" in tool_call_result and tool_name in ["scrape", "scrape_website"]:
-            tool_call_result["result"] = self.get_scrape_result(
-                tool_call_result["result"]
-            )
+        # Only in demo mode: truncate scrape results to 20,000 chars
+        # to support more conversation turns. Skipped in perf tests to avoid loss.
+        if os.environ.get("DEMO_MODE") == "1":
+            if "result" in tool_call_result and tool_name in [
+                "scrape",
+                "scrape_website",
+            ]:
+                tool_call_result["result"] = self.get_scrape_result(
+                    tool_call_result["result"]
+                )
         return tool_call_result
+
+    def _get_query_str_from_tool_call(
+        self, tool_name: str, arguments: dict
+    ) -> Optional[str]:
+        """
+        Extracts the query string from tool call arguments based on tool_name.
+        Supports search_and_browse, google_search, and sougou_search.
+        """
+        if tool_name == "search_and_browse":
+            return arguments.get("subtask")
+        elif tool_name == "google_search":
+            return arguments.get("q")
+        elif tool_name == "sougou_search":
+            return arguments.get("Query")
+        return None
 
     async def _handle_llm_call(
         self,
@@ -257,10 +287,11 @@ class Orchestrator:
         purpose: str = "",
         keep_tool_result: int = -1,
         agent_type: str = "main",
-    ) -> Tuple[Optional[str], bool, Optional[object]]:
+    ) -> Tuple[Optional[str], bool, Optional[Any], List[Dict[str, Any]]]:
         """Unified LLM call and logging processing
         Returns:
-            Tuple[Optional[str], bool, Optional[object]]: (response_text, should_break, tool_calls_info)
+            Tuple[Optional[str], bool, Optional[Any], List[Dict[str, Any]]]:
+                (response_text, should_break, tool_calls_info, message_history)
         """
 
         try:
@@ -386,7 +417,7 @@ class Orchestrator:
         # Limit sub-agent turns
         max_turns = self.cfg.agent.sub_agents[sub_agent_name].max_turns
         turn_count = 0
-        all_tool_results_content_with_id = []
+        should_hard_stop = False
 
         while turn_count < max_turns:
             turn_count += 1
@@ -474,16 +505,33 @@ class Orchestrator:
                 call_start_time = time.time()
                 try:
                     tool_call_id = await self._stream_tool_call(tool_name, arguments)
-                    tool_result = await self.sub_agent_tool_managers[
-                        sub_agent_name
-                    ].execute_tool_call(server_name, tool_name, arguments)
+                    query_str = self._get_query_str_from_tool_call(tool_name, arguments)
+                    if query_str:
+                        self.used_queries.setdefault(tool_name, defaultdict(int))
+                        count = self.used_queries[tool_name][query_str]
+                        if count > 0:
+                            tool_result = {
+                                "server_name": server_name,
+                                "tool_name": tool_name,
+                                "result": f"The query '{query_str}' has already been used in previous {tool_name}. Please try a different query or keyword.",
+                            }
+                            if count >= self.max_repeat_queries:
+                                should_hard_stop = True
+                        else:
+                            tool_result = await self.sub_agent_tool_managers[
+                                sub_agent_name
+                            ].execute_tool_call(server_name, tool_name, arguments)
+                        if "error" not in tool_result:
+                            self.used_queries[tool_name][query_str] += 1
+                    else:
+                        tool_result = await self.sub_agent_tool_managers[
+                            sub_agent_name
+                        ].execute_tool_call(server_name, tool_name, arguments)
 
                     # Only in demo mode: truncate scrape results to 20,000 chars
-                    # to support more conversation turns. Skipped in perf tests to avoid loss.
-                    if os.environ.get("DEMO_MODE") == "1":
-                        tool_result = self.post_process_tool_call_result(
-                            tool_name, tool_result
-                        )
+                    tool_result = self.post_process_tool_call_result(
+                        tool_name, tool_result
+                    )
                     result = (
                         tool_result.get("result")
                         if tool_result.get("result")
@@ -570,6 +618,10 @@ class Orchestrator:
                 )
                 break
 
+            # If a repeat occurs, terminate early to speed up task completion
+            if should_hard_stop:
+                break
+
         # Continue processing
         self.task_log.log_step(
             "info",
@@ -651,12 +703,6 @@ class Orchestrator:
                 "Unable to generate final answer",
             )
 
-        # self.task_log.log_step(
-        #     "info",
-        #     "Sub Agent | Final Answer",
-        #     f"Sub agent {sub_agent_name} final answer: {final_answer_text}",
-        # )
-
         self.task_log.sub_agent_message_history_sessions[
             self.task_log.current_sub_agent_session_id
         ] = {"system_prompt": system_prompt, "message_history": message_history}
@@ -733,7 +779,7 @@ class Orchestrator:
         max_turns = self.cfg.agent.main_agent.max_turns
         turn_count = 0
         error_msg = ""
-        tool_calls = []
+        should_hard_stop = False
 
         self.current_agent_id = await self._stream_start_agent("main")
         await self._stream_start_llm("main")
@@ -814,9 +860,24 @@ class Orchestrator:
                     if server_name.startswith("agent-"):
                         await self._stream_end_llm("main")
                         await self._stream_end_agent("main", self.current_agent_id)
-                        sub_agent_result = await self.run_sub_agent(
-                            server_name, arguments["subtask"], keep_tool_result
+                        query_str = self._get_query_str_from_tool_call(
+                            tool_name, arguments
                         )
+                        if query_str:
+                            self.used_queries.setdefault(tool_name, defaultdict(int))
+                            count = self.used_queries[tool_name][query_str]
+                            if count > 0:
+                                sub_agent_result = f"The query '{query_str}' has already been used in previous {tool_name}. Please try a different query or keyword."
+                                if count >= self.max_repeat_queries:
+                                    should_hard_stop = True
+                            else:
+                                sub_agent_result = await self.run_sub_agent(
+                                    server_name, arguments["subtask"], keep_tool_result
+                                )
+                        else:
+                            sub_agent_result = await self.run_sub_agent(
+                                server_name, arguments["subtask"], keep_tool_result
+                            )
                         tool_result = {
                             "server_name": server_name,
                             "tool_name": tool_name,
@@ -830,13 +891,35 @@ class Orchestrator:
                         tool_call_id = await self._stream_tool_call(
                             tool_name, arguments
                         )
-                        tool_result = (
-                            await self.main_agent_tool_manager.execute_tool_call(
-                                server_name=server_name,
-                                tool_name=tool_name,
-                                arguments=arguments,
-                            )
+                        query_str = self._get_query_str_from_tool_call(
+                            tool_name, arguments
                         )
+                        if query_str:
+                            self.used_queries.setdefault(tool_name, defaultdict(int))
+                            count = self.used_queries[tool_name][query_str]
+                            if count > 0:
+                                tool_result = {
+                                    "server_name": server_name,
+                                    "tool_name": tool_name,
+                                    "result": f"The query '{query_str}' has already been used in previous {tool_name}. Please try a different query or keyword.",
+                                }
+                                if count >= self.max_repeat_queries:
+                                    should_hard_stop = True
+                            else:
+                                tool_result = await self.main_agent_tool_manager.execute_tool_call(
+                                    server_name=server_name,
+                                    tool_name=tool_name,
+                                    arguments=arguments,
+                                )
+                        else:
+                            tool_result = (
+                                await self.main_agent_tool_manager.execute_tool_call(
+                                    server_name=server_name,
+                                    tool_name=tool_name,
+                                    arguments=arguments,
+                                )
+                            )
+                        # Only in demo mode: truncate scrape results to 20,000 chars
                         tool_result = self.post_process_tool_call_result(
                             tool_name, tool_result
                         )
@@ -932,6 +1015,9 @@ class Orchestrator:
                     f"Main Agent | Turn: {turn_count} | Context Limit Reached",
                     "Context limit reached, triggering summary",
                 )
+                break
+
+            if should_hard_stop:
                 break
 
         await self._stream_end_llm("main")
