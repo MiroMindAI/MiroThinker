@@ -268,7 +268,7 @@ class Orchestrator:
     ) -> Optional[str]:
         """
         Extracts the query string from tool call arguments based on tool_name.
-        Supports search_and_browse, google_search, and sougou_search.
+        Supports search_and_browse, google_search, sougou_search, and scrape_website.
         """
         if tool_name == "search_and_browse":
             return arguments.get("subtask")
@@ -276,6 +276,8 @@ class Orchestrator:
             return arguments.get("q")
         elif tool_name == "sougou_search":
             return arguments.get("Query")
+        elif tool_name == "scrape_website":
+            return arguments.get("url")
         return None
 
     async def _handle_llm_call(
