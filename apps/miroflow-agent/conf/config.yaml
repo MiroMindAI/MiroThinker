@@ -3,12 +3,12 @@ defaults:
   - llm: default
   - agent: default
   - benchmark: default
-  - _self_  # 允许在此文件顶部定义变量
+  - _self_  # Allows variables to be defined at the top of this file
 
 hydra:
   run:
     dir: ../../logs/debug
 
-# 可在此处定义一些顶层或默认参数
-project_name: "miroflow-agent" 
+# You can define some top-level or default parameters here
+project_name: "miroflow-agent"
 debug_dir: "../../logs/debug"

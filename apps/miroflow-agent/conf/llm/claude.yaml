@@ -4,6 +4,6 @@ defaults:
   - _self_
 
 provider: "anthropic"
-model_name: "claude-sonnet-4-20250514" # claude-sonnet-4-20250514, claude-3-7-sonnet-20250219
+model_name: "claude-3-7-sonnet-20250219"
 anthropic_base_url: https://api.anthropic.com
-max_context_length: 153600
+max_context_length: 128000

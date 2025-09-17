@@ -1,6 +1,6 @@
 # conf/llm/default.yaml - Default LLM configuration
-provider: "openai" # openai, qwen, anthropic, gemini, deepseek
-model_name: "gpt-4.1" # gpt-4.1, qwen3-14b, claude-sonnet-4-20250514, claude-3-7-sonnet-20250219, gemini-1.5-pro, deepseek-chat
+provider: "openai" # openai, anthropic
+model_name: "claude-3-7-sonnet-20250219"
 async_client: false
 temperature: 0.3
 top_p: 1.0
