@@ -5,7 +5,7 @@ This project supports **two tool configuration modes** for benchmark testing:
 1. **Default Setting with Open-Source Tools** — Uses open-source tools as much as possible.
    *Config file:* [`evaluation_os.yaml`](../apps/miroflow-agent/conf/agent/evaluation_os.yaml)
 
-2. **Advanced Setting with Commercial Tools** — Uses commercial tools with advanced features.
+1. **Advanced Setting with Commercial Tools** — Uses commercial tools with advanced features.
    *Config file:* [`evaluation.yaml`](../apps/miroflow-agent/conf/agent/evaluation.yaml)
 
 ## Tool List
@@ -70,8 +70,8 @@ TENCENTCLOUD_SECRET_KEY=your_tencent_cloud_secret_key
 An open-source vision-language model service that answers questions about images.
 Supports local image files and URLs. Automatically encodes local images to Base64 for API requests. Compatible with JPEG, PNG, GIF formats.
 
-* **Open-Source Mode:** Qwen2.5-VL-72B-Instruct
-* **Commercial Mode:** Claude Sonnet 3.7
+- **Open-Source Mode:** Qwen2.5-VL-72B-Instruct
+- **Commercial Mode:** Claude Sonnet 3.7
 
 **Local Deployment (Open-Source Mode):**
 
@@ -91,8 +91,8 @@ python3 -m sglang.launch_server \
 **Description:**
 A reasoning service for solving complex analytical problems, such as advanced mathematics, puzzles, and riddles.
 
-* **Open-Source Mode:** Qwen3-235B-A22B-Thinking-2507
-* **Commercial Mode:** Claude Sonnet 3.7
+- **Open-Source Mode:** Qwen3-235B-A22B-Thinking-2507
+- **Commercial Mode:** Claude Sonnet 3.7
 
 **Local Deployment (Open-Source Mode):**
 
@@ -114,8 +114,8 @@ python3 -m sglang.launch_server \
 A transcription service converts audio files to text.
 Supports MP3, WAV, M4A, AAC, OGG, FLAC, and WMA formats. Can process both local and remote audio. Includes format detection, temporary file handling, and robust error handling.
 
-* **Open-Source Mode:** Whisper-Large-v3-Turbo
-* **Commercial Mode:** GPT-4o mini Transcribe
+- **Open-Source Mode:** Whisper-Large-v3-Turbo
+- **Commercial Mode:** GPT-4o mini Transcribe
 
 **Local Deployment (Open-Source Mode):**
 

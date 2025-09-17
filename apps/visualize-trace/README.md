@@ -23,16 +23,19 @@ uv run run.py
 
 1. **Start the application**: After running, visit `http://127.0.0.1:5000` in your browser
 
-2. **Load files**:
+1. **Load files**:
+
    - Select the trace JSON file to analyze from the dropdown menu in the top navigation bar
    - Click the "Load" button to load the file
 
-3. **View analysis results**:
+1. **View analysis results**:
+
    - **Left panel**: Shows basic information, execution summary, and performance statistics
    - **Right panel**: Displays detailed execution flow
    - **Bottom panel**: Shows spans statistics and step logs statistics
 
-4. **Interactive operations**:
+1. **Interactive operations**:
+
    - Click on execution steps to expand/collapse detailed information
    - Use "Expand All"/"Collapse All" buttons to control all steps
    - Click "View Details" button to see complete message content
