@@ -21,12 +21,12 @@ This script:
 3. Copies those tasks to a new directory structure maintaining the original layout
 """
 
-import os
-import json
-import shutil
 import argparse
-from typing import Set
+import json
+import os
+import shutil
 from pathlib import Path
+from typing import Set
 
 
 class GAIAtoText103Copier:

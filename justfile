@@ -6,6 +6,11 @@ default:
 lint:
     uv tool run ruff@0.8.0 check --fix .
 
+# sort imports
+[group('precommit')]
+sort-imports:
+    uv tool run ruff@0.8.0 check --select I --fix .
+
 # format monorepo
 [group('precommit')]
 format:
@@ -23,7 +28,7 @@ insert-license:
 
 # run precommit before PR
 [group('precommit')]
-precommit: lint format
+precommit: lint sort-imports format
 
 # format markdown files
 [group('precommit')]

@@ -12,18 +12,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import asyncio
+import base64
+import contextlib
+import mimetypes
 import os
 import tempfile
-import requests
-from urllib.parse import urlparse
-from fastmcp import FastMCP
-from openai import OpenAI
-import base64
-import mimetypes
 import wave
-import contextlib
+from urllib.parse import urlparse
+
+import requests
+from fastmcp import FastMCP
 from mutagen import File as MutagenFile
-import asyncio
+from openai import OpenAI
 
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1")

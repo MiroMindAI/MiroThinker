@@ -13,17 +13,17 @@
 # limitations under the License.
 
 import json
-import tempfile
-import sys
 import os
+import sys
+import tempfile
 from pathlib import Path
 
 # Add parent directory to Python path
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), "..", ".."))
 
 from utils.converters import (
-    extract_message_history_from_log,
     extract_and_save_chat_history,
+    extract_message_history_from_log,
 )
 
 

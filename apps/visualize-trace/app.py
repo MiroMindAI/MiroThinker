@@ -12,8 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from flask import Flask, render_template, jsonify, request
 import os
+
+from flask import Flask, jsonify, render_template, request
 from trace_analyzer import TraceAnalyzer
 
 app = Flask(__name__)

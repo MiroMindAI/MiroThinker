@@ -12,17 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-import json
-import sys
-import requests
-import datetime
-import calendar
-from fastmcp import FastMCP
-from mcp.client.stdio import stdio_client
-from mcp import ClientSession, StdioServerParameters  # (already imported in config.py)
-import wikipedia
 import asyncio
+import calendar
+import datetime
+import json
+import os
+import sys
+
+import requests
+import wikipedia
+from fastmcp import FastMCP
+from mcp import ClientSession, StdioServerParameters  # (already imported in config.py)
+from mcp.client.stdio import stdio_client
 
 from .utils import strip_markdown_links
 

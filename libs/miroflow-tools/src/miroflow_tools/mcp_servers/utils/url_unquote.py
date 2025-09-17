@@ -1,7 +1,7 @@
-from urllib.parse import unquote
-from markdown_it import MarkdownIt
 import re
+from urllib.parse import unquote
 
+from markdown_it import MarkdownIt
 
 # Reserved character encodings to be protected -> temporary placeholders
 PROTECT = {

@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import argparse
 import json
 import os
 import shutil
-import argparse
 
 
 def get_successful_log_paths(jsonl_file_path: str) -> list:

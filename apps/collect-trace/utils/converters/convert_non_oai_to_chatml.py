@@ -15,7 +15,7 @@
 import json
 import sys
 from pathlib import Path
-from typing import Dict, List, Any
+from typing import Any, Dict, List
 
 
 def convert_to_json_chatml(messages: List[Dict[str, Any]]) -> List[Dict[str, str]]:

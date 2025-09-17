@@ -14,13 +14,12 @@
 
 import asyncio
 import json
+import logging
 
 from mcp import StdioServerParameters
 from mcp.client.session import ClientSession
 from mcp.client.sse import sse_client
 from mcp.client.stdio import stdio_client
-
-import logging
 
 logger = logging.getLogger("miroflow")
 

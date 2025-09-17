@@ -13,12 +13,12 @@
 # limitations under the License.
 
 import argparse
+import logging
 import sys
 
 from fastmcp import FastMCP
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
-import logging
 
 logger = logging.getLogger("miroflow")
 

@@ -13,8 +13,8 @@
 # limitations under the License.
 
 import json
-from typing import Dict, List, Any, Optional
 import re
+from typing import Any, Dict, List, Optional
 
 
 class TraceAnalyzer:

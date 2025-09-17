@@ -28,7 +28,6 @@ from typing import (
 from omegaconf import DictConfig
 
 from ..logging.task_logger import TaskLog
-
 from .util import with_timeout
 
 

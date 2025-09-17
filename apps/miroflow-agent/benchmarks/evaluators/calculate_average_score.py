@@ -13,11 +13,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import os
-import sys
 import glob
-import statistics
+import os
 import re
+import statistics
+import sys
 
 
 def detect_pass_at_k(results_dir: str) -> tuple:

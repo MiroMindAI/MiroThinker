@@ -18,11 +18,10 @@ import os
 from dataclasses import asdict, dataclass, field
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Literal
+from typing import Any, Dict, List, Literal, Optional
 
 # Import colorama for cross-platform colored output
-from colorama import init, Fore, Style
-
+from colorama import Fore, Style, init
 
 # Initialize colorama
 init(autoreset=True, strip=False)

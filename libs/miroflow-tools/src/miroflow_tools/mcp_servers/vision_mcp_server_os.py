@@ -15,9 +15,9 @@
 import base64
 import os
 
-from fastmcp import FastMCP
 import aiohttp
 import requests
+from fastmcp import FastMCP
 
 VISION_API_KEY = os.environ.get("VISION_API_KEY")
 VISION_BASE_URL = os.environ.get("VISION_BASE_URL")

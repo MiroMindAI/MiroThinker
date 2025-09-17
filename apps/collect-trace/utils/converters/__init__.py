@@ -12,23 +12,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .convert_oai_to_chatml import (
-    oai_tool_message_to_chat_message,
-    extract_message_history_from_log,
-    save_chatml_to_files,
-    process_log_file,
-)
-
 from .convert_non_oai_to_chatml import (
     convert_to_json_chatml,
     extract_and_save_chat_history,
 )
-
+from .convert_oai_to_chatml import (
+    extract_message_history_from_log,
+    oai_tool_message_to_chat_message,
+    process_log_file,
+    save_chatml_to_files,
+)
 from .convert_to_chatml_auto_batch import (
-    get_llm_provider,
-    determine_conversion_method,
-    process_single_file,
     batch_process_files,
+    determine_conversion_method,
+    get_llm_provider,
+    process_single_file,
 )
 
 __all__ = [

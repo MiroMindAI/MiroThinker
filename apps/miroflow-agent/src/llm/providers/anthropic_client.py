@@ -17,6 +17,7 @@ import dataclasses
 import logging
 import os
 
+import tiktoken
 from anthropic import (
     NOT_GIVEN,
     Anthropic,
@@ -25,11 +26,9 @@ from anthropic import (
     DefaultHttpxClient,
 )
 from tenacity import retry, stop_after_attempt, wait_fixed
-import tiktoken
-
-from ..provider_client_base import LLMProviderClientBase
 
 from ...utils.prompt_utils import generate_mcp_system_prompt
+from ..provider_client_base import LLMProviderClientBase
 
 logger = logging.getLogger("miroflow_agent")
 

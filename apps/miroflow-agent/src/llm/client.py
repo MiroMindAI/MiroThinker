@@ -17,7 +17,6 @@ from typing import Optional
 from omegaconf import DictConfig, OmegaConf
 
 from ..logging.task_logger import TaskLog
-
 from .providers.anthropic_client import AnthropicLLMClient
 from .providers.qwen_client import QwenLLMClient
 

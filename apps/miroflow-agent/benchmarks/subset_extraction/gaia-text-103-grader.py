@@ -29,10 +29,10 @@ import asyncio
 import json
 import os
 import sys
-from pathlib import Path
-from typing import Dict, List, Optional
 import time
 from dataclasses import dataclass
+from pathlib import Path
+from typing import Dict, List, Optional
 
 # Add the benchmarks directory to the path to import evaluators
 sys.path.append(str(Path(__file__).parent.parent))

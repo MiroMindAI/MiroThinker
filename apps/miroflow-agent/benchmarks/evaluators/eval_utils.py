@@ -16,12 +16,11 @@ import os
 import re
 import string
 import warnings
-
 from typing import Literal
-from pydantic import BaseModel
 
 from dotenv import load_dotenv
 from openai import AsyncOpenAI, OpenAI
+from pydantic import BaseModel
 
 load_dotenv()
 

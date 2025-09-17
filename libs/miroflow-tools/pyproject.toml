@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Tool management and MCP server utilities for MiroFlow"
 readme = "README.md"
 authors = [
-    { name = "MiroMind Team", email = "miromind@shanda.com" }
+    { name = "MiroMind Team", email = "service@miromind.ai" }
 ]
 requires-python = ">=3.12"
 dependencies = [
