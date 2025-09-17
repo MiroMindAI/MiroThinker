@@ -103,7 +103,7 @@ class ToolManager(ToolManagerProtocol):
         :return: True if scraping should be blocked, False otherwise
         """
         return (
-            tool_name == "scrape"
+            tool_name in ["scrape", "scrape_website"]
             and arguments.get("url")
             and self._is_huggingface_dataset_or_space_url(arguments["url"])
         )
@@ -346,7 +346,7 @@ class ToolManager(ToolManagerProtocol):
                 error_message = str(outer_e)
 
                 if (
-                    tool_name == "scrape"
+                    tool_name in ["scrape", "scrape_website"]
                     and "unhandled errors" in error_message
                     and "url" in arguments
                     and arguments["url"] is not None

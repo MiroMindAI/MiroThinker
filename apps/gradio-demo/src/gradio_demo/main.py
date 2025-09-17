@@ -203,7 +203,7 @@ def filter_message(message: dict) -> dict:
                     new_result, ensure_ascii=False
                 )
         if (
-            tool_name == "scrape"
+            tool_name in ["scrape", "scrape_website"]
             and isinstance(tool_input, dict)
             and "result" in tool_input
         ):
