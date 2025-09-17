@@ -143,16 +143,16 @@ Open your browser and navigate to: `http://localhost:8000`
 
 > **Tokens per second (TPS)** - Higher values indicate better performance. Benchmarks conducted on consumer hardware.
 
-| Model | Quant | MacBook M4 Pro | RTX 5070 |
-|:------|:-----:|:--------------:|:--------:|
-| MiroThinker-8B-SFT-v0.1 | Q2_K (2-bit) | ~24 TPS | ~106 TPS |
-| MiroThinker-8B-SFT-v0.1 | Q4_K_M (4-bit) | ~24 TPS | ~94 TPS |
-| MiroThinker-8B-SFT-v0.1 | Q8_0 (8-bit) | ~21 TPS | ~64 TPS |
-| MiroThinker-14B-DPO-v0.1 | Q2_K (2-bit) | ~17 TPS | ~63 TPS |
-| MiroThinker-14B-DPO-v0.1 | Q4_K_M (4-bit) | — | ~59 TPS |
+| Model                    |     Quant      | MacBook M4 Pro  | RTX 5070  |
+|:-------------------------|:--------------:|:---------------:|:---------:|
+| MiroThinker-8B-SFT-v0.2  |  Q2_K (2-bit)  |     ~24 TPS     | ~106 TPS  |
+| MiroThinker-8B-SFT-v0.2  | Q4_K_M (4-bit) |     ~24 TPS     |  ~94 TPS  |
+| MiroThinker-8B-SFT-v0.2  |  Q8_0 (8-bit)  |     ~21 TPS     |  ~64 TPS  |
+| MiroThinker-14B-DPO-v0.2 |  Q2_K (2-bit)  |     ~17 TPS     |  ~63 TPS  |
+| MiroThinker-14B-DPO-v0.2 | Q4_K_M (4-bit) |        —        |  ~59 TPS  |
 
 ### Accuracy
 
-We conducted experiments to evaluate FP8 precision's impact on model performance. Using identical experimental settings, the original model achieved 35.9% accuracy across 8 evaluation runs. After applying FP8 quantization, we performed 4 evaluation runs and obtained an average score of 36.36% on the GAIA validation set. These results demonstrate that FP8 quantization does not negatively impact model performance.
+We conducted experiments to evaluate the impact of FP8 precision on model performance. Under identical experimental settings, the original model and the FP8 quantized model produced comparable results on the GAIA validation set. These findings demonstrate that FP8 quantization does not negatively impact model performance.
 
-For other quantization methods such as Q8_0, Q4_K_S, and Q4_K_M, these are optimized for CPU deployment to provide better user experience and faster inference speeds, though they may have some impact on model performance to varying degrees.
+For other quantization methods such as Q8_0, Q4_K_S, and Q4_K_M, they are optimized for CPU deployment to provide better user experience and faster inference speeds, though they may have some impact on model performance to varying degrees.
