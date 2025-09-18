@@ -18,7 +18,7 @@ uv run python benchmarks/common_benchmark.py \
     benchmark=collect_trace \
     benchmark.data.data_dir="../../data/debug" \
     benchmark.data.metadata_file="standardized_data.jsonl" \
-    llm=claude-3-7-sonnet-20250219 \
+    llm=claude-3-7 \
     llm.provider=anthropic \
     llm.model_name=claude-3-7-sonnet-20250219 \
     llm.anthropic_base_url=https://api.anthropic.com \

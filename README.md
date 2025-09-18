@@ -420,10 +420,11 @@ The trace collection scripts automatically save logs in the `logs/` directory in
 cd apps/collect-trace
 
 # Collect Traces for SFT
-bash scripts/collect_trace_claude.sh
+uv run bash scripts/collect_trace_claude37.sh
+uv run bash scripts/collect_trace_gpt5.sh
 
 # Collect Traces for DPO
-bash scripts/collect_trace_qwen.sh
+uv run bash scripts/collect_trace_qwen3.sh
 ```
 
 ## 📄 License
