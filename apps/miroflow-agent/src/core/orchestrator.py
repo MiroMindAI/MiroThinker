@@ -234,7 +234,7 @@ class Orchestrator:
 
     def get_scrape_result(self, result: str) -> str:
         """
-        Check if the scrape result is an error
+        Process scrape result and truncate if too long to support more conversation turns.
         """
         SCRAPE_MAX_LENGTH = 20000
         try:

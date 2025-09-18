@@ -16,7 +16,7 @@ import asyncio
 import dataclasses
 import logging
 import os
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Tuple, Union
 
 import tiktoken
 from openai import AsyncOpenAI, DefaultAsyncHttpxClient, DefaultHttpxClient, OpenAI
@@ -30,7 +30,7 @@ logger = logging.getLogger("miroflow_agent")
 
 @dataclasses.dataclass
 class OpenAIClient(BaseClient):
-    def _create_client(self):
+    def _create_client(self) -> Union[AsyncOpenAI, OpenAI]:
         """Create OpenAI format client"""
         api_key = os.environ.get("api_key", None)
 
@@ -49,7 +49,7 @@ class OpenAIClient(BaseClient):
                 http_client=DefaultHttpxClient(**http_client_args),
             )
 
-    def _update_token_usage(self, usage_data):
+    def _update_token_usage(self, usage_data: Any) -> None:
         """Update cumulative token usage - OpenAI format implementation"""
         if usage_data:
             input_tokens = getattr(usage_data, "prompt_tokens", 0)
@@ -180,8 +180,8 @@ class OpenAIClient(BaseClient):
                 raise e
 
     def process_llm_response(
-        self, llm_response, message_history, agent_type="main"
-    ) -> tuple[str, bool, list]:
+        self, llm_response: Any, message_history: List[Dict], agent_type: str = "main"
+    ) -> tuple[str, bool, List[Dict]]:
         """Process OpenAI format LLM response"""
         if not llm_response or not llm_response.choices:
             error_msg = "LLM did not return a valid response."
@@ -230,13 +230,17 @@ class OpenAIClient(BaseClient):
 
         return assistant_response_text, False, message_history
 
-    def extract_tool_calls_info(self, llm_response, assistant_response_text) -> list:
+    def extract_tool_calls_info(
+        self, llm_response: Any, assistant_response_text: str
+    ) -> List[Dict]:
         """Extract tool call information from LLM response"""
         from ...utils.parsing_utils import parse_llm_response_for_tool_calls
 
         return parse_llm_response_for_tool_calls(assistant_response_text)
 
-    def update_message_history(self, message_history, all_tool_results_content_with_id):
+    def update_message_history(
+        self, message_history: List[Dict], all_tool_results_content_with_id: List[Tuple]
+    ) -> List[Dict]:
         """Update message history with tool calls data (llm client specific)"""
 
         merged_text = "\n".join(
@@ -256,7 +260,7 @@ class OpenAIClient(BaseClient):
 
         return message_history
 
-    def generate_agent_system_prompt(self, date, mcp_servers) -> str:
+    def generate_agent_system_prompt(self, date: Any, mcp_servers: List[Dict]) -> str:
         return generate_mcp_system_prompt(date, mcp_servers)
 
     def _estimate_tokens(self, text: str) -> int:
@@ -342,7 +346,9 @@ class OpenAIClient(BaseClient):
         )
         return True, message_history
 
-    def handle_max_turns_reached_summary_prompt(self, message_history, summary_prompt):
+    def handle_max_turns_reached_summary_prompt(
+        self, message_history: List[Dict], summary_prompt: str
+    ) -> str:
         """Handle max turns reached summary prompt"""
         if message_history[-1]["role"] == "user":
             message_history.pop()  # Remove the last user message
@@ -351,7 +357,7 @@ class OpenAIClient(BaseClient):
         else:
             return summary_prompt
 
-    def format_token_usage_summary(self):
+    def format_token_usage_summary(self) -> tuple[List[str], str]:
         """Format token usage statistics, return summary_lines for format_final_summary and log string"""
         token_usage = self.get_token_usage()
 

@@ -99,9 +99,11 @@ class BaseClient(ABC):
             total_cache_read_input_tokens=0,
         )
 
-    def _remove_tool_result_from_messages(self, messages, keep_tool_result):
-        messages_copy = [m.copy() for m in messages]
+    def _remove_tool_result_from_messages(
+        self, messages, keep_tool_result
+    ) -> List[Dict]:
         """Remove tool results from messages"""
+        messages_copy = [m.copy() for m in messages]
         if keep_tool_result >= 0:
             # Find indices of all user messages
             user_indices = [
