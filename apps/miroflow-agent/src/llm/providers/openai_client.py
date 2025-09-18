@@ -121,12 +121,18 @@ class OpenAIClient(BaseClient):
         params = {
             "model": self.model_name,
             "temperature": self.temperature,
-            "max_tokens": self.max_tokens,
             "messages": messages_history,
             "tools": [],
             "stream": False,
             "top_p": self.top_p,
         }
+        # Check if the model is GPT-5, and adjust the parameter accordingly
+        if "gpt-5" in self.model_name:
+            # Use 'max_completion_tokens' for GPT-5
+            params["max_completion_tokens"] = self.max_tokens
+        else:
+            # Use 'max_tokens' for GPT-4 and other models
+            params["max_tokens"] = self.max_tokens
 
         try:
             if self.async_client:
