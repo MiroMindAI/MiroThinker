@@ -1,4 +1,4 @@
-# conf/llm/claude.yaml
+# conf/llm/claude-3-7.yaml
 defaults:
   - default
   - _self_

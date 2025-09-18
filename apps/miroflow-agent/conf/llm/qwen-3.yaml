@@ -1,4 +1,4 @@
-# conf/llm/qwen3-32b.yaml
+# conf/llm/qwen-3.yaml
 defaults:
   - default
   - _self_
