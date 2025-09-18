@@ -9,14 +9,14 @@ echo "Target directory: $TARGET_DIR"
 cd $TARGET_DIR
 
 mkdir -p ../../logs
-LOG_DIR="../../logs/example_trace_collect_qwen"
+LOG_DIR="../../logs/collect_trace_qwen"
 echo "Log directory: $LOG_DIR"
 mkdir -p $LOG_DIR
 
 # Collect traces
 uv run python benchmarks/common_benchmark.py \
-    benchmark=gaia-validation \
-    benchmark.data.data_dir="../../data/gaia-2023-validation" \
+    benchmark=browsecomp \
+    benchmark.data.data_dir="../../data/debug" \
     benchmark.data.metadata_file="standardized_data.jsonl" \
     llm=qwen3-32b \
     llm.provider=qwen \

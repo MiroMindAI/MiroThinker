@@ -9,18 +9,19 @@ echo "Target directory: $TARGET_DIR"
 cd $TARGET_DIR
 
 mkdir -p ../../logs
-LOG_DIR="../../logs/example_trace_collect_claude"
+LOG_DIR="../../logs/collect_trace_claude"
 echo "Log directory: $LOG_DIR"
 mkdir -p $LOG_DIR
 
 # Collect traces
 uv run python benchmarks/common_benchmark.py \
-    benchmark=gaia-validation \
-    benchmark.data.data_dir="../../data/gaia-2023-validation" \
+    benchmark=browsecomp \
+    benchmark.data.data_dir="../../data/debug" \
     benchmark.data.metadata_file="standardized_data.jsonl" \
     llm=claude \
     llm.provider=anthropic \
     llm.model_name=claude-3-7-sonnet-20250219 \
+    llm.anthropic_base_url=https://api.anthropic.com \
     llm.async_client=true \
     benchmark.execution.max_tasks=null \
     benchmark.execution.max_concurrent=10 \

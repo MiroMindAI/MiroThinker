@@ -1,5 +1,5 @@
 # conf/llm/default.yaml - Default LLM configuration
-provider: "openai" # openai, anthropic
+provider: "anthropic" # openai, anthropic, qwen
 model_name: "claude-3-7-sonnet-20250219"
 async_client: false
 temperature: 0.3
