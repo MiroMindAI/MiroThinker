@@ -220,7 +220,7 @@ async def verify_answer_hle(question: str, target: str, predicted_answer: str) -
     except Exception as e:
         if "Incorrect API key provided" in str(e):
             print(f"LLM evaluation failed: {e}")
-            os._exit(1)
+            exit()
         print(f"LLM evaluation failed: {e}")
         return "NOT_ATTEMPTED"
 

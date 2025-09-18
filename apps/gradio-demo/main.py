@@ -106,7 +106,7 @@ def load_miroflow_config(config_overrides: Optional[dict] = None) -> DictConfig:
         return cfg
     except Exception as e:
         logger.error(f"Failed to compose Hydra config: {e}")
-        os._exit(1)
+        exit()
 
 
 # pre load main agent tool definitions to speed up the first request
