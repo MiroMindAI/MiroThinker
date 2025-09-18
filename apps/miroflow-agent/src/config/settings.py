@@ -343,7 +343,14 @@ def get_env_info(cfg: DictConfig) -> dict:
         "has_anthropic_api_key": bool(ANTHROPIC_API_KEY),
         "has_openai_api_key": bool(OPENAI_API_KEY),
         "has_e2b_api_key": bool(E2B_API_KEY),
+        "has_tencent_secret_id": bool(TENCENTCLOUD_SECRET_ID),
+        "has_tencent_secret_key": bool(TENCENTCLOUD_SECRET_KEY),
         # Base URLs
         "openai_base_url": os.environ.get("OPENAI_BASE_URL"),
         "anthropic_base_url": os.environ.get("ANTHROPIC_BASE_URL"),
+        "jina_base_url": JINA_BASE_URL,
+        "serper_base_url": SERPER_BASE_URL,
+        "whisper_base_url": WHISPER_BASE_URL,
+        "vision_base_url": VISION_BASE_URL,
+        "reasoning_base_url": REASONING_BASE_URL,
     }
