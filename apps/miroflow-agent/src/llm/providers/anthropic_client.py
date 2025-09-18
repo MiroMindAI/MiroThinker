@@ -46,8 +46,8 @@ class AnthropicClient(BaseClient):
         self.cache_read_tokens: int = 0
 
     def _create_client(self) -> Union[AsyncAnthropic, Anthropic]:
-        """Create Anthropic client"""
-        api_key = os.environ.get("ANTHROPIC_API_KEY")
+        """Create LLM client"""
+        api_key = os.environ.get("ANTHROPIC_API_KEY", None)
         http_client_args = {}
 
         if self.async_client:
@@ -64,7 +64,7 @@ class AnthropicClient(BaseClient):
             )
 
     def _update_token_usage(self, usage_data: Any) -> None:
-        """Update cumulative token usage - Anthropic implementation"""
+        """Update cumulative token usage"""
         if usage_data:
             # Update based on actual field names returned by Anthropic API
             self.token_usage["total_cache_write_input_tokens"] += (
@@ -101,7 +101,7 @@ class AnthropicClient(BaseClient):
     @retry(wait=wait_fixed(10), stop=stop_after_attempt(5))
     async def _create_message(
         self,
-        system_prompt,
+        system_prompt: str,
         messages_history: List[Dict[str, Any]],
         tools_definitions,
         keep_tool_result: int = -1,
@@ -109,7 +109,7 @@ class AnthropicClient(BaseClient):
         """
         Send message to Anthropic API.
         :param system_prompt: System prompt string.
-        :param messages: Message history list.
+        :param messages_history: Message history list.
         :return: Anthropic API response object or None (if error occurs).
         """
         self.task_log.log_step(
@@ -182,8 +182,8 @@ class AnthropicClient(BaseClient):
 
     def process_llm_response(
         self, llm_response: Any, message_history: List[Dict], agent_type: str = "main"
-    ) -> tuple[str, bool, list]:
-        """Process Anthropic LLM response"""
+    ) -> tuple[str, bool, List[Dict]]:
+        """Process LLM response"""
         if not llm_response:
             self.task_log.log_step(
                 "error",
@@ -359,7 +359,7 @@ class AnthropicClient(BaseClient):
         )
         return True, message_history
 
-    def format_token_usage_summary(self):
+    def format_token_usage_summary(self) -> tuple[List[str], str]:
         """Format token usage statistics, return summary_lines for format_final_summary and log string"""
         token_usage = self.get_token_usage()
 

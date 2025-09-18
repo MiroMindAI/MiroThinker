@@ -31,9 +31,8 @@ logger = logging.getLogger("miroflow_agent")
 @dataclasses.dataclass
 class OpenAIClient(BaseClient):
     def _create_client(self) -> Union[AsyncOpenAI, OpenAI]:
-        """Create OpenAI format client"""
-        api_key = os.environ.get("api_key", None)
-
+        """Create LLM client"""
+        api_key = os.environ.get("OPENAI_API_KEY", None)
         http_client_args = {}
 
         if self.async_client:
@@ -50,7 +49,7 @@ class OpenAIClient(BaseClient):
             )
 
     def _update_token_usage(self, usage_data: Any) -> None:
-        """Update cumulative token usage - OpenAI format implementation"""
+        """Update cumulative token usage"""
         if usage_data:
             input_tokens = getattr(usage_data, "prompt_tokens", 0)
             output_tokens = getattr(usage_data, "completion_tokens", 0)
@@ -182,7 +181,7 @@ class OpenAIClient(BaseClient):
     def process_llm_response(
         self, llm_response: Any, message_history: List[Dict], agent_type: str = "main"
     ) -> tuple[str, bool, List[Dict]]:
-        """Process OpenAI format LLM response"""
+        """Process LLM response"""
         if not llm_response or not llm_response.choices:
             error_msg = "LLM did not return a valid response."
             self.task_log.log_step(
