@@ -86,11 +86,11 @@ You can also leverage other frameworks for model serving like Ollama, vLLM, and 
 
 ### 1. **Environment Setup**
 
-Copy the environment template to create your configuration:
+Get your free API keys:
 
-```bash
-cp apps/miroflow-agent/.env.example apps/miroflow-agent/.env
-```
+- [Serper](https://serper.dev/): 2,500 free search credits for new accounts
+- [Jina](https://jina.ai/reader): 10M free tokens for new accounts, scrape & extract clean text from any website, PDF, or online doc
+- [E2B](https://e2b.dev/): $100 free credits for new accounts
 
 Edit the `apps/miroflow-agent/.env` file with your API keys:
 
@@ -99,12 +99,6 @@ SERPER_API_KEY=your_serper_key
 JINA_API_KEY=your_jina_key
 E2B_API_KEY=your_e2b_key
 ```
-
-#### Get your free API keys:
-
-- [Serper](https://serper.dev/): 2,500 free search credits for new accounts
-- [Jina](https://jina.ai/reader): 10M free tokens for new accounts, scrape & extract clean text from any website, PDF, or online doc
-- [E2B](https://e2b.dev/): $100 free credits for new accounts
 
 ### 2. **Install Dependencies**
 
@@ -126,7 +120,7 @@ export OPENAI_BASE_URL=http://your-sglang-address:your-sglang-port/v1
 ### 4. **Launch the Application**
 
 ```bash
-DEMO_MODE=1 uv run src/main.py
+DEMO_MODE=1 uv run main.py
 ```
 
 ### 5. **Access the Web Interface**
