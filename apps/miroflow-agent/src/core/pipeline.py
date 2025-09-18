@@ -24,7 +24,7 @@ from ..config.settings import (
     get_env_info,
 )
 from ..io.output_formatter import OutputFormatter
-from ..llm.client import LLMClient
+from ..llm.factory import ClientFactory
 from ..logging.task_logger import (
     TaskLog,
     get_utc_plus_8_time,
@@ -90,7 +90,7 @@ async def execute_task_pipeline(
 
     try:
         # Initialize LLM client
-        llm_client = LLMClient(task_id=task_id, cfg=cfg, task_log=task_log)
+        llm_client = ClientFactory(task_id=task_id, cfg=cfg, task_log=task_log)
 
         # Initialize orchestrator
         orchestrator = Orchestrator(

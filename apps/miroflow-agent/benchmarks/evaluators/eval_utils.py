@@ -136,7 +136,7 @@ async def verify_answer_simpleqa(
 
     try:
         llm_response = await evaluation_llm_client.chat.completions.create(
-            model="gpt-4o-mini", messages=messages, max_completion_tokens=2
+            model="gpt-4.1-2025-04-14", messages=messages, max_completion_tokens=2
         )
         content = llm_response.choices[0].message.content
         match = re.search(r"(A|B|C)", content)
@@ -574,7 +574,7 @@ async def verify_answer_for_datasets(
         result = await verify_answer_browsecomp(question, target, predicted_answer)
         return result, "browsecomp_judge"
 
-    elif benchmark_name == "simpleqa":
+    elif benchmark_name == "simpleqa" or benchmark_name == "collect_trace":
         result = await verify_answer_simpleqa(question, target, predicted_answer)
         return result, "simpleqa_judge"
 

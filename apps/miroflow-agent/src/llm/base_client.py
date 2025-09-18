@@ -49,7 +49,7 @@ class TokenUsage(TypedDict, total=True):
 
 
 @dataclasses.dataclass
-class LLMProviderClientBase(ABC):
+class BaseClient(ABC):
     # Required arguments (no default value)
     task_id: str
     cfg: DictConfig
@@ -79,9 +79,6 @@ class LLMProviderClientBase(ABC):
         self.openai_base_url: Optional[str] = os.environ.get(
             "OPENAI_BASE_URL"
         ) or self.cfg.llm.get("openai_base_url")
-        self.newapi_base_url: Optional[str] = os.environ.get(
-            "NEWAPI_BASE_URL"
-        ) or self.cfg.llm.get("newapi_base_url")
         self.use_tool_calls: Optional[bool] = self.cfg.llm.get("use_tool_calls")
 
         self.token_usage = self._reset_token_usage()

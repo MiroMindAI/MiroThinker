@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-
 import asyncio
 import dataclasses
 import logging
@@ -24,34 +23,34 @@ from openai import AsyncOpenAI, DefaultAsyncHttpxClient, DefaultHttpxClient, Ope
 from tenacity import retry, stop_after_attempt, wait_fixed
 
 from ...utils.prompt_utils import generate_mcp_system_prompt
-from ..provider_client_base import LLMProviderClientBase
+from ..base_client import BaseClient
 
 logger = logging.getLogger("miroflow_agent")
 
 
 @dataclasses.dataclass
-class QwenLLMClient(LLMProviderClientBase):
+class OpenAIClient(BaseClient):
     def _create_client(self):
-        """Create configured Qwen client"""
-
-        QWEN_API_KEY = os.environ.get("QWEN_API_KEY", None)
+        """Create OpenAI format client"""
+        api_key = os.environ.get("api_key", None)
 
         http_client_args = {}
 
         if self.async_client:
             return AsyncOpenAI(
-                api_key=QWEN_API_KEY,
+                api_key=api_key,
                 base_url=self.openai_base_url,
                 http_client=DefaultAsyncHttpxClient(**http_client_args),
             )
         else:
             return OpenAI(
-                api_key=QWEN_API_KEY,
+                api_key=api_key,
                 base_url=self.openai_base_url,
                 http_client=DefaultHttpxClient(**http_client_args),
             )
 
     def _update_token_usage(self, usage_data):
+        """Update cumulative token usage - OpenAI format implementation"""
         if usage_data:
             input_tokens = getattr(usage_data, "prompt_tokens", 0)
             output_tokens = getattr(usage_data, "completion_tokens", 0)
@@ -75,7 +74,8 @@ class QwenLLMClient(LLMProviderClientBase):
             self.task_log.log_step(
                 "info",
                 "LLM | Token Usage",
-                f"Input: {self.token_usage['total_input_tokens']}, Output: {self.token_usage['total_output_tokens']}",
+                f"Input: {self.token_usage['total_input_tokens']}, "
+                f"Output: {self.token_usage['total_output_tokens']}",
             )
 
     @retry(wait=wait_fixed(30), stop=stop_after_attempt(10))
@@ -89,7 +89,7 @@ class QwenLLMClient(LLMProviderClientBase):
         """
         Send message to OpenAI API.
         :param system_prompt: System prompt string.
-        :param messages: Message history list.
+        :param messages_history: Message history list.
         :return: OpenAI API response object or None (if error occurs).
         """
 
@@ -176,8 +176,7 @@ class QwenLLMClient(LLMProviderClientBase):
     def process_llm_response(
         self, llm_response, message_history, agent_type="main"
     ) -> tuple[str, bool, list]:
-        """Process OpenAI LLM response"""
-
+        """Process OpenAI format LLM response"""
         if not llm_response or not llm_response.choices:
             error_msg = "LLM did not return a valid response."
             self.task_log.log_step(
@@ -213,13 +212,12 @@ class QwenLLMClient(LLMProviderClientBase):
                     message_history,
                 )  # Return True to indicate need to exit loop
 
+            # Add assistant response to history
             message_history.append(
                 {"role": "assistant", "content": assistant_response_text}
             )
 
         else:
-            # Different from Openai Client, we don't use tool calls for qwen,
-            # so we don't support tool_call finish reason
             raise ValueError(
                 f"Unsupported finish reason: {llm_response.choices[0].finish_reason}"
             )
@@ -227,10 +225,9 @@ class QwenLLMClient(LLMProviderClientBase):
         return assistant_response_text, False, message_history
 
     def extract_tool_calls_info(self, llm_response, assistant_response_text) -> list:
-        """Extract tool call information from Qwen LLM response"""
+        """Extract tool call information from LLM response"""
         from ...utils.parsing_utils import parse_llm_response_for_tool_calls
 
-        # For qwen, use the same parsing method as anthropic
         return parse_llm_response_for_tool_calls(assistant_response_text)
 
     def update_message_history(self, message_history, all_tool_results_content_with_id):
@@ -271,9 +268,9 @@ class QwenLLMClient(LLMProviderClientBase):
         except Exception as e:
             # If encoding fails, use simple estimation: approximately 1 token per 4 characters
             self.task_log.log_step(
+                "error",
                 "LLM | Token Estimation Error",
                 f"Error: {str(e)}",
-                "error",
             )
             return len(text) // 4
 
@@ -345,16 +342,11 @@ class QwenLLMClient(LLMProviderClientBase):
             message_history.pop()  # Remove the last user message
             # TODO: this part is a temporary fix, we need to find a better way to handle this
             return summary_prompt
-            # return (
-            #     last_user_message["content"]
-            #     + "\n*************\n"
-            #     + summary_prompt
-            # )
         else:
             return summary_prompt
 
     def format_token_usage_summary(self):
-        """Format token usage statistics, return summary_lines for format_final_summary and log string - Qwen implementation"""
+        """Format token usage statistics, return summary_lines for format_final_summary and log string"""
         token_usage = self.get_token_usage()
 
         total_input = token_usage.get("total_input_tokens", 0)
@@ -371,7 +363,11 @@ class QwenLLMClient(LLMProviderClientBase):
         summary_lines.append("-" * (40 + len(" Token Usage ")))
 
         # Generate log string
-        log_string = f"[Qwen/{self.model_name}] Total Input: {total_input}, Cache Input: {cache_input}, Output: {total_output}"
+        log_string = (
+            f"[{self.model_name}] Total Input: {total_input}, "
+            f"Cache Input: {cache_input}, "
+            f"Output: {total_output}"
+        )
 
         return summary_lines, log_string
 

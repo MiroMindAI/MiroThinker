@@ -17,11 +17,11 @@ from typing import Optional
 from omegaconf import DictConfig, OmegaConf
 
 from ..logging.task_logger import TaskLog
-from .providers.anthropic_client import AnthropicLLMClient
-from .providers.qwen_client import QwenLLMClient
+from .providers.anthropic_client import AnthropicClient
+from .providers.openai_client import OpenAIClient
 
 
-def LLMClient(
+def ClientFactory(
     task_id: str, cfg: DictConfig, task_log: Optional[TaskLog] = None, **kwargs
 ):
     """
@@ -31,10 +31,11 @@ def LLMClient(
     config = OmegaConf.merge(cfg, kwargs)
 
     client_creators = {
-        "anthropic": lambda: AnthropicLLMClient(
+        "anthropic": lambda: AnthropicClient(
             task_id=task_id, task_log=task_log, cfg=config
         ),
-        "qwen": lambda: QwenLLMClient(task_id=task_id, task_log=task_log, cfg=config),
+        "qwen": lambda: OpenAIClient(task_id=task_id, task_log=task_log, cfg=config),
+        "openai": lambda: OpenAIClient(task_id=task_id, task_log=task_log, cfg=config),
     }
 
     factory = client_creators.get(provider)

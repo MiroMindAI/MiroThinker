@@ -27,7 +27,7 @@ from omegaconf import DictConfig
 from ..config.settings import expose_sub_agents_as_tools
 from ..io.input_handler import process_input
 from ..io.output_formatter import OutputFormatter
-from ..llm.client import LLMClient
+from ..llm.factory import ClientFactory
 from ..logging.task_logger import (
     TaskLog,
     get_utc_plus_8_time,
@@ -65,7 +65,7 @@ class Orchestrator:
         self,
         main_agent_tool_manager: ToolManager,
         sub_agent_tool_managers: Dict[str, ToolManager],
-        llm_client: LLMClient,
+        llm_client: ClientFactory,
         output_formatter: OutputFormatter,
         cfg: DictConfig,
         task_log: Optional["TaskLog"] = None,

@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from .anthropic_client import AnthropicLLMClient
-from .qwen_client import QwenLLMClient
+from .anthropic_client import AnthropicClient
+from .openai_client import OpenAIClient
 
 __all__ = [
-    "AnthropicLLMClient",
-    "QwenLLMClient",
+    "AnthropicClient",
+    "OpenAIClient",
 ]
