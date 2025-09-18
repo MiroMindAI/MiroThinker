@@ -119,9 +119,7 @@ def print_results(stats: dict):
 def main():
     if len(sys.argv) < 2:
         print("Usage: python calculate_average_score.py <results_directory>")
-        print(
-            "Example: python calculate_average_score.py logs/gaia-validation/qwen_qwen3-32b-all-in-one"
-        )
+        print("Example: python calculate_average_score.py logs/gaia-validation/mytest")
         sys.exit(1)
 
     results_dir = sys.argv[1]
