@@ -11,12 +11,11 @@ from typing import AsyncGenerator, List, Optional
 
 import gradio as gr
 from dotenv import load_dotenv
-from utils import contains_chinese, replace_chinese_punctuation
 from hydra import compose, initialize_config_dir
 from omegaconf import DictConfig
-
 from src.config.settings import expose_sub_agents_as_tools
 from src.core.pipeline import create_pipeline_components, execute_task_pipeline
+from utils import contains_chinese, replace_chinese_punctuation
 
 # Create global cleanup thread pool for operations that won't be affected by asyncio.cancel
 cleanup_executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="cleanup")
@@ -30,28 +29,28 @@ load_dotenv()
 _hydra_initialized = False
 
 
-def load_mirage_config(config_overrides: Optional[dict] = None) -> DictConfig:
+def load_miroflow_config(config_overrides: Optional[dict] = None) -> DictConfig:
     """
-    Load the full Mirage configuration using Hydra, similar to how benchmarks work.
+    Load the full MiroFlow configuration using Hydra, similar to how benchmarks work.
     """
     global _hydra_initialized
 
-    # Get the path to the mirage agent config directory
-    mirage_config_dir = (
-        Path(__file__).parent.parent.parent.parent / "miroflow-agent" / "conf"
-    )
-    mirage_config_dir = mirage_config_dir.resolve()
-    print("config dir", mirage_config_dir)
+    # Get the path to the miroflow agent config directory
+    miroflow_config_dir = Path(__file__).parent.parent / "miroflow-agent" / "conf"
+    miroflow_config_dir = miroflow_config_dir.resolve()
+    print("config dir", miroflow_config_dir)
 
-    if not mirage_config_dir.exists():
+    if not miroflow_config_dir.exists():
         raise FileNotFoundError(
-            f"Mirage config directory not found: {mirage_config_dir}"
+            f"MiroFlow config directory not found: {miroflow_config_dir}"
         )
 
     # Initialize Hydra if not already done
     if not _hydra_initialized:
         try:
-            initialize_config_dir(config_dir=str(mirage_config_dir), version_base=None)
+            initialize_config_dir(
+                config_dir=str(miroflow_config_dir), version_base=None
+            )
             _hydra_initialized = True
         except Exception as e:
             logger.warning(f"Hydra already initialized or error: {e}")
@@ -75,12 +74,12 @@ def load_mirage_config(config_overrides: Optional[dict] = None) -> DictConfig:
         "anthropic": "claude",
         "openai": "openai",
         "deepseek": "deepseek",
-        "qwen": "qwen3-32b",
+        "qwen": "qwen-3",
     }
 
     llm_config = provider_config_map.get(
-        llm_provider, "qwen3-32b"
-    )  # default changed to qwen3-32b
+        llm_provider, "qwen-3"
+    )  # default changed to qwen-3
     overrides.extend(
         [
             f"llm={llm_config}",
@@ -111,7 +110,7 @@ def load_mirage_config(config_overrides: Optional[dict] = None) -> DictConfig:
 
 
 # pre load main agent tool definitions to speed up the first request
-cfg = load_mirage_config(None)
+cfg = load_miroflow_config(None)
 # Create pipeline components
 main_agent_tool_manager, sub_agent_tool_managers, output_formatter = (
     create_pipeline_components(cfg)
