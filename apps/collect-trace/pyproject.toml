@@ -1,7 +1,7 @@
 [project]
 name = "collect-trace"
-version = "0.1.0"
-description = "runs user-defined agentic loop to collect multi-turn traces"
+version = "0.2.0"
+description = "Executes a user-defined agent loop for capturing multi-turn interaction traces"
 readme = "README.md"
 requires-python = ">=3.12"
 authors = [{ name = "MiroMind Team", email = "service@miromind.ai" }]
