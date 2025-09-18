@@ -1,6 +1,6 @@
 [project]
 name = "collect-trace"
-version = "0.2.0"
+version = "0.1.0"
 description = "Executes a user-defined agent loop for capturing multi-turn interaction traces"
 readme = "README.md"
 requires-python = ">=3.12"
