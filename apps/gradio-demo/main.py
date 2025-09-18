@@ -63,7 +63,7 @@ def load_miroflow_config(config_overrides: Optional[dict] = None) -> DictConfig:
         "DEFAULT_LLM_PROVIDER", "qwen"
     )  # debug.sh defaults to qwen
     model_name = os.getenv(
-        "DEFAULT_MODEL_NAME", "SOTA_Shawnpo_0731"
+        "DEFAULT_MODEL_NAME", "MiroThinker"
     )  # debug.sh default model
     agent_set = os.getenv("DEFAULT_AGENT_SET", "evaluation")  # debug.sh uses evaluation
     openai_base_url = os.getenv("OPENAI_BASE_URL", "http://localhost:11434")
