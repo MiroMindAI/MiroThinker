@@ -126,7 +126,7 @@ export OPENAI_BASE_URL=http://your-sglang-address:your-sglang-port/v1
 ### 4. **Launch the Application**
 
 ```bash
-DEMO_MODE=1 uv run src/gradio_demo/main.py
+DEMO_MODE=1 uv run src/main.py
 ```
 
 ### 5. **Access the Web Interface**

@@ -11,12 +11,12 @@ from typing import AsyncGenerator, List, Optional
 
 import gradio as gr
 from dotenv import load_dotenv
+from utils import contains_chinese, replace_chinese_punctuation
 from hydra import compose, initialize_config_dir
 from omegaconf import DictConfig
+
 from src.config.settings import expose_sub_agents_as_tools
 from src.core.pipeline import create_pipeline_components, execute_task_pipeline
-
-from gradio_demo.utils import contains_chinese, replace_chinese_punctuation
 
 # Create global cleanup thread pool for operations that won't be affected by asyncio.cancel
 cleanup_executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="cleanup")
