@@ -16,7 +16,7 @@ import asyncio
 import os
 
 from e2b_code_interpreter import Sandbox
-from fastmcp import FastMCP
+from mcp.server.fastmcp import FastMCP
 
 # Initialize FastMCP server
 mcp = FastMCP("e2b-python-interpreter")

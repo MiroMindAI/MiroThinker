@@ -1,3 +1,6 @@
+set dotenv-load := true
+set dotenv-path := "{{justfile_directory()}}/.env"
+
 default:
     just --list
 
@@ -34,3 +37,8 @@ format-md:
 # run precommit before PR
 [group('precommit')]
 precommit: lint sort-imports format-md format
+
+# run mcp server under test
+[group('mcp-test')]
+mcp-inspect service:
+    uv run --directory libs/miroflow-tools mcp dev src/miroflow_tools/mcp_servers/{{service}}
