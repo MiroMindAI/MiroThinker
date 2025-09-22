@@ -30,6 +30,9 @@ LOGS_DIR = os.environ.get(
 # DEFAULT TEMPLATE ID
 DEFAULT_TEMPLATE_ID = "all_pip_apt_pkg"
 
+# DEFAULT METADATA
+DEFAULT_METADATA = {"env": "miro-thinker"}
+
 # DEFAULT CONFS
 DEFAULT_TIMEOUT = 1800  # seconds
 
@@ -45,15 +48,17 @@ async def create_sandbox() -> str:
         The id of the newly created sandbox. You should use this sandbox_id to run other tools in the sandbox.
     """
     max_retries = 3
+    sandbox = None
     for attempt in range(1, max_retries + 1):
-        sandbox = None
         try:
-            sandbox = Sandbox(
+            sandbox = Sandbox.create(
                 template=DEFAULT_TEMPLATE_ID,
                 timeout=DEFAULT_TIMEOUT,
                 api_key=E2B_API_KEY,
+                metadata=DEFAULT_METADATA,
             )
             info = sandbox.get_info()
+            sandbox.beta_pause()
 
             tmpfiles_dir = os.path.join(LOGS_DIR, "tmpfiles")
             os.makedirs(tmpfiles_dir, exist_ok=True)
@@ -66,7 +71,9 @@ async def create_sandbox() -> str:
         finally:
             # Set timeout before exit to prevent timeout after function exits
             try:
-                sandbox.set_timeout(DEFAULT_TIMEOUT)
+                if sandbox is not None:
+                    sandbox.beta_pause()
+                # sandbox.set_timeout(DEFAULT_TIMEOUT)
             except Exception:
                 pass  # Ignore timeout setting errors
 
@@ -91,10 +98,10 @@ async def run_command(command: str, sandbox_id: str) -> str:
     max_retries = 3
     for attempt in range(1, max_retries + 1):
         try:
-            sandbox.set_timeout(
-                DEFAULT_TIMEOUT
-            )  # refresh the timeout for each command execution
-            result = sandbox.commands.run(command)
+            # sandbox.set_timeout(
+            #     DEFAULT_TIMEOUT
+            # )  # refresh the timeout for each command execution
+            result = sandbox.commands.run(command, timeout=DEFAULT_TIMEOUT)
 
             # Check if command contains package installation commands
             result_str = str(result)
@@ -115,7 +122,8 @@ async def run_command(command: str, sandbox_id: str) -> str:
         finally:
             # Set timeout before exit to prevent timeout after function exits
             try:
-                sandbox.set_timeout(DEFAULT_TIMEOUT)
+                sandbox.beta_pause()
+                # sandbox.set_timeout(DEFAULT_TIMEOUT)
             except Exception:
                 pass  # Ignore timeout setting errors
 
@@ -140,11 +148,11 @@ async def run_python_code(code_block: str, sandbox_id: str) -> str:
     max_retries = 3
     for attempt in range(1, max_retries + 1):
         try:
-            sandbox.set_timeout(
-                DEFAULT_TIMEOUT
-            )  # refresh the timeout for each command execution
+            # sandbox.set_timeout(
+            #     DEFAULT_TIMEOUT
+            # )  # refresh the timeout for each command execution
 
-            execution = sandbox.run_code(code_block)
+            execution = sandbox.run_code(code_block, timeout=DEFAULT_TIMEOUT)
             return str(execution)
         except Exception as e:
             if attempt == max_retries:
@@ -153,7 +161,8 @@ async def run_python_code(code_block: str, sandbox_id: str) -> str:
         finally:
             # Set timeout before exit to prevent timeout after function exits
             try:
-                sandbox.set_timeout(DEFAULT_TIMEOUT)
+                sandbox.beta_pause()
+                # sandbox.set_timeout(DEFAULT_TIMEOUT)
             except Exception:
                 pass  # Ignore timeout setting errors
 
@@ -179,9 +188,9 @@ async def upload_file_from_local_to_sandbox(
         return f"[ERROR]: Failed to connect to sandbox {sandbox_id}, retry later. Make sure the sandbox is created and the id is correct."
 
     try:
-        sandbox.set_timeout(
-            DEFAULT_TIMEOUT
-        )  # refresh the timeout for each command execution
+        # sandbox.set_timeout(
+        #     DEFAULT_TIMEOUT
+        # )  # refresh the timeout for each command execution
 
         # Get the uploaded file path
         uploaded_file_path = os.path.join(
@@ -190,7 +199,7 @@ async def upload_file_from_local_to_sandbox(
 
         # Upload the file
         with open(local_file_path, "rb") as f:
-            sandbox.files.write(uploaded_file_path, f)
+            sandbox.files.write(uploaded_file_path, f, request_timeout=DEFAULT_TIMEOUT)
 
         return f"File uploaded to {uploaded_file_path}\n\n[INFO]: For directly reading local files without uploading to sandbox, consider using the `convert_to_markdown` tool which can read various file types (Doc, PPT, PDF, Excel, CSV, ZIP, etc.) directly from local paths or URLs. Note that `convert_to_markdown` doesn't support files already in the sandbox."
     except Exception as e:
@@ -198,7 +207,8 @@ async def upload_file_from_local_to_sandbox(
     finally:
         # Set timeout before exit to prevent timeout after function exits
         try:
-            sandbox.set_timeout(DEFAULT_TIMEOUT)
+            sandbox.beta_pause()
+            # sandbox.set_timeout(DEFAULT_TIMEOUT)
         except Exception:
             pass  # Ignore timeout setting errors
 
@@ -224,16 +234,18 @@ async def download_file_from_internet_to_sandbox(
         return f"[ERROR]: Failed to connect to sandbox {sandbox_id}, retry later. Make sure the sandbox is created and the id is correct."
 
     try:
-        sandbox.set_timeout(
-            DEFAULT_TIMEOUT
-        )  # refresh the timeout for each command execution
+        # sandbox.set_timeout(
+        #     DEFAULT_TIMEOUT
+        # )  # refresh the timeout for each command execution
 
         downloaded_file_path = os.path.join(sandbox_file_path, os.path.basename(url))
 
         # Download the file with retry logic
         max_retries = 3
         for attempt in range(1, max_retries + 1):
-            result = sandbox.commands.run(f"wget {url} -O {downloaded_file_path}")
+            result = sandbox.commands.run(
+                f"wget {url} -O {downloaded_file_path}", timeout=DEFAULT_TIMEOUT
+            )
             if result.exit_code == 0:
                 return f"File downloaded to {downloaded_file_path}\n\n[INFO]: For directly reading files from internet URLs without downloading to sandbox, consider using the `convert_to_markdown` tool which can read various file types (Doc, PPT, PDF, Excel, CSV, ZIP, etc.) directly from URLs. Note that `convert_to_markdown` doesn't support files already in the sandbox."
             elif attempt < max_retries:
@@ -246,7 +258,8 @@ async def download_file_from_internet_to_sandbox(
     finally:
         # Set timeout before exit to prevent timeout after function exits
         try:
-            sandbox.set_timeout(DEFAULT_TIMEOUT)
+            sandbox.beta_pause()
+            # sandbox.set_timeout(DEFAULT_TIMEOUT)
         except Exception:
             pass  # Ignore timeout setting errors
 
@@ -272,9 +285,9 @@ async def download_file_from_sandbox_to_local(
         return f"[ERROR]: Failed to connect to sandbox {sandbox_id}, retry later. Make sure the sandbox is created and the id is correct."
 
     try:
-        sandbox.set_timeout(
-            DEFAULT_TIMEOUT
-        )  # refresh the timeout for each command execution
+        # sandbox.set_timeout(
+        #     DEFAULT_TIMEOUT
+        # )  # refresh the timeout for each command execution
 
         # Create tmpfiles directory if it doesn't exist
         if not LOGS_DIR:
@@ -293,7 +306,9 @@ async def download_file_from_sandbox_to_local(
 
         # Download the file
         with open(local_file_path, "wb") as f:
-            content = sandbox.files.read(sandbox_file_path, format="bytes")
+            content = sandbox.files.read(
+                sandbox_file_path, format="bytes", request_timeout=DEFAULT_TIMEOUT
+            )
             f.write(content)
 
         return f"File downloaded successfully to: {local_file_path}\n\n[INFO]: The file can now be accessed by other tools (reading, question-answering, etc.) which only support local files and internet URLs, not sandbox files."
@@ -302,7 +317,8 @@ async def download_file_from_sandbox_to_local(
     finally:
         # Set timeout before exit to prevent timeout after function exits
         try:
-            sandbox.set_timeout(DEFAULT_TIMEOUT)
+            sandbox.beta_pause()
+            # sandbox.set_timeout(DEFAULT_TIMEOUT)
         except Exception:
             pass  # Ignore timeout setting errors
 
