@@ -58,7 +58,7 @@ async def create_sandbox() -> str:
                 metadata=DEFAULT_METADATA,
             )
             info = sandbox.get_info()
-            sandbox.beta_pause()
+            # sandbox.beta_pause()
 
             tmpfiles_dir = os.path.join(LOGS_DIR, "tmpfiles")
             os.makedirs(tmpfiles_dir, exist_ok=True)
