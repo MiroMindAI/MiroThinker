@@ -48,8 +48,8 @@ async def create_sandbox() -> str:
         The id of the newly created sandbox. You should use this sandbox_id to run other tools in the sandbox.
     """
     max_retries = 3
-    sandbox = None
     for attempt in range(1, max_retries + 1):
+        sandbox = None
         try:
             sandbox = Sandbox.create(
                 template=DEFAULT_TEMPLATE_ID,
