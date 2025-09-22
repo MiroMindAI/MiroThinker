@@ -1496,6 +1496,7 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "inline-snapshot", specifier = ">=0.23.2" },
+    { name = "mcp", extras = ["cli"], specifier = ">=1.14.1" },
     { name = "pytest", specifier = ">=8.4.1" },
     { name = "pytest-asyncio", specifier = ">=1.0.0" },
     { name = "pytest-cov", specifier = ">=6.2.1" },

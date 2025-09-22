@@ -37,6 +37,7 @@ dev = [
     "pytest-mock>=3.10.0",
     "pytest-timeout>=2.1.0",
     "inline-snapshot>=0.23.2",
+    "mcp[cli]>=1.14.1",
 ]
 
 [tool.pytest.ini_options]
