@@ -35,10 +35,11 @@ task_description = "Your custom task here"
 ### Output
 
 The agent will:
+
 1. Execute the task using available tools
-2. Generate a final summary and boxed answer
-3. Save logs to `../../logs/debug/` directory
-4. Display the results in the terminal
+1. Generate a final summary and boxed answer
+1. Save logs to `../../logs/debug/` directory
+1. Display the results in the terminal
 
 ### Troubleshooting
 
