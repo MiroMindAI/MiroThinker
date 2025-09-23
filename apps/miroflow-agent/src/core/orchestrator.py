@@ -95,6 +95,7 @@ class Orchestrator:
             "search_and_browse": defaultdict(int),
             "google_search": defaultdict(int),
             "sougou_search": defaultdict(int),
+            "scrape_website": defaultdict(int),
         }
 
     async def _stream_update(self, event_type: str, data: dict):
