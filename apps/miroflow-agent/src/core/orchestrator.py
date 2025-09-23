@@ -712,6 +712,7 @@ class Orchestrator:
 
         # Remove thinking content in tool response
         # For the return result of a sub-agent, the content within the `<think>` tags is unnecessary in any case.
+        final_answer_text = final_answer_text.split("<think>")[-1].strip()
         final_answer_text = final_answer_text.split("</think>")[-1].strip()
 
         # Stream sub-agent end
