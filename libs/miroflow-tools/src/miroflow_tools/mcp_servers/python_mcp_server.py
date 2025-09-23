@@ -31,7 +31,7 @@ LOGS_DIR = os.environ.get(
 DEFAULT_TEMPLATE_ID = "all_pip_apt_pkg"
 
 # DEFAULT CONFS
-DEFAULT_TIMEOUT = 1800  # seconds
+DEFAULT_TIMEOUT = 600  # seconds
 
 
 @mcp.tool()
