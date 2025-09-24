@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="assets/miro_thinker.png" width="55%" alt="MiroFlow" />
+  <img src="assets/miro_thinker.png" width="55%" alt="MiroThinker" />
 </div>
 
 <br>
@@ -26,14 +26,14 @@
 </div>
 
 <div align="center">
-  <img width="100%" alt="image" src="https://github.com/user-attachments/assets/a95bcf1b-fc31-4af9-8c1f-03829775f3ec" />
+  <img src="assets/futurex-09-12.png" width="100%" alt="MiroFlow" />
 </div>
 
 ---
 
 This repo is the official implementation of the MiroMind Research Agent Project. It is a leading-performance, fully open-source system designed to perform multi-step internet research for addressing complex challenges such as future event prediction. The project currently comprises four key components:
 
-- 🤔 **MiroThinker**: an open-source agent foundation model that natively supports tool-assisted reasoning, achieving open-source state-of-the-art performance across multiple benchmarks (e.g., FutureX, GAIA, HLE, xBench-DeepSearch, BrowserComp, and Frames Benchmarks), included in this repo. See [] for a quick start.
+- 🤔 **MiroThinker**: an open-source agent foundation model that natively supports tool-assisted reasoning, achieving open-source state-of-the-art performance across multiple benchmarks (e.g., FutureX, GAIA, HLE, xBench-DeepSearch, BrowserComp, and Frames Benchmarks), included in this repo. See [[Quick Start]](#-quick-start) for a quick start.
 - 🤖 **MiroFlow**: an open-source research agent framework that offers reproducible state-of-the-art performance across multiple benchmarks. See [MiroFlow](https://github.com/MiroMindAI/MiroFlow).
 - 📊 **MiroVerse**: 147k premium open-source training data supporting research agent training. See [MiroThinker](https://huggingface.co/datasets/miromind-ai/MiroVerse-v0.1).
 - 🚧 **MiroTrain / MiroRL**: The training infra that supports stable and efficient training for the research agent models. See [MiroTrain](https://github.com/MiroMindAI/MiroTrain) / [MiroRL](https://github.com/MiroMindAI/MiroRL)
@@ -71,8 +71,7 @@ This repo is the official implementation of the MiroMind Research Agent Project.
 **MiroThinker** is an open-source agent foundation model. Designed as a research agent for complex, long-horizon problem solving, it integrates strong capabilities in task decomposition, multi-hop reasoning, retrieval-augmented generation, code execution, web browsing, and document/file processing, enabling a wide range of real-world applications.
 
 <div align="center">
-  <img src="https://huggingface.co/datasets/miromind-ai/MiroFlow-Benchmarks/resolve/main/assets/MiroThinker_v0.2_Performance_2.png" width="100%" alt="MiroThinker" />
-  <p><strong>Performance of research agents on GAIA-Text-103, HLE, and BrowserComp.</strong></p>
+  <img src="https://huggingface.co/datasets/miromind-ai/MiroFlow-Benchmarks/resolve/main/assets/MiroThinker_v0.2_Performance_2.png" width="100%" alt="MiroThinker"/>
 </div>
 
 ### MiroThinker-v0.2
