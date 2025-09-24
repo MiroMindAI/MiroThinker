@@ -21,7 +21,7 @@ uv run python benchmarks/common_benchmark.py \
     llm=claude-3-7 \
     llm.provider=anthropic \
     llm.model_name=claude-3-7-sonnet-20250219 \
-    llm.anthropic_base_url=https://api.anthropic.com \
+    llm.base_url=https://api.anthropic.com \
     llm.async_client=true \
     benchmark.execution.max_tasks=null \
     benchmark.execution.max_concurrent=10 \
