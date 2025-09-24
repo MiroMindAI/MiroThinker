@@ -12,7 +12,7 @@ uv run python main.py llm=claude-3-7 agent=evaluation_os benchmark=debug
 uv run python main.py llm=gpt-5 agent=evaluation_os benchmark=debug
 
 # Use a different benchmark configuration
-uv run python main.py llm=qwen-3 agent=evaluation_os benchmark=debug llm.openai_base_url=<base_url>
+uv run python main.py llm=qwen-3 agent=evaluation_os benchmark=debug llm.base_url=<base_url>
 ```
 
 This will execute the default task: "What is the title of today's arxiv paper in computer science?"

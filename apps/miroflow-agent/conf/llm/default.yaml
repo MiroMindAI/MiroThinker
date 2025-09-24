@@ -7,6 +7,5 @@ top_p: 1.0
 min_p: 0.0
 top_k: -1
 max_tokens: 4096
-openai_base_url: null
+base_url: https://api.anthropic.com
 keep_tool_result: -1
-anthropic_base_url: https://api.anthropic.com

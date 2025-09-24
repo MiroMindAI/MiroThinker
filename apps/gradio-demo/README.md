@@ -114,7 +114,7 @@ uv sync
 Set your OpenAI API base URL as the SGLang endpoint:
 
 ```bash
-export OPENAI_BASE_URL=http://your-sglang-address:your-sglang-port/v1
+export BASE_URL=http://your-sglang-address:your-sglang-port/v1
 ```
 
 ### 4. **Launch the Application**

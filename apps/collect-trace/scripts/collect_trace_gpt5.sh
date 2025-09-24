@@ -21,7 +21,7 @@ uv run python benchmarks/common_benchmark.py \
     llm=gpt-5 \
     llm.provider=openai \
     llm.model_name=gpt-5-2025-08-07 \
-    llm.openai_base_url=https://api.openai.com/v1 \
+    llm.base_url=https://api.openai.com/v1 \
     llm.async_client=true \
     benchmark.execution.max_tasks=null \
     benchmark.execution.max_concurrent=10 \

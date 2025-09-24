@@ -5,5 +5,5 @@ defaults:
 
 provider: "anthropic"
 model_name: "claude-3-7-sonnet-20250219"
-anthropic_base_url: https://api.anthropic.com
+base_url: https://api.anthropic.com
 max_context_length: 65536

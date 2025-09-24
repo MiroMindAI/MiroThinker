@@ -50,9 +50,11 @@ REASONING_MODEL_NAME = os.environ.get("REASONING_MODEL_NAME")
 
 # API for Claude Sonnet 3.7 as Commercial Tools
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
+ANTHROPIC_BASE_URL = os.environ.get("ANTHROPIC_BASE_URL")
 
 # API Keys for Commercial Tools
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL")
 
 # API for Sougou Search
 TENCENTCLOUD_SECRET_ID = os.environ.get("TENCENTCLOUD_SECRET_ID")
@@ -63,15 +65,6 @@ TENCENTCLOUD_SECRET_KEY = os.environ.get("TENCENTCLOUD_SECRET_KEY")
 def create_mcp_server_parameters(cfg: DictConfig, agent_cfg: DictConfig):
     """Define and return MCP server configuration list"""
     configs = []
-    os.environ["OPENAI_BASE_URL"] = (
-        cfg.llm.get("openai_base_url") or "https://api.openai.com/v1"
-    )
-    os.environ["ANTHROPIC_BASE_URL"] = (
-        cfg.llm.get("anthropic_base_url") or "https://api.anthropic.com"
-    )
-
-    OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL")
-    ANTHROPIC_BASE_URL = os.environ.get("ANTHROPIC_BASE_URL")
 
     if (
         agent_cfg.get("tools", None) is not None

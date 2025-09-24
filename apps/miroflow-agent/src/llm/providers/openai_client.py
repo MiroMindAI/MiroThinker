@@ -38,13 +38,13 @@ class OpenAIClient(BaseClient):
         if self.async_client:
             return AsyncOpenAI(
                 api_key=api_key,
-                base_url=self.openai_base_url,
+                base_url=self.base_url,
                 http_client=DefaultAsyncHttpxClient(**http_client_args),
             )
         else:
             return OpenAI(
                 api_key=api_key,
-                base_url=self.openai_base_url,
+                base_url=self.base_url,
                 http_client=DefaultHttpxClient(**http_client_args),
             )
 

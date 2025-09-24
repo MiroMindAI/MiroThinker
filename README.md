@@ -250,7 +250,7 @@ We also provide comprehensive guidance for serving MiroThinker models using CPU-
 
 ```bash
 cd apps/miroflow-agent
-uv run main.py llm=qwen-3 agent=evaluation llm.openai_base_url=https://your_base_url/v1
+uv run main.py llm=qwen-3 agent=evaluation llm.base_url=https://your_base_url/v1
 ```
 
 #### 2. **Run comprehensive benchmark evaluation**

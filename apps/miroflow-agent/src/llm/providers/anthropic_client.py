@@ -53,13 +53,13 @@ class AnthropicClient(BaseClient):
         if self.async_client:
             return AsyncAnthropic(
                 api_key=api_key,
-                base_url=self.anthropic_base_url,
+                base_url=self.base_url,
                 http_client=DefaultAsyncHttpxClient(**http_client_args),
             )
         else:
             return Anthropic(
                 api_key=api_key,
-                base_url=self.anthropic_base_url,
+                base_url=self.base_url,
                 http_client=DefaultHttpxClient(**http_client_args),
             )
 

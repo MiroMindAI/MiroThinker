@@ -66,8 +66,8 @@ def load_miroflow_config(config_overrides: Optional[dict] = None) -> DictConfig:
         "DEFAULT_MODEL_NAME", "MiroThinker"
     )  # debug.sh default model
     agent_set = os.getenv("DEFAULT_AGENT_SET", "evaluation")  # debug.sh uses evaluation
-    openai_base_url = os.getenv("OPENAI_BASE_URL", "http://localhost:11434")
-    print("openai_base_url", openai_base_url)
+    base_url = os.getenv("BASE_URL", "http://localhost:11434")
+    print("base_url", base_url)
 
     # Map provider names to config files
     provider_config_map = {
@@ -85,7 +85,7 @@ def load_miroflow_config(config_overrides: Optional[dict] = None) -> DictConfig:
             f"llm={llm_config}",
             f"llm.provider={llm_provider}",
             f"llm.model_name={model_name}",
-            f"llm.openai_base_url={openai_base_url}",
+            f"llm.base_url={base_url}",
             f"agent={agent_set}",  # use evaluation instead of default
             "benchmark=gaia-validation",  # refer to debug.sh
             "+pricing=default",

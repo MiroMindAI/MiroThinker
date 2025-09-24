@@ -37,11 +37,11 @@ for i in $(seq 1 $NUM_RUNS); do
     (
         uv run python benchmarks/common_benchmark.py \
             benchmark=$BENCHMARK_NAME \
-            benchmark.data.metadata_file="standardized_data_250827_250902.jsonl" \
+            benchmark.data.metadata_file="standardized_data_250924_250930.jsonl" \
             llm=qwen-3 \
             llm.provider=$LLM_PROVIDER \
             llm.model_name=$LLM_MODEL \
-            llm.openai_base_url=$BASE_URL \
+            llm.base_url=$BASE_URL \
             llm.async_client=true \
             llm.temperature=$TEMPERATURE \
             llm.max_context_length=$MAX_CONTEXT_LENGTH \
