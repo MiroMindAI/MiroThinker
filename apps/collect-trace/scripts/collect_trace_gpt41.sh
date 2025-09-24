@@ -9,7 +9,7 @@ echo "Target directory: $TARGET_DIR"
 cd $TARGET_DIR
 
 mkdir -p ../../logs
-LOG_DIR="../../logs/collect_trace_gpt5"
+LOG_DIR="../../logs/collect_trace_gpt41"
 echo "Log directory: $LOG_DIR"
 mkdir -p $LOG_DIR
 
