@@ -447,7 +447,7 @@ python benchmarks/check_progress/check_progress_gaia-validation-text-103.py /pat
 
 ---
 
-## 🔧 Trace Collection1
+## 🔧 Supported Open-Source Tools
 
 We provide the option to use open-source tools as alternatives to commercial tools.
 One way to access these open-source tools is to purchase them from API providers, such as [SiliconFlow](https://www.siliconflow.com/).
