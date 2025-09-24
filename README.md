@@ -47,7 +47,7 @@ This repo is the official implementation of the MiroMind Research Agent Project.
 - ✨ [Key Features](#-key-features)
 - 📈 [Performance on Benchmarks](#-performance-on-benchmarks)
 - 🚀 [Quick Start](#-quick-start)
-- 🛠️ [Using](#-using)
+- 🛠️ [Trace Collection1](#-trace-collection1)
 - 📊 [Trace Collection](#-trace-collection)
 - 📞 [Support](#-support)
 - 📄 [License](#-license)
@@ -447,7 +447,7 @@ python benchmarks/check_progress/check_progress_gaia-validation-text-103.py /pat
 
 ---
 
-## 🛠️ Using
+## 🛠️ Trace Collection1
 
 We provide the option to use open-source tools as alternatives to commercial tools.
 One way to access these open-source tools is to purchase them from API providers, such as [SiliconFlow](https://www.siliconflow.com/).
