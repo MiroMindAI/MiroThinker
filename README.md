@@ -47,7 +47,7 @@ This repo is the official implementation of the MiroMind Research Agent Project.
 - ✨ [Key Features](#-key-features)
 - 📈 [Performance on Benchmarks](#-performance-on-benchmarks)
 - 🚀 [Quick Start](#-quick-start)
-- 🛠️ [Supported Open-Source Tools](#-supported-opensource-tools)
+- 🛠️ [Supported Open-Source Tools](#-supported-open_source-tools)
 - 📊 [Trace Collection](#-trace-collection)
 - 📞 [Support](#-support)
 - 📄 [License](#-license)
