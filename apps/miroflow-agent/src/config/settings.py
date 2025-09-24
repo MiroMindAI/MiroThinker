@@ -316,6 +316,7 @@ def get_env_info(cfg: DictConfig) -> dict:
     return {
         # LLM Configuration
         "llm_provider": cfg.llm.provider,
+        "llm_base_url": cfg.llm.base_url,
         "llm_model_name": cfg.llm.model_name,
         "llm_temperature": cfg.llm.temperature,
         "llm_top_p": cfg.llm.top_p,
@@ -339,8 +340,8 @@ def get_env_info(cfg: DictConfig) -> dict:
         "has_tencent_secret_id": bool(TENCENTCLOUD_SECRET_ID),
         "has_tencent_secret_key": bool(TENCENTCLOUD_SECRET_KEY),
         # Base URLs
-        "openai_base_url": os.environ.get("OPENAI_BASE_URL"),
-        "anthropic_base_url": os.environ.get("ANTHROPIC_BASE_URL"),
+        "openai_base_url": OPENAI_BASE_URL,
+        "anthropic_base_url": ANTHROPIC_BASE_URL,
         "jina_base_url": JINA_BASE_URL,
         "serper_base_url": SERPER_BASE_URL,
         "whisper_base_url": WHISPER_BASE_URL,
