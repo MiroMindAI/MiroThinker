@@ -25,10 +25,10 @@ from pydantic import BaseModel
 load_dotenv()
 
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
-OPENAI_API_BASE = os.environ.get("OPENAI_API_BASE")
+OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL")
 
-evaluation_llm_client = AsyncOpenAI(api_key=OPENAI_API_KEY, base_url=OPENAI_API_BASE)
-model_as_a_judge_client = OpenAI(api_key=OPENAI_API_KEY, base_url=OPENAI_API_BASE)
+evaluation_llm_client = AsyncOpenAI(api_key=OPENAI_API_KEY, base_url=OPENAI_BASE_URL)
+model_as_a_judge_client = OpenAI(api_key=OPENAI_API_KEY, base_url=OPENAI_BASE_URL)
 
 
 # ================================================
