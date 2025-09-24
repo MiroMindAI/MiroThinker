@@ -370,7 +370,11 @@ class Orchestrator:
         self.task_log.log_step(
             "info", f"{sub_agent_name} | Start Task", f"Starting {sub_agent_name}"
         )
-        task_description += "\n\nPlease provide the answer and detailed supporting information of the subtask given to you."
+        use_cn_prompt = os.getenv("USE_CN_PROMPT", "0")
+        if use_cn_prompt == "1":
+            task_description += "\n\n请给出该子任务的答案，并提供详细的依据或支持信息。"
+        else:
+            task_description += "\n\nPlease provide the answer and detailed supporting information of the subtask given to you."
         self.task_log.log_step(
             "info",
             f"{sub_agent_name} | Task Description",

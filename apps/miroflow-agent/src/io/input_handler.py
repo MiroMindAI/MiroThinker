@@ -151,7 +151,11 @@ def process_input(task_description, task_file_name):
             )
 
     # output format requirement
-    updated_task_description += "\nYou should follow the format instruction in the request strictly and wrap the final answer in \\boxed{}."
+    use_cn_prompt = os.getenv("USE_CN_PROMPT", "0")
+    if use_cn_prompt == "1":
+        updated_task_description += "\n请通过任务分解和MCP工具调用来解决给定的问题。**你必须严格遵循请求中的格式要求，并将最终答案包裹在 \\boxed{} 中。**"
+    else:
+        updated_task_description += "\nYou should follow the format instruction in the request strictly and wrap the final answer in \\boxed{}."
     initial_user_content += updated_task_description
 
     return initial_user_content, updated_task_description
