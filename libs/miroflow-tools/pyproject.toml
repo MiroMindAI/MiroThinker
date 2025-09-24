@@ -12,7 +12,7 @@ dependencies = [
     "fastmcp>=0.1.0",
     "playwright>=1.40.0",
     "requests>=2.32.0",
-    "e2b-code-interpreter>=1.2.1",
+    "e2b-code-interpreter==2.0.0",
     "wikipedia",
     "mutagen",
     "markitdown-mcp>=0.0.1a3",
@@ -37,6 +37,7 @@ dev = [
     "pytest-mock>=3.10.0",
     "pytest-timeout>=2.1.0",
     "inline-snapshot>=0.23.2",
+    "mcp[cli]>=1.14.1",
 ]
 
 [tool.pytest.ini_options]

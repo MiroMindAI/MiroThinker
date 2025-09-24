@@ -1,5 +1,5 @@
 version = 1
-revision = 3
+revision = 2
 requires-python = ">=3.12"
 resolution-markers = [
     "python_full_version >= '3.13'",
@@ -527,6 +527,15 @@ wheels = [
 ]
 
 [[package]]
+name = "dockerfile-parse"
+version = "2.0.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/92/df/929ee0b5d2c8bd8d713c45e71b94ab57c7e11e322130724d54f469b2cd48/dockerfile-parse-2.0.1.tar.gz", hash = "sha256:3184ccdc513221983e503ac00e1aa504a2aa8f84e5de673c46b0b6eee99ec7bc", size = 24556, upload-time = "2023-07-18T13:36:07.897Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/7a/6c/79cd5bc1b880d8c1a9a5550aa8dacd57353fa3bb2457227e1fb47383eb49/dockerfile_parse-2.0.1-py2.py3-none-any.whl", hash = "sha256:bdffd126d2eb26acf1066acb54cb2e336682e1d72b974a40894fac76a4df17f6", size = 14845, upload-time = "2023-07-18T13:36:06.052Z" },
+]
+
+[[package]]
 name = "duckduckgo-search"
 version = "8.0.5"
 source = { registry = "https://pypi.org/simple" }
@@ -542,10 +551,11 @@ wheels = [
 
 [[package]]
 name = "e2b"
-version = "1.5.3"
+version = "2.1.4"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "attrs" },
+    { name = "dockerfile-parse" },
     { name = "httpcore" },
     { name = "httpx" },
     { name = "packaging" },
@@ -553,23 +563,23 @@ dependencies = [
     { name = "python-dateutil" },
     { name = "typing-extensions" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ac/5e/c86b8130e275723066c982e81b564042bfb3c5c852b1e92165287e98f4d4/e2b-1.5.3.tar.gz", hash = "sha256:bc059dd5c82b2df54dcb17eb3f95c3524c128d7f35740d0ff4ee00600b906cba", size = 55859, upload-time = "2025-06-27T20:24:33.436Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/22/7d/8e95fa0760626a0ec076d2818dffe7959102985d20df35c8ede471f14922/e2b-2.1.4.tar.gz", hash = "sha256:21a2b00ea5c921749f572120a60795d10bcef6872698204028897800570bee85", size = 80515, upload-time = "2025-09-19T19:03:19.576Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/0d/39/94f7c6bf52e869c0e3d8e23eb570f88c59774ebd970a4a3d2dd5a775bc8b/e2b-1.5.3-py3-none-any.whl", hash = "sha256:c6fff77c63d371bdc3c76eaf3ead22ea0507db4690a8d0d05aeb4debc349da89", size = 104087, upload-time = "2025-06-27T20:24:31.753Z" },
+    { url = "https://files.pythonhosted.org/packages/c2/24/832fe7d7e220cdc386e79cd32263b0dbddf6394d0b5b6c9c8ad4287995fa/e2b-2.1.4-py3-none-any.whl", hash = "sha256:6b4b40b8e9307bdeec362f41d8d18f8776ac2a653b43ba3b04f5c698d452de1e", size = 156135, upload-time = "2025-09-19T19:03:18.083Z" },
 ]
 
 [[package]]
 name = "e2b-code-interpreter"
-version = "1.5.2"
+version = "2.0.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "attrs" },
     { name = "e2b" },
     { name = "httpx" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/ee/85/b4a1c9427b45818d4c3773ed967ec1fcc2d7b677e096d8051303889adc2d/e2b_code_interpreter-1.5.2.tar.gz", hash = "sha256:3bd6ea70596290e85aaf0a2f19f28bf37a5e73d13086f5e6a0080bb591c5a547", size = 10006, upload-time = "2025-07-07T14:58:28.676Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/42/84/e94cb706d88ac3510748be9d0030fb0a896a25b43677903aff20213b3cc1/e2b_code_interpreter-2.0.0.tar.gz", hash = "sha256:19136916be8de60bfd0a678742501d1d0335442bb6e86405c7dd6f98059b73c4", size = 10029, upload-time = "2025-08-22T10:16:57.169Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f5/4a/7dc5c673c47418e1b38594ab3b022ee20ea1bf3ff8f8aa8273d6ddc99532/e2b_code_interpreter-1.5.2-py3-none-any.whl", hash = "sha256:5c3188d8f25226b28fef4b255447cc6a4c36afb748bdd5180b45be486d5169f3", size = 12873, upload-time = "2025-07-07T14:58:27.622Z" },
+    { url = "https://files.pythonhosted.org/packages/5e/f1/135acbaffe4b2e63addecfc2a6c2ecf9ea3e5394aa2a9a829e3eb6f2098d/e2b_code_interpreter-2.0.0-py3-none-any.whl", hash = "sha256:273642d4dd78f09327fb1553fe4f7ddcf17892b78f98236e038d29985e42dca5", size = 12939, upload-time = "2025-08-22T10:16:55.698Z" },
 ]
 
 [[package]]
@@ -1347,7 +1357,6 @@ dependencies = [
     { name = "colorama" },
     { name = "datasets" },
     { name = "duckduckgo-search" },
-    { name = "e2b-code-interpreter" },
     { name = "fastmcp" },
     { name = "google-genai" },
     { name = "huggingface-hub" },
@@ -1404,7 +1413,6 @@ requires-dist = [
     { name = "colorama", specifier = ">=0.4.6" },
     { name = "datasets", specifier = ">=3.5.0" },
     { name = "duckduckgo-search", specifier = ">=6.3.7" },
-    { name = "e2b-code-interpreter", specifier = ">=1.2.1" },
     { name = "fastmcp" },
     { name = "google-genai" },
     { name = "huggingface-hub", specifier = ">=0.28.0" },
@@ -1474,7 +1482,7 @@ dependencies = [
 [package.metadata]
 requires-dist = [
     { name = "aiohttp" },
-    { name = "e2b-code-interpreter", specifier = ">=1.2.1" },
+    { name = "e2b-code-interpreter", specifier = "==2.0.0" },
     { name = "fastmcp", specifier = ">=0.1.0" },
     { name = "google-genai" },
     { name = "markitdown-mcp", specifier = ">=0.0.1a3" },
@@ -1488,6 +1496,7 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "inline-snapshot", specifier = ">=0.23.2" },
+    { name = "mcp", extras = ["cli"], specifier = ">=1.14.1" },
     { name = "pytest", specifier = ">=8.4.1" },
     { name = "pytest-asyncio", specifier = ">=1.0.0" },
     { name = "pytest-cov", specifier = ">=6.2.1" },

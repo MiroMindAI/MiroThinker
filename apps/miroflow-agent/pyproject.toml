@@ -23,7 +23,7 @@ dependencies = [
     "mcp",
     "fastmcp",
     "anthropic",
-    "e2b-code-interpreter>=1.2.1",
+    # "e2b-code-interpreter>=1.2.1",
     "jsonlines>=4.0.0",
     "mammoth>=1.9.0",
     "numpy>=2.2.5",
