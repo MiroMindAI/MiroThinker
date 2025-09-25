@@ -55,7 +55,9 @@ class OpenAIClient(BaseClient):
             output_tokens = getattr(usage_data, "completion_tokens", 0)
             prompt_tokens_details = getattr(usage_data, "prompt_tokens_details", None)
             if prompt_tokens_details:
-                cached_tokens = getattr(prompt_tokens_details, "cached_tokens", None) or 0
+                cached_tokens = (
+                    getattr(prompt_tokens_details, "cached_tokens", None) or 0
+                )
             else:
                 cached_tokens = 0
 
