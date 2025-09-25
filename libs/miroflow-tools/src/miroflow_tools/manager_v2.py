@@ -57,7 +57,11 @@ async def connect_by_config(cfg: Config):
             yield session
 
 
-class LoggingMixin(Protocol):
+class LoggingMixin:
+    """
+    add logging instance (.task_log) and helper functions (info(), error()) to any class.
+    """
+
     task_log: Any
 
     def add_log(self, logger: Any):
@@ -91,11 +95,11 @@ class ToolManagerV2(ToolManagerProtocol, LoggingMixin):
         for config in server_configs:
             kind = config.get("kind")
             if kind == "stdio":
-                config = StdIOConfig(**config)
+                config = StdIOConfig.model_validate(config)
             elif kind == "sse":
-                config = SSEConfig(**config)
+                config = SSEConfig.model_validate(config)
             elif kind == "streamable_http":
-                config = StreamableHttpConfig(**config)
+                config = StreamableHttpConfig.model_validate(config)
             else:
                 raise ValueError(f"unknown kind {kind} in config")
             parsed_configs.append(config)
