@@ -1,5 +1,5 @@
 from contextlib import AsyncExitStack, asynccontextmanager
-from typing import Any, Literal, cast
+from typing import Any, Literal, Protocol, cast
 
 from mcp import ClientSession
 from mcp.client.sse import sse_client
@@ -57,20 +57,8 @@ async def connect_by_config(cfg: Config):
             yield session
 
 
-class ToolManagerV2(ToolManagerProtocol):
-    """
-    implements a barebone ToolManager. Difference in Version 2:
-    1. deprecate huggingface block + browser session (tool name no longer matches).
-    2.
-    """
-
-    def __init__(self, server_configs: list[Config], logger: Any):
-        """
-        Initialize ToolManager.
-        :param server_configs: List returned by create_server_parameters()
-        """
-        self.server_dict = {config.name: config for config in server_configs}
-        self.task_log = None
+class LoggingMixin(Protocol):
+    task_log: Any
 
     def add_log(self, logger: Any):
         self.task_log = logger
@@ -85,6 +73,21 @@ class ToolManagerV2(ToolManagerProtocol):
 
     def error(self, step_name: str, message: str):
         self._log("error", f"ToolManagerV2 | {step_name}", message)
+
+
+class ToolManagerV2(ToolManagerProtocol, LoggingMixin):
+    """
+    implements a barebone ToolManager. Difference in Version 2:
+    1. deprecate huggingface block + browser session (tool name no longer matches).
+    2.
+    """
+
+    def __init__(self, server_configs: list[Config]):
+        """
+        Initialize ToolManager.
+        :param server_configs: List returned by create_server_parameters()
+        """
+        self.server_dict = {config.name: config for config in server_configs}
 
     async def get_all_tool_definitions(self):
         """
