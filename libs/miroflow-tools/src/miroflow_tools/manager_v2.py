@@ -82,12 +82,24 @@ class ToolManagerV2(ToolManagerProtocol, LoggingMixin):
     2.
     """
 
-    def __init__(self, server_configs: list[Config]):
+    def __init__(self, server_configs: list[dict[str, Any]]):
         """
         Initialize ToolManager.
         :param server_configs: List returned by create_server_parameters()
         """
-        self.server_dict = {config.name: config for config in server_configs}
+        parsed_configs = []
+        for config in server_configs:
+            kind = config.get("kind")
+            if kind == "stdio":
+                config = StdIOConfig(**config)
+            elif kind == "sse":
+                config = SSEConfig(**config)
+            elif kind == "streamable_http":
+                config = StreamableHttpConfig(**config)
+            else:
+                raise ValueError(f"unknown kind {kind} in config")
+            parsed_configs.append(config)
+        self.server_dict = {config.name: config for config in parsed_configs}
 
     async def get_all_tool_definitions(self):
         """
@@ -95,7 +107,8 @@ class ToolManagerV2(ToolManagerProtocol, LoggingMixin):
         Returns a list suitable for passing to the Prompt generator.
         """
 
-        async def inner_list_tools(session):
+        async def inner_list_tools(session: ClientSession):
+            """helper function to reduce indentation level"""
             try:
                 response = await session.list_tools()
                 return response, None
@@ -110,24 +123,35 @@ class ToolManagerV2(ToolManagerProtocol, LoggingMixin):
                 "Get Tool Definitions",
                 f"Getting tool definitions for server '{server_name}'...",
             )
-            async with connect_by_config(config) as session:
-                response, error = await inner_list_tools(session)
-                if error is not None:
-                    self.error(
-                        "Connection Error",
-                        f"Unable to connect or get tools from server '{server_name}': {str(error)}",
-                    )
-                    curr["tools"] = [{"error": f"Unable to fetch tools: {str(error)}"}]
-                if response is not None:
-                    for tool in response.tools:
-                        curr["tools"].append(
-                            {
-                                "name": tool.name,
-                                "description": tool.description,
-                                "schema": tool.inputSchema,
-                            }
+            try:
+                async with connect_by_config(config) as session:
+                    response, error = await inner_list_tools(session)
+                    if error is not None:
+                        self.error(
+                            "Connection Error",
+                            f"Unable to connect or get tools from server '{server_name}': {str(error)}",
                         )
-                    final.append(curr)
+                        curr["tools"] = [
+                            {"error": f"Unable to fetch tools: {str(error)}"}
+                        ]
+                        final.append(curr)
+                    if response is not None:
+                        for tool in response.tools:
+                            curr["tools"].append(
+                                {
+                                    "name": tool.name,
+                                    "description": tool.description,
+                                    "schema": tool.inputSchema,
+                                }
+                            )
+                        final.append(curr)
+            except Exception as e:
+                self.error(
+                    "MCP session Error",
+                    f"MCP session error: {str(e)}",
+                )
+                curr["tools"] = [{"error": f"MCP session error: {str(e)}"}]
+                final.append(curr)
 
         return final
 
@@ -147,7 +171,10 @@ class ToolManagerV2(ToolManagerProtocol, LoggingMixin):
             depends = {"error": error} if error is not None else {"result": result}
             return common | depends
 
-        async def inner_call_tool(session, tool_name, arguments):
+        async def inner_call_tool(
+            session: ClientSession, tool_name: str, arguments: dict[str, Any]
+        ):
+            """helper function to reduce indentation level"""
             try:
                 tool_result = await session.call_tool(tool_name, arguments=arguments)
                 return tool_result, None
@@ -166,16 +193,25 @@ class ToolManagerV2(ToolManagerProtocol, LoggingMixin):
             "Tool Call Start",
             f"Connecting to server '{server_name}' to call tool '{tool_name}'",
         )
-        async with connect_by_config(config) as session:
-            tool_result, error = await inner_call_tool(session, tool_name, arguments)
-            if error is not None:
-                self.error(
-                    "Tool Execution Error",
-                    f"Tool execution error: {error}",
+        try:
+            async with connect_by_config(config) as session:
+                tool_result, error = await inner_call_tool(
+                    session, tool_name, arguments
                 )
-                return rv(error=f"Tool execution failed: {str(error)}")
-            if tool_result is not None:
-                result_content = (
-                    tool_result.content[-1].text if tool_result.content else ""
-                )
-                return rv(result=result_content)
+                if error is not None:
+                    self.error(
+                        "Tool Execution Error",
+                        f"Tool execution error: {error}",
+                    )
+                    return rv(error=f"Tool execution failed: {str(error)}")
+                if tool_result is not None:
+                    result_content = (
+                        tool_result.content[-1].text if tool_result.content else ""
+                    )
+                    return rv(result=result_content)
+        except Exception as e:
+            self.error(
+                "MCP Session Error",
+                f"MCP session error: {e}",
+            )
+            return rv(error=f"MCP session error: {str(e)}")
