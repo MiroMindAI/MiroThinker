@@ -1,10 +1,11 @@
 from contextlib import AsyncExitStack, asynccontextmanager
-from typing import Any, Literal, Protocol, cast
+from typing import Any, Literal, cast
 
 from mcp import ClientSession
 from mcp.client.sse import sse_client
 from mcp.client.stdio import StdioServerParameters, stdio_client
 from mcp.client.streamable_http import streamablehttp_client
+from mcp.types import TextContent
 from miroflow_tools.manager import ToolManagerProtocol
 from pydantic import BaseModel, HttpUrl
 
@@ -62,7 +63,7 @@ class LoggingMixin:
     add logging instance (.task_log) and helper functions (info(), error()) to any class.
     """
 
-    task_log: Any
+    task_log: Any = None
 
     def add_log(self, logger: Any):
         self.task_log = logger
@@ -143,7 +144,7 @@ class ToolManagerV2(ToolManagerProtocol, LoggingMixin):
                         for tool in response.tools:
                             curr["tools"].append(
                                 {
-                                    "name": tool.name,
+                                    "name": tool.name,  # type: ignore
                                     "description": tool.description,
                                     "schema": tool.inputSchema,
                                 }
@@ -181,7 +182,16 @@ class ToolManagerV2(ToolManagerProtocol, LoggingMixin):
             """helper function to reduce indentation level"""
             try:
                 tool_result = await session.call_tool(tool_name, arguments=arguments)
-                return tool_result, None
+                final = ""
+                if tool_result is not None:
+                    if (
+                        getattr(tool_result, "content", None) is not None
+                        and len(tool_result.content) > 0
+                    ):
+                        block = tool_result.content[-1]
+                        if isinstance(block, TextContent):
+                            final = block.text
+                return final, None
             except Exception as e:
                 return None, e
 
@@ -199,7 +209,7 @@ class ToolManagerV2(ToolManagerProtocol, LoggingMixin):
         )
         try:
             async with connect_by_config(config) as session:
-                tool_result, error = await inner_call_tool(
+                result_content, error = await inner_call_tool(
                     session, tool_name, arguments
                 )
                 if error is not None:
@@ -208,10 +218,7 @@ class ToolManagerV2(ToolManagerProtocol, LoggingMixin):
                         f"Tool execution error: {error}",
                     )
                     return rv(error=f"Tool execution failed: {str(error)}")
-                if tool_result is not None:
-                    result_content = (
-                        tool_result.content[-1].text if tool_result.content else ""
-                    )
+                if result_content is not None:
                     return rv(result=result_content)
         except Exception as e:
             self.error(
