@@ -38,7 +38,7 @@ async def execute_task_pipeline(
     task_description: str,
     task_file_name: str,
     main_agent_tool_manager: ToolManager,
-    sub_agent_tool_managers: List[Dict[str, ToolManager]],
+    sub_agent_tool_managers: Dict[str, ToolManager],
     output_formatter: OutputFormatter,
     ground_truth: Optional[Any] = None,
     log_dir: str = "logs",
