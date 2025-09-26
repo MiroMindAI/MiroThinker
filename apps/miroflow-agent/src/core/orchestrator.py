@@ -91,12 +91,7 @@ class Orchestrator:
             self.llm_client.task_log = task_log
 
         # Record used subtask / q / Query
-        self.used_queries = {
-            "search_and_browse": defaultdict(int),
-            "google_search": defaultdict(int),
-            "sougou_search": defaultdict(int),
-            "scrape_website": defaultdict(int),
-        }
+        self.used_queries = {}
 
     async def _stream_update(self, event_type: str, data: dict):
         """Send streaming update in new SSE protocol format"""
@@ -511,8 +506,9 @@ class Orchestrator:
                     tool_call_id = await self._stream_tool_call(tool_name, arguments)
                     query_str = self._get_query_str_from_tool_call(tool_name, arguments)
                     if query_str:
-                        self.used_queries.setdefault(tool_name, defaultdict(int))
-                        count = self.used_queries[tool_name][query_str]
+                        cache_name = sub_agent_id + '_' + tool_name
+                        self.used_queries.setdefault(cache_name, defaultdict(int))
+                        count = self.used_queries[cache_name][query_str]
                         if count > 0:
                             tool_result = {
                                 "server_name": server_name,
@@ -526,7 +522,7 @@ class Orchestrator:
                                 sub_agent_name
                             ].execute_tool_call(server_name, tool_name, arguments)
                         if "error" not in tool_result:
-                            self.used_queries[tool_name][query_str] += 1
+                            self.used_queries[cache_name][query_str] += 1
                     else:
                         tool_result = await self.sub_agent_tool_managers[
                             sub_agent_name
@@ -868,8 +864,9 @@ class Orchestrator:
                             tool_name, arguments
                         )
                         if query_str:
-                            self.used_queries.setdefault(tool_name, defaultdict(int))
-                            count = self.used_queries[tool_name][query_str]
+                            cache_name = self.current_agent_id + '_' + tool_name
+                            self.used_queries.setdefault(cache_name, defaultdict(int))
+                            count = self.used_queries[cache_name][query_str]
                             if count > 0:
                                 sub_agent_result = f"The query '{query_str}' has already been used in previous {tool_name}. Please try a different query or keyword."
                                 if count >= self.max_repeat_queries:
@@ -878,7 +875,7 @@ class Orchestrator:
                                 sub_agent_result = await self.run_sub_agent(
                                     server_name, arguments["subtask"], keep_tool_result
                                 )
-                            self.used_queries[tool_name][query_str] += 1
+                            self.used_queries[cache_name][query_str] += 1
                         else:
                             sub_agent_result = await self.run_sub_agent(
                                 server_name, arguments["subtask"], keep_tool_result
@@ -900,8 +897,9 @@ class Orchestrator:
                             tool_name, arguments
                         )
                         if query_str:
-                            self.used_queries.setdefault(tool_name, defaultdict(int))
-                            count = self.used_queries[tool_name][query_str]
+                            cache_name = self.current_agent_id + '_' + tool_name
+                            self.used_queries.setdefault(cache_name, defaultdict(int))
+                            count = self.used_queries[cache_name][query_str]
                             if count > 0:
                                 tool_result = {
                                     "server_name": server_name,
@@ -917,7 +915,7 @@ class Orchestrator:
                                     arguments=arguments,
                                 )
                             if "error" not in tool_result:
-                                self.used_queries[tool_name][query_str] += 1
+                                self.used_queries[cache_name][query_str] += 1
                         else:
                             tool_result = (
                                 await self.main_agent_tool_manager.execute_tool_call(
