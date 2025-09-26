@@ -506,7 +506,7 @@ class Orchestrator:
                     tool_call_id = await self._stream_tool_call(tool_name, arguments)
                     query_str = self._get_query_str_from_tool_call(tool_name, arguments)
                     if query_str:
-                        cache_name = sub_agent_id + '_' + tool_name
+                        cache_name = sub_agent_id + "_" + tool_name
                         self.used_queries.setdefault(cache_name, defaultdict(int))
                         count = self.used_queries[cache_name][query_str]
                         if count > 0:
@@ -864,7 +864,7 @@ class Orchestrator:
                             tool_name, arguments
                         )
                         if query_str:
-                            cache_name = self.current_agent_id + '_' + tool_name
+                            cache_name = self.current_agent_id + "_" + tool_name
                             self.used_queries.setdefault(cache_name, defaultdict(int))
                             count = self.used_queries[cache_name][query_str]
                             if count > 0:
@@ -897,7 +897,7 @@ class Orchestrator:
                             tool_name, arguments
                         )
                         if query_str:
-                            cache_name = self.current_agent_id + '_' + tool_name
+                            cache_name = self.current_agent_id + "_" + tool_name
                             self.used_queries.setdefault(cache_name, defaultdict(int))
                             count = self.used_queries[cache_name][query_str]
                             if count > 0:

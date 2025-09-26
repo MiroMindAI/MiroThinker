@@ -29,16 +29,16 @@
   <img src="assets/futurex-09-12.png" width="100%" alt="MiroFlow" />
 </div>
 
----
+______________________________________________________________________
 
 This repo is the official implementation of the MiroMind Research Agent Project. It is a leading-performance, fully open-source system designed to perform multi-step internet research for addressing complex challenges such as future event prediction. The project currently comprises four key components:
 
-- 🤔 **MiroThinker**: an open-source agent foundation model that natively supports tool-assisted reasoning, achieving open-source state-of-the-art performance across multiple benchmarks (e.g., FutureX, GAIA, HLE, xBench-DeepSearch, BrowserComp, and Frames Benchmarks), included in this repo. See [[Quick Start]](#-quick-start) for a quick start.
+- 🤔 **MiroThinker**: an open-source agent foundation model that natively supports tool-assisted reasoning, achieving open-source state-of-the-art performance across multiple benchmarks (e.g., FutureX, GAIA, HLE, xBench-DeepSearch, BrowserComp, and Frames Benchmarks), included in this repo. See [\[Quick Start\]](#-quick-start) for a quick start.
 - 🤖 **MiroFlow**: an open-source research agent framework that offers reproducible state-of-the-art performance across multiple benchmarks. See [MiroFlow](https://github.com/MiroMindAI/MiroFlow).
 - 📊 **MiroVerse**: 147k premium open-source training data supporting research agent training. See [MiroVerse](https://huggingface.co/datasets/miromind-ai/MiroVerse-v0.1).
 - 🚧 **MiroTrain / MiroRL**: The training infra that supports stable and efficient training for the research agent models. See [MiroTrain](https://github.com/MiroMindAI/MiroTrain) / [MiroRL](https://github.com/MiroMindAI/MiroRL)
 
----
+______________________________________________________________________
 
 ## 📋 Table of Contents
 
@@ -53,7 +53,7 @@ This repo is the official implementation of the MiroMind Research Agent Project.
 - 📄 [License](#-license)
 - 🙏 [Acknowledgments](#-acknowledgments-and-contributors)
 
----
+______________________________________________________________________
 
 ## 📰 News & Updates
 
@@ -64,7 +64,7 @@ This repo is the official implementation of the MiroMind Research Agent Project.
 - **\[2025-08-22\]** Introducing streamlined deployment options for MiroThinker models with optimized resource usage and faster startup times. Experience the interactive demo: [🚀 Try Gradio Demo](apps/gradio-demo)
 - **\[2025-08-08\]** [MiroThinker-v0.1](https://huggingface.co/collections/miromind-ai/mirothinker-v01-689301b6d0563321862d44a1) released. Models, framework, and data are now fully open-sourced!
 
----
+______________________________________________________________________
 
 ## 📝 Introduction
 
@@ -120,7 +120,7 @@ We have released the **MiroThinker v0.1** series, including both SFT and DPO var
 
 </details>
 
----
+______________________________________________________________________
 
 ## ✨ Key Features
 
@@ -144,7 +144,7 @@ We have released the **MiroThinker v0.1** series, including both SFT and DPO var
 - **XBench-DeepResearch**: A benchmark for deep research agents. ([website](https://xbench.org/agi/aisearch))
 - **FutureX**: A live benchmark designed for predicting unknown future. ([website](https://futurex-ai.github.io/))
 
----
+______________________________________________________________________
 
 ## 📈 Performance on Benchmarks
 
@@ -240,7 +240,7 @@ We have released the **MiroThinker v0.1** series, including both SFT and DPO var
 
 </details>
 
----
+______________________________________________________________________
 
 ## 🚀 Quick Start
 
@@ -445,7 +445,7 @@ python benchmarks/check_progress/check_progress_gaia-validation-text-103.py /pat
 # Others follow the same pattern
 ```
 
----
+______________________________________________________________________
 
 ## 🔧 Supported Open-Source Tools
 
@@ -455,7 +455,7 @@ One way to access these open-source tools is to purchase them from API providers
 Of course, these tools can also be deployed on local servers.
 For detailed setup and local deployment instructions, please refer to our documentation: [USE-OS-TOOL.md](assets/USE-OS-TOOL.md).
 
----
+______________________________________________________________________
 
 ## 📊 Trace Collection
 
@@ -472,7 +472,7 @@ uv run bash scripts/collect_trace_gpt5.sh
 uv run bash scripts/collect_trace_qwen3.sh
 ```
 
----
+______________________________________________________________________
 
 ## 📞 Support
 
