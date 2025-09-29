@@ -327,10 +327,14 @@ def get_env_info(cfg: DictConfig) -> dict:
         "keep_tool_result": cfg.llm.keep_tool_result,
         # Agent Configuration
         "main_agent_max_turns": cfg.agent.main_agent.max_turns,
-        **{
-            f"sub_{sub_agent}_max_turns": cfg.agent.sub_agents[sub_agent].max_turns
-            for sub_agent in cfg.agent.sub_agents
-        },
+        **(
+            {
+                f"sub_{sub_agent}_max_turns": cfg.agent.sub_agents[sub_agent].max_turns
+                for sub_agent in cfg.agent.sub_agents
+            }
+            if cfg.agent.sub_agents is not None
+            else {}
+        ),
         # API Keys (masked for security)
         "has_serper_api_key": bool(SERPER_API_KEY),
         "has_jina_api_key": bool(JINA_API_KEY),

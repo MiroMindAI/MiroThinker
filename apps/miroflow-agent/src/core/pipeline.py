@@ -85,8 +85,9 @@ async def execute_task_pipeline(
 
     # Set task_log for all ToolManager instances
     main_agent_tool_manager.set_task_log(task_log)
-    for sub_agent_tool_manager in sub_agent_tool_managers.values():
-        sub_agent_tool_manager.set_task_log(task_log)
+    if sub_agent_tool_managers:
+        for sub_agent_tool_manager in sub_agent_tool_managers.values():
+            sub_agent_tool_manager.set_task_log(task_log)
 
     try:
         # Initialize LLM client
@@ -174,7 +175,14 @@ def create_pipeline_components(cfg: DictConfig):
         tool_blacklist=main_agent_blacklist,
     )
 
+    # Create OutputFormatter
+    output_formatter = OutputFormatter()
     sub_agent_tool_managers = {}
+
+    # For single agent mode
+    if not cfg.agent.sub_agents:
+        return main_agent_tool_manager, {}, output_formatter
+
     for sub_agent in cfg.agent.sub_agents:
         sub_agent_mcp_server_configs, sub_agent_blacklist = (
             create_mcp_server_parameters(cfg, cfg.agent.sub_agents[sub_agent])
@@ -184,8 +192,5 @@ def create_pipeline_components(cfg: DictConfig):
             tool_blacklist=sub_agent_blacklist,
         )
         sub_agent_tool_managers[sub_agent] = sub_agent_tool_manager
-
-    # Create OutputFormatter
-    output_formatter = OutputFormatter()
 
     return main_agent_tool_manager, sub_agent_tool_managers, output_formatter

@@ -83,7 +83,9 @@ class Orchestrator:
         self.tool_definitions = tool_definitions
         self.sub_agent_tool_definitions = sub_agent_tool_definitions
         # call this once, then use cache value
-        self._list_sub_agent_tools = _list_tools(sub_agent_tool_managers)
+        self._list_sub_agent_tools = None
+        if sub_agent_tool_managers:
+            self._list_sub_agent_tools = _list_tools(sub_agent_tool_managers)
         self.max_repeat_queries = 3
 
         # Pass task_log to llm_client
@@ -414,7 +416,10 @@ class Orchestrator:
         ) + generate_agent_specific_system_prompt(agent_type=sub_agent_name)
 
         # Limit sub-agent turns
-        max_turns = self.cfg.agent.sub_agents[sub_agent_name].max_turns
+        if self.cfg.agent.sub_agents:
+            max_turns = self.cfg.agent.sub_agents[sub_agent_name].max_turns
+        else:
+            max_turns = 0
         turn_count = 0
         should_hard_stop = False
 
@@ -755,7 +760,10 @@ class Orchestrator:
             tool_definitions = (
                 await self.main_agent_tool_manager.get_all_tool_definitions()
             )
-            tool_definitions += expose_sub_agents_as_tools(self.cfg.agent.sub_agents)
+            if self.cfg.agent.sub_agents is not None:
+                tool_definitions += expose_sub_agents_as_tools(
+                    self.cfg.agent.sub_agents
+                )
         else:
             tool_definitions = self.tool_definitions
         if not tool_definitions:
@@ -857,7 +865,7 @@ class Orchestrator:
 
                 call_start_time = time.time()
                 try:
-                    if server_name.startswith("agent-"):
+                    if server_name.startswith("agent-") and self.cfg.agent.sub_agents:
                         await self._stream_end_llm("main")
                         await self._stream_end_agent("main", self.current_agent_id)
                         query_str = self._get_query_str_from_tool_call(
