@@ -25,6 +25,7 @@ from tenacity import (
     wait_exponential,
 )
 
+from ..mcp_servers.utils.url_unquote import decode_http_urls_in_dict
 from .redis_cache_async import redis_cache_async
 
 # Configure logging
@@ -176,6 +177,8 @@ async def google_search(
             "organic": organic_results,
             "searchParameters": data.get("searchParameters", {}),
         }
+        response_data = decode_http_urls_in_dict(response_data)
+
         # Cache the successful result
         await redis_cache_async.set_google_search_cache(
             search_params, response_data, ttl_seconds=86400
