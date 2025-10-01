@@ -11,19 +11,21 @@ logger = logging.getLogger(__name__)
 
 
 class AsyncRedisCache:
-    """Redis缓存管理类（异步版），支持火山云Redis服务。
+    """Async Redis cache manager class, supporting Volcengine Redis service.
 
-    说明：
-    - 使用 redis-py 的 asyncio 客户端（`redis.asyncio`）。
-    - 采用惰性初始化：首次调用时才尝试建立连接与 `PING`，避免在模块导入阶段阻塞或缺少事件循环。
-    - 接口与同步版本基本一致，但 `get`、`set`、`health_check` 为异步方法。
+    Notes:
+    - Uses redis-py asyncio client (`redis.asyncio`).
+    - Lazy initialization: connection and `PING` are attempted only on first call,
+      to avoid blocking or missing event loop at import stage.
+    - The interface is basically the same as the sync version,
+      but `get`, `set`, and `health_check` are async methods.
     """
 
     def __init__(self) -> None:
         self.client: Optional[redis.Redis] = None
         self.enabled: bool = False
 
-        # 读取环境变量配置（同步读取即可）
+        # Read environment variable configuration (synchronously is fine)
         self._cache_enabled: bool = (
             os.getenv("REDIS_CACHE_ENABLED", "false").lower() == "true"
         )
@@ -36,7 +38,7 @@ class AsyncRedisCache:
         )
 
     async def _ensure_client(self) -> None:
-        """惰性初始化 Redis 客户端并执行一次 PING 健康检查。"""
+        """Lazy initialize Redis client and perform a PING health check once."""
         if self.client is not None:
             return
 
@@ -75,26 +77,27 @@ class AsyncRedisCache:
                 decode_responses=True,
             )
 
-            # 测试连接
+            # Test connection
             await self.client.ping()
             self.enabled = True
             logger.info(
                 f"Async Redis cache initialized successfully, host: {self._redis_host}:{self._redis_port}, db: {self._redis_db}, ssl: {self._redis_ssl}"
             )
-        except Exception as e:  # noqa: BLE001 - 记录详细错误
+        except Exception as e:  # noqa: BLE001 - log detailed error
             logger.error(f"Failed to initialize async Redis cache: {str(e)}")
             self.client = None
             self.enabled = False
 
     def _generate_cache_key(self, prefix: str, data: Union[str, Dict[str, Any]]) -> str:
-        """生成缓存键。
+        """Generate cache key.
 
         Args:
-            prefix: 前缀，例如 "google_search"、"jina_complete"。
-            data: 用于生成哈希的内容，支持字符串或字典（字典会进行排序后序列化）。
+            prefix: Key prefix, e.g., "google_search", "jina_complete".
+            data: Content used for hash generation, supports string or dict
+                  (dict will be sorted and serialized).
 
         Returns:
-            形如 "{prefix}:{hash16}" 的键名。
+            Key string in the form "{prefix}:{hash16}".
         """
         if isinstance(data, dict):
             data_str = json.dumps(data, sort_keys=True, ensure_ascii=False)
@@ -106,13 +109,13 @@ class AsyncRedisCache:
         return f"{prefix}:{hash_str}"
 
     async def get(self, cache_key: str) -> Optional[Dict[str, Any]]:
-        """从缓存中获取数据。
+        """Retrieve data from cache.
 
         Args:
-            cache_key: 缓存键。
+            cache_key: Cache key.
 
         Returns:
-            反序列化后的字典，若未命中或出错返回 None。
+            Deserialized dictionary, or None if not found or error occurred.
         """
         await self._ensure_client()
         if not self.enabled or not self.client:
@@ -137,15 +140,15 @@ class AsyncRedisCache:
     async def set(
         self, cache_key: str, data: Dict[str, Any], ttl_seconds: int = 3600
     ) -> bool:
-        """将数据存储到缓存中。
+        """Store data in cache.
 
         Args:
-            cache_key: 缓存键。
-            data: 将被 JSON 序列化后写入。
-            ttl_seconds: 过期时间（秒），默认 3600。
+            cache_key: Cache key.
+            data: Data to be serialized to JSON and stored.
+            ttl_seconds: Expiration time in seconds, default 3600.
 
         Returns:
-            成功写入返回 True，否则 False。
+            True if successfully written, otherwise False.
         """
         await self._ensure_client()
         if not self.enabled or not self.client:
@@ -169,7 +172,7 @@ class AsyncRedisCache:
             return False
 
     def generate_google_search_cache_key(self, search_params: Dict[str, Any]) -> str:
-        """为 google_search 搜索生成缓存键。"""
+        """Generate cache key for google_search."""
         return self._generate_cache_key("google_search", search_params)
 
     def generate_scrape_and_extract_info_cache_key(
@@ -179,7 +182,7 @@ class AsyncRedisCache:
         model: str,
         custom_headers: Optional[Dict[str, str]] = None,
     ) -> str:
-        """为 Jina 完整流程生成缓存键。"""
+        """Generate cache key for Jina full pipeline."""
         cache_data: Dict[str, Any] = {
             "url": url,
             "info_to_extract": info_to_extract,
@@ -193,7 +196,7 @@ class AsyncRedisCache:
         url: str,
         custom_headers: Optional[Dict[str, str]] = None,
     ) -> str:
-        """为 Jina 单步网页抓取生成缓存键。"""
+        """Generate cache key for Jina single-step scraping."""
         cache_data: Dict[str, Any] = {
             "url": url,
             "custom_headers": custom_headers or {},
@@ -207,7 +210,7 @@ class AsyncRedisCache:
         model: str,
         custom_headers: Optional[Dict[str, str]] = None,
     ) -> str:
-        """为 Jina 单步网页抓取生成缓存键。"""
+        """Generate cache key for hierarchical summarize (Jina single-step scraping)."""
         cache_data: Dict[str, Any] = {
             "url": url,
             "info_to_extract": info_to_extract,
@@ -219,7 +222,7 @@ class AsyncRedisCache:
     async def get_google_search_cache(
         self, search_params: Dict[str, Any]
     ) -> Optional[Dict[str, Any]]:
-        """获取 google_search 搜索缓存。"""
+        """Get google_search cache."""
         cache_key = self.generate_google_search_cache_key(search_params)
         return await self.get(cache_key)
 
@@ -229,7 +232,7 @@ class AsyncRedisCache:
         result: Dict[str, Any],
         ttl_seconds: int = 3600,
     ) -> bool:
-        """设置 google_search 搜索缓存，默认 1 小时 TTL。"""
+        """Set google_search cache, default TTL 1 hour."""
         cache_key = self.generate_google_search_cache_key(search_params)
         return await self.set(cache_key, result, ttl_seconds)
 
@@ -240,7 +243,7 @@ class AsyncRedisCache:
         model: str,
         custom_headers: Optional[Dict[str, str]] = None,
     ) -> Optional[Dict[str, Any]]:
-        """获取 Jina 完整流程缓存。"""
+        """Get Jina full pipeline cache."""
         cache_key = self.generate_scrape_and_extract_info_cache_key(
             url, info_to_extract, model, custom_headers
         )
@@ -255,7 +258,7 @@ class AsyncRedisCache:
         custom_headers: Optional[Dict[str, str]] = None,
         ttl_seconds: int = 86400,
     ) -> bool:
-        """设置 Jina 完整流程缓存，默认 24 小时 TTL。"""
+        """Set Jina full pipeline cache, default TTL 24 hours."""
         cache_key = self.generate_scrape_and_extract_info_cache_key(
             url, info_to_extract, model, custom_headers
         )
@@ -266,7 +269,7 @@ class AsyncRedisCache:
         url: str,
         custom_headers: Optional[Dict[str, str]] = None,
     ) -> Optional[Dict[str, Any]]:
-        """获取 Jina 单步网页抓取缓存。"""
+        """Get Jina single-step scraping cache."""
         cache_key = self.generate_scrape_url_with_jina_cache_key(url, custom_headers)
         return await self.get(cache_key)
 
@@ -277,7 +280,7 @@ class AsyncRedisCache:
         custom_headers: Optional[Dict[str, str]] = None,
         ttl_seconds: int = 86400,
     ) -> bool:
-        """设置 Jina 单步网页抓取缓存，默认 24 小时 TTL。"""
+        """Set Jina single-step scraping cache, default TTL 24 hours."""
         cache_key = self.generate_scrape_url_with_jina_cache_key(url, custom_headers)
         return await self.set(cache_key, result, ttl_seconds)
 
@@ -288,7 +291,7 @@ class AsyncRedisCache:
         model: str,
         custom_headers: Optional[Dict[str, str]] = None,
     ) -> Optional[Dict[str, Any]]:
-        """获取 Jina 单步网页抓取缓存。"""
+        """Get hierarchical summarize (Jina single-step scraping) cache."""
         cache_key = self.generate_hierarchical_summarize_cache_key(
             url, info_to_extract, model, custom_headers
         )
@@ -303,18 +306,18 @@ class AsyncRedisCache:
         custom_headers: Optional[Dict[str, str]] = None,
         ttl_seconds: int = 86400,
     ) -> bool:
-        """设置 Jina 单步网页抓取缓存，默认 24 小时 TTL。"""
+        """Set hierarchical summarize (Jina single-step scraping) cache, default TTL 24 hours."""
         cache_key = self.generate_hierarchical_summarize_cache_key(
             url, info_to_extract, model, custom_headers
         )
         return await self.set(cache_key, result, ttl_seconds)
 
     def is_enabled(self) -> bool:
-        """检查缓存是否启用（仅反映当前已建立连接的状态）。"""
+        """Check if cache is enabled (only reflects currently established connection state)."""
         return self.enabled and self.client is not None
 
     async def health_check(self) -> bool:
-        """健康检查。"""
+        """Health check."""
         await self._ensure_client()
         if not self.enabled or not self.client:
             return False
@@ -326,7 +329,7 @@ class AsyncRedisCache:
             return False
 
 
-# 全局异步缓存实例
+# Global async cache instance
 redis_cache_async = AsyncRedisCache()
 
 __all__ = ["AsyncRedisCache", "redis_cache_async"]
