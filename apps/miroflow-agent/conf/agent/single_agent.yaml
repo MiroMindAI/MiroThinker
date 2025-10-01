@@ -7,8 +7,8 @@ defaults:
 
 main_agent:
   tools:
-#    - search_and_scrape_webpage
-#    - jina_scrape_llm_summary
+    - search_and_scrape_webpage
+    - jina_scrape_llm_summary
     - tool-python
   max_turns: 50  # Maximum number of turns for main agent execution
 

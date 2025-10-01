@@ -60,6 +60,11 @@ OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1")
 TENCENTCLOUD_SECRET_ID = os.environ.get("TENCENTCLOUD_SECRET_ID")
 TENCENTCLOUD_SECRET_KEY = os.environ.get("TENCENTCLOUD_SECRET_KEY")
 
+# API for Summary LLM
+SUMMARY_LLM_API_KEY = os.environ.get("SUMMARY_LLM_API_KEY")
+SUMMARY_LLM_BASE_URL = os.environ.get("SUMMARY_LLM_BASE_URL")
+SUMMARY_LLM_MODEL_NAME = os.environ.get("SUMMARY_LLM_MODEL_NAME")
+
 
 # MCP server configuration generation function
 def create_mcp_server_parameters(cfg: DictConfig, agent_cfg: DictConfig):
@@ -278,6 +283,51 @@ def create_mcp_server_parameters(cfg: DictConfig, agent_cfg: DictConfig):
             }
         )
 
+    if (
+        agent_cfg.get("tools", None) is not None
+        and "search_and_scrape_webpage" in agent_cfg["tools"]
+    ):
+        configs.append(
+            {
+                "name": "search_and_scrape_webpage",
+                "params": StdioServerParameters(
+                    command=sys.executable,
+                    args=[
+                        "-m",
+                        "miroflow_tools.dev_mcp_servers.search_and_scrape_webpage",
+                    ],
+                    env={
+                        "SERPER_API_KEY": SERPER_API_KEY,
+                        "SERPER_BASE_URL": SERPER_BASE_URL,
+                    },
+                ),
+            }
+        )
+
+    if (
+        agent_cfg.get("tools", None) is not None
+        and "jina_scrape_llm_summary" in agent_cfg["tools"]
+    ):
+        configs.append(
+            {
+                "name": "jina_scrape_llm_summary",
+                "params": StdioServerParameters(
+                    command=sys.executable,
+                    args=[
+                        "-m",
+                        "miroflow_tools.dev_mcp_servers.jina_scrape_llm_summary",
+                    ],
+                    env={
+                        "JINA_API_KEY": JINA_API_KEY,
+                        "JINA_BASE_URL": JINA_BASE_URL,
+                        "SUMMARY_LLM_BASE_URL": SUMMARY_LLM_BASE_URL,
+                        "SUMMARY_LLM_MODEL_NAME": SUMMARY_LLM_MODEL_NAME,
+                        "SUMMARY_LLM_API_KEY": SUMMARY_LLM_API_KEY,
+                    },
+                ),
+            }
+        )
+
     blacklist = set()
     for black_list_item in agent_cfg.get("tool_blacklist", []):
         blacklist.add((black_list_item[0], black_list_item[1]))
@@ -343,6 +393,7 @@ def get_env_info(cfg: DictConfig) -> dict:
         "has_e2b_api_key": bool(E2B_API_KEY),
         "has_tencent_secret_id": bool(TENCENTCLOUD_SECRET_ID),
         "has_tencent_secret_key": bool(TENCENTCLOUD_SECRET_KEY),
+        "has_summary_llm_api_key": bool(SUMMARY_LLM_API_KEY),
         # Base URLs
         "openai_base_url": OPENAI_BASE_URL,
         "anthropic_base_url": ANTHROPIC_BASE_URL,
@@ -351,4 +402,5 @@ def get_env_info(cfg: DictConfig) -> dict:
         "whisper_base_url": WHISPER_BASE_URL,
         "vision_base_url": VISION_BASE_URL,
         "reasoning_base_url": REASONING_BASE_URL,
+        "summary_llm_base_url": SUMMARY_LLM_BASE_URL,
     }
