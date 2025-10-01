@@ -872,7 +872,7 @@ class Orchestrator:
                             tool_name, arguments
                         )
                         if query_str:
-                            cache_name = self.current_agent_id + "_" + tool_name
+                            cache_name = "main_" + tool_name
                             self.used_queries.setdefault(cache_name, defaultdict(int))
                             count = self.used_queries[cache_name][query_str]
                             if count > 0:
@@ -905,7 +905,7 @@ class Orchestrator:
                             tool_name, arguments
                         )
                         if query_str:
-                            cache_name = self.current_agent_id + "_" + tool_name
+                            cache_name = "main_" + tool_name
                             self.used_queries.setdefault(cache_name, defaultdict(int))
                             count = self.used_queries[cache_name][query_str]
                             if count > 0:
