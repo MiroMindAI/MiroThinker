@@ -132,6 +132,9 @@ class OpenAIClient(BaseClient):
             # Use 'max_tokens' for GPT-4 and other models
             params["max_tokens"] = self.max_tokens
 
+        if "deepseek-v3-1" in self.model_name:
+            params["extra_body"] = {"thinking": {"type": "enabled"}}
+
         try:
             if self.async_client:
                 response = await self.client.chat.completions.create(**params)
