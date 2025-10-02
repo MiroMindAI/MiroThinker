@@ -1,3 +1,11 @@
+# Check if OPENAI_API_KEY is set
+if [ -z "$OPENAI_API_KEY" ]; then
+    echo "Error: OPENAI_API_KEY is not set."
+    exit 1
+else
+    echo "OPENAI_API_KEY detected."
+fi
+
 # Get the directory where the current script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 echo "Current script directory: $SCRIPT_DIR"
@@ -21,6 +29,7 @@ uv run python benchmarks/common_benchmark.py \
     llm=gpt-5 \
     llm.provider=openai \
     llm.model_name=gpt-4.1-mini \
+    llm.api_key="$OPENAI_API_KEY" \
     llm.base_url=https://api.openai.com/v1 \
     llm.async_client=true \
     benchmark.execution.max_tasks=null \

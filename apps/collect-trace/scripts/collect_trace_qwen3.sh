@@ -21,6 +21,7 @@ uv run python benchmarks/common_benchmark.py \
     llm=qwen-3 \
     llm.provider=qwen \
     llm.model_name=qwen-3-32b \
+    llm.api_key="" \
     llm.base_url=https://your-api.com/v1 \
     llm.async_client=true \
     benchmark.execution.max_tasks=null \

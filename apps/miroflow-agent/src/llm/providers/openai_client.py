@@ -15,7 +15,6 @@
 import asyncio
 import dataclasses
 import logging
-import os
 from typing import Any, Dict, List, Tuple, Union
 
 import tiktoken
@@ -32,18 +31,16 @@ logger = logging.getLogger("miroflow_agent")
 class OpenAIClient(BaseClient):
     def _create_client(self) -> Union[AsyncOpenAI, OpenAI]:
         """Create LLM client"""
-        api_key = os.environ.get("OPENAI_API_KEY", None)
         http_client_args = {}
-
         if self.async_client:
             return AsyncOpenAI(
-                api_key=api_key,
+                api_key=self.api_key,
                 base_url=self.base_url,
                 http_client=DefaultAsyncHttpxClient(**http_client_args),
             )
         else:
             return OpenAI(
-                api_key=api_key,
+                api_key=self.api_key,
                 base_url=self.base_url,
                 http_client=DefaultHttpxClient(**http_client_args),
             )

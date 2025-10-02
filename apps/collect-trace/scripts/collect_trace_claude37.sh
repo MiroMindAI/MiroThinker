@@ -1,3 +1,11 @@
+# Check if ANTHROPIC_API_KEY is set
+if [ -z "$ANTHROPIC_API_KEY" ]; then
+    echo "Error: ANTHROPIC_API_KEY is not set."
+    exit 1
+else
+    echo "ANTHROPIC_API_KEY detected."
+fi
+
 # Get the directory where the current script is located
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 echo "Current script directory: $SCRIPT_DIR"
@@ -21,6 +29,7 @@ uv run python benchmarks/common_benchmark.py \
     llm=claude-3-7 \
     llm.provider=anthropic \
     llm.model_name=claude-3-7-sonnet-20250219 \
+    llm.api_key="$ANTHROPIC_API_KEY" \
     llm.base_url=https://api.anthropic.com \
     llm.async_client=true \
     benchmark.execution.max_tasks=null \
