@@ -15,7 +15,6 @@
 import asyncio
 import dataclasses
 import logging
-import os
 from typing import Any, Dict, List, Tuple, Union
 
 import tiktoken
@@ -47,18 +46,17 @@ class AnthropicClient(BaseClient):
 
     def _create_client(self) -> Union[AsyncAnthropic, Anthropic]:
         """Create LLM client"""
-        api_key = os.environ.get("ANTHROPIC_API_KEY", None)
         http_client_args = {}
 
         if self.async_client:
             return AsyncAnthropic(
-                api_key=api_key,
+                api_key=self.api_key,
                 base_url=self.base_url,
                 http_client=DefaultAsyncHttpxClient(**http_client_args),
             )
         else:
             return Anthropic(
-                api_key=api_key,
+                api_key=self.api_key,
                 base_url=self.base_url,
                 http_client=DefaultHttpxClient(**http_client_args),
             )
