@@ -12,12 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import asyncio
 import os
 import re
 import string
 import warnings
 from typing import Literal
-import asyncio
 
 from dotenv import load_dotenv
 from openai import AsyncOpenAI, OpenAI
@@ -607,7 +607,9 @@ async def verify_answer_for_datasets(
         if result != "NOT_ATTEMPTED":
             return result, judge_type
         if attempt < max_retries:
-            print(f"[Retry {attempt}/{max_retries}] Got NOT_ATTEMPTED, retrying in {retry_interval}s...")
+            print(
+                f"[Retry {attempt}/{max_retries}] Got NOT_ATTEMPTED, retrying in {retry_interval}s..."
+            )
             await asyncio.sleep(retry_interval)
 
     # still NOT_ATTEMPTED after retries
