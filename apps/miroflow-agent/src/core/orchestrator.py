@@ -669,6 +669,8 @@ class Orchestrator:
                 message_history, summary_prompt
             )
 
+        if message_history[-1]["role"] == "user":
+            message_history.pop(-1)
         message_history.append({"role": "user", "content": summary_prompt})
 
         await self._stream_tool_call(
@@ -1072,6 +1074,8 @@ class Orchestrator:
                 message_history, summary_prompt
             )
 
+        if message_history[-1]["role"] == "user":
+            message_history.pop(-1)
         message_history.append({"role": "user", "content": summary_prompt})
 
         # Use unified LLM call processing
