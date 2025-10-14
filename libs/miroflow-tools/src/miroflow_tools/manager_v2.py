@@ -33,7 +33,7 @@ Config = StdIOConfig | SSEConfig | StreamableHttpConfig
 
 
 @asynccontextmanager
-async def connect_by_config(cfg: Config):
+async def connect(cfg: Config):
     """
     returns a mcp.ClientSession instance, depending on Config.
     """
@@ -83,8 +83,8 @@ class LoggingMixin:
 class ToolManagerV2(ToolManagerProtocol, LoggingMixin):
     """
     implements a barebone ToolManager. Difference in Version 2:
-    1. deprecate huggingface block + browser session (tool name no longer matches).
-    2.
+    1. Deprecate huggingface block + browser session (tool name no longer matches).
+    2. add supports for streamable_http.
     """
 
     def __init__(self, server_configs: list[dict[str, Any]]):
@@ -122,24 +122,23 @@ class ToolManagerV2(ToolManagerProtocol, LoggingMixin):
 
         final = []
         # Process remote server tools
-        for server_name, config in self.server_dict.items():
-            curr = {"name": server_name, "tools": []}
+        for name, config in self.server_dict.items():
             self.info(
                 "Get Tool Definitions",
-                f"Getting tool definitions for server '{server_name}'...",
+                f"Getting tool definitions for server '{name}'...",
             )
+            curr = {"name": name, "tools": []}
             try:
-                async with connect_by_config(config) as session:
+                async with connect(config) as session:
                     response, error = await inner_list_tools(session)
                     if error is not None:
                         self.error(
-                            "Connection Error",
-                            f"Unable to connect or get tools from server '{server_name}': {str(error)}",
+                            "List Tools Error",
+                            f"Unable to connect or get tools from server '{name}': {str(error)}",
                         )
                         curr["tools"] = [
                             {"error": f"Unable to fetch tools: {str(error)}"}
                         ]
-                        final.append(curr)
                     if response is not None:
                         for tool in response.tools:
                             curr["tools"].append(
@@ -149,13 +148,10 @@ class ToolManagerV2(ToolManagerProtocol, LoggingMixin):
                                     "schema": tool.inputSchema,
                                 }
                             )
-                        final.append(curr)
             except Exception as e:
-                self.error(
-                    "MCP session Error",
-                    f"MCP session error: {str(e)}",
-                )
+                self.error("MCP session Error", f"MCP session error: {str(e)}")
                 curr["tools"] = [{"error": f"MCP session error: {str(e)}"}]
+            finally:
                 final.append(curr)
 
         return final
@@ -171,9 +167,9 @@ class ToolManagerV2(ToolManagerProtocol, LoggingMixin):
         :return: Dictionary containing result or error
         """
 
-        def rv(*, error: str | None = None, result: str | None = None):
+        def rv(*, exc: str | None = None, res: str | None = None):
             common = {"server_name": server_name, "tool_name": tool_name}
-            depends = {"error": error} if error is not None else {"result": result}
+            depends = {"error": exc} if exc is not None else {"result": res}
             return common | depends
 
         async def inner_call_tool(
@@ -201,28 +197,26 @@ class ToolManagerV2(ToolManagerProtocol, LoggingMixin):
                 "Server Not Found",
                 f"Attempting to call server '{server_name}' not found",
             )
-            return rv(error=f"Server '{server_name}' not found.")
+            return rv(exc=f"Server '{server_name}' not found.")
 
         self.info(
             "Tool Call Start",
             f"Connecting to server '{server_name}' to call tool '{tool_name}'",
         )
         try:
-            async with connect_by_config(config) as session:
-                result_content, error = await inner_call_tool(
-                    session, tool_name, arguments
-                )
-                if error is not None:
+            async with connect(config) as session:
+                res, exc = await inner_call_tool(session, tool_name, arguments)
+                if exc is not None:
                     self.error(
                         "Tool Execution Error",
-                        f"Tool execution error: {error}",
+                        f"Tool execution error: {exc}",
                     )
-                    return rv(error=f"Tool execution failed: {str(error)}")
-                if result_content is not None:
-                    return rv(result=result_content)
+                    return rv(exc=f"Tool execution failed: {str(exc)}")
+                if res is not None:
+                    return rv(res=res)
         except Exception as e:
             self.error(
                 "MCP Session Error",
                 f"MCP session error: {e}",
             )
-            return rv(error=f"MCP session error: {str(e)}")
+            return rv(exc=f"MCP session error: {str(e)}")
