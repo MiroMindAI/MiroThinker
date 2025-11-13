@@ -1,12 +1,12 @@
-# conf/benchmark/xbench_deepresearch.yaml
+# conf/benchmark/xbench_deepsearch.yaml
 defaults:
   - default
   - _self_
 
-name: "xbench_deepresearch"
+name: "xbench_deepsearch"
 
 data:
-  data_dir: "../../data/xbench_deepresearch"
+  data_dir: "../../data/xbench_deepsearch"
 
 execution:
   max_tasks: null  # null means no limit

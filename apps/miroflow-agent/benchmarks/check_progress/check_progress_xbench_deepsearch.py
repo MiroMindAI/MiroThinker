@@ -19,8 +19,8 @@ from common import ProgressChecker
 
 # Benchmark configuration
 FILENAME = os.path.basename(__file__)
-BENCHMARK_NAME = "xbench_deepresearch"
-BENCHMARK_NAME_STD = "XBench-DeepResearch"
+BENCHMARK_NAME = "xbench_deepsearch"
+BENCHMARK_NAME_STD = "XBench-DeepSearch"
 TASKS_PER_RUN = 100
 DATA_PATH = f"../../data/{BENCHMARK_NAME}/standardized_data.jsonl"
 TASK_ID_PATTERN = r"task_([a-f0-9]+)"

@@ -6,7 +6,7 @@ BASE_URL=${BASE_URL:-"https://your-api.com/v1"}
 
 # Configuration parameters
 NUM_RUNS=${NUM_RUNS:-8}
-BENCHMARK_NAME="xbench_deepresearch"
+BENCHMARK_NAME="xbench_deepsearch"
 LLM_PROVIDER=${LLM_PROVIDER:-"qwen"}
 AGENT_SET=${AGENT_SET:-"evaluation_os"}
 MAX_CONTEXT_LENGTH=${MAX_CONTEXT_LENGTH:-262144}
@@ -50,7 +50,7 @@ for i in $(seq 1 $NUM_RUNS); do
             benchmark.execution.max_tasks=null \
             benchmark.execution.max_concurrent=$MAX_CONCURRENT \
             benchmark.execution.pass_at_k=$PASS_AT_K \
-            benchmark.data.data_dir=../../data/xbench_deepresearch \
+            benchmark.data.data_dir=../../data/xbench_deepsearch \
             agent=$AGENT_SET \
             hydra.run.dir=${RESULTS_DIR}/$RUN_ID \
             2>&1 | tee "$RESULTS_DIR/${RUN_ID}_output.log" 

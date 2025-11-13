@@ -452,7 +452,7 @@ async def verify_answer_browsecomp(
 
 
 # ================================================
-# verify_answer_xbench_deepresearch
+# verify_answer_xbench_deepsearch
 
 # Prompt from XBench-Evals
 # https://github.com/xbench-ai/xbench-evals/blob/main/eval_grader.py#L25
@@ -477,11 +477,11 @@ JUDGE_PROMPT_XBENCH = """
 """.strip()
 
 
-async def verify_answer_xbench_deepresearch(
+async def verify_answer_xbench_deepsearch(
     question: str, target: str, predicted_answer: str
 ) -> str:
     """
-    Use XBench-DeepResearch judge to verify if the predicted answer is correct.
+    Use XBench-DeepSearch judge to verify if the predicted answer is correct.
     """
 
     def parse_match_result(match):
@@ -578,11 +578,11 @@ async def _verify_answer_for_datasets_core(
         result = await verify_answer_simpleqa(question, target, predicted_answer)
         return result, "simpleqa_judge"
 
-    elif benchmark_name == "xbench_deepresearch":
-        result = await verify_answer_xbench_deepresearch(
+    elif benchmark_name == "xbench_deepsearch":
+        result = await verify_answer_xbench_deepsearch(
             question, target, predicted_answer
         )
-        return result, "xbench_deepresearch_judge"
+        return result, "xbench_deepsearch_judge"
 
     else:
         result = await verify_answer_gaia_validation_text_103(

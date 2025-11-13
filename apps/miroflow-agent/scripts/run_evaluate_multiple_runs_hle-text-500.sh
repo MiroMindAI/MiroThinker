@@ -5,7 +5,7 @@ LLM_MODEL=${LLM_MODEL:-"MiroThinker-Models"}
 BASE_URL=${BASE_URL:-"https://your-api.com/v1"}
 
 # Configuration parameters
-NUM_RUNS=${NUM_RUNS:-4}
+NUM_RUNS=${NUM_RUNS:-3}
 BENCHMARK_NAME="hle-text-500"
 LLM_PROVIDER=${LLM_PROVIDER:-"qwen"}
 AGENT_SET=${AGENT_SET:-"evaluation_os"}
