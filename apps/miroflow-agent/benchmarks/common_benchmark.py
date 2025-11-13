@@ -1,25 +1,16 @@
-# Copyright 2025 Miromind.ai
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# Copyright (c) 2025 Miromind.ai
+# This source code is licensed under the MIT License.
 
 import asyncio
+import gc
 import json
 import os
 import random
+import re
 import signal
 import sys
-import threading
 from abc import ABC
+from concurrent.futures import ProcessPoolExecutor
 from dataclasses import asdict, dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
@@ -37,6 +28,58 @@ from src.logging.summary_time_cost import generate_summary
 
 # Constants for format error detection
 FORMAT_ERROR_MESSAGE = "No \\boxed{} content found in the final answer."
+
+
+def _task_worker(task_dict, cfg_dict, evaluator_kwargs):
+    """
+    Worker function to run a single task in a separate process.
+    This function is called by ProcessPoolExecutor and must be at module level.
+    """
+    import asyncio
+
+    from omegaconf import OmegaConf
+
+    # Reconstruct config in this process
+    cfg = OmegaConf.create(cfg_dict)
+
+    # Reconstruct task
+    task = BenchmarkTask(
+        task_id=task_dict["task_id"],
+        task_question=task_dict["task_question"],
+        ground_truth=task_dict["ground_truth"],
+        file_path=task_dict.get("file_path"),
+        metadata=task_dict.get("metadata", {}),
+    )
+
+    # Create evaluator in this process
+    evaluator = GenericEvaluator(
+        data_dir=evaluator_kwargs["data_dir"],
+        benchmark_name=evaluator_kwargs["benchmark_name"],
+        cfg=cfg,
+        metadata_file=evaluator_kwargs.get("metadata_file", "metadata.jsonl"),
+        task_id_field=evaluator_kwargs.get("task_id_field", "task_id"),
+        question_field=evaluator_kwargs.get("question_field", "task_question"),
+        ground_truth_field=evaluator_kwargs.get("ground_truth_field", "ground_truth"),
+        file_name_field=evaluator_kwargs.get("file_name_field"),
+    )
+
+    # Run task in new event loop
+    loop = asyncio.new_event_loop()
+    asyncio.set_event_loop(loop)
+
+    # Set exception handler to suppress "Task exception was never retrieved" warnings
+    def exception_handler(loop, context):
+        # Suppress all asyncio internal warnings for cleaner output
+        pass
+
+    loop.set_exception_handler(exception_handler)
+
+    try:
+        result = loop.run_until_complete(evaluator.run_single_task(task))
+        # Convert result to dict for serialization
+        return asdict(result)
+    finally:
+        loop.close()
 
 
 @dataclass
@@ -152,6 +195,7 @@ class BenchmarkEvaluator(ABC):
             # Run up to k attempts (with early stopping when correct answer found)
             for attempt in range(1, self.pass_at_k + 1):
                 print(f"  Attempt {attempt}/{self.pass_at_k} for task {task.task_id}")
+                format_retry_count = 0
 
                 # Check if log file exists for this specific attempt in current directory
                 log_pattern = f"task_{task.task_id}_attempt-{attempt}_*.json"
@@ -201,9 +245,19 @@ class BenchmarkEvaluator(ABC):
                         f"    Found existing log for attempt {attempt}: {log_file.name}"
                     )
 
+                    match = re.search(r"retry-(\d+)", os.path.basename(str(log_file)))
+                    if match:
+                        format_retry_count = int(match.group(1))
+                    else:
+                        raise ValueError(
+                            f"Failed to extract retry number from log file: {log_file}"
+                        )
+
                     try:
                         with open(log_file) as f:
                             log_data = json.loads(f.read())
+                            if log_data.get("status") == "success":
+                                format_retry_count += 1
                             if log_data.get("final_boxed_answer"):
                                 attempt_result["model_boxed_answer"] = log_data[
                                     "final_boxed_answer"
@@ -233,7 +287,7 @@ class BenchmarkEvaluator(ABC):
                 ):
                     # Try to get a valid response with format retry
                     print(f"TASK ID: {task.task_id}, ATTEMPT: {attempt}")
-                    format_retry_count = 0
+
                     max_format_retries = self.format_error_retry_limit
 
                     while format_retry_count <= max_format_retries:
@@ -390,6 +444,7 @@ class BenchmarkEvaluator(ABC):
                     f"    Pass@{self.pass_at_k} result: {'✅ SUCCESS' if found_correct_answer else '❌ FAILED'}"
                 )
 
+        gc.collect()
         return result
 
     def _run_single_task_sync(self, task: BenchmarkTask) -> BenchmarkResult:
@@ -413,19 +468,53 @@ class BenchmarkEvaluator(ABC):
     def run_parallel_inference(
         self, tasks: List[BenchmarkTask], max_concurrent: int = 3
     ) -> List[BenchmarkResult]:
-        """Run inference on multiple tasks in parallel using threading"""
+        """Run inference on multiple tasks in parallel using multiprocessing"""
         print(
-            f"Running inference on {len(tasks)} tasks with max_concurrent={max_concurrent}"
+            f"Running inference on {len(tasks)} tasks with max_concurrent={max_concurrent} (multiprocessing)"
         )
+
+        # Serialize config
+        cfg_dict = OmegaConf.to_container(self.cfg, resolve=True)
 
         # Shuffle tasks to avoid order bias and improve balancing
         shuffled_tasks = tasks.copy()
         random.shuffle(shuffled_tasks)
 
-        # Use daemon threads with semaphore - simple and effective
+        # Prepare evaluator kwargs for worker processes
+        evaluator_kwargs = {
+            "data_dir": str(self.data_dir),
+            "benchmark_name": self.benchmark_name,
+        }
+        # Add GenericEvaluator specific kwargs if available
+        if hasattr(self, "metadata_file"):
+            evaluator_kwargs["metadata_file"] = str(self.metadata_file.name)
+        if hasattr(self, "task_id_field"):
+            evaluator_kwargs["task_id_field"] = self.task_id_field
+        if hasattr(self, "question_field"):
+            evaluator_kwargs["question_field"] = self.question_field
+        if hasattr(self, "ground_truth_field"):
+            evaluator_kwargs["ground_truth_field"] = self.ground_truth_field
+        if hasattr(self, "file_name_field"):
+            evaluator_kwargs["file_name_field"] = self.file_name_field
+
+        # Prepare serializable arguments for worker processes
+        worker_args = []
+        for task in shuffled_tasks:
+            task_dict = {
+                "task_id": task.task_id,
+                "task_question": task.task_question,
+                "ground_truth": task.ground_truth,
+                "file_path": task.file_path,
+                "metadata": task.metadata,
+            }
+            worker_args.append((task_dict, cfg_dict, evaluator_kwargs))
+
+        # Use ProcessPoolExecutor for true parallelism (bypasses GIL)
         processed_results = []
-        results_lock = threading.Lock()
-        semaphore = threading.Semaphore(max_concurrent)
+        task_index_map = {
+            task.task_id: (i, task) for i, task in enumerate(shuffled_tasks)
+        }
+        results_dict = {}  # Store results by task_id to maintain order
 
         def signal_handler(signum, frame):
             """Handle SIGINT signal"""
@@ -436,42 +525,50 @@ class BenchmarkEvaluator(ABC):
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
 
-        def worker(task):
-            """Worker function that runs in daemon thread"""
-            with semaphore:
-                try:
-                    result = self._run_single_task_sync(task)
-                    with results_lock:
-                        processed_results.append(result)
+        try:
+            with ProcessPoolExecutor(max_workers=max_concurrent) as executor:
+                # Submit all tasks
+                future_to_task_id = {}
+                for args in worker_args:
+                    task_dict = args[0]  # First element is task_dict
+                    future = executor.submit(_task_worker, *args)
+                    future_to_task_id[future] = task_dict["task_id"]
+
+                # Collect results as they complete
+                from concurrent.futures import as_completed
+
+                for future in as_completed(future_to_task_id):
+                    task_id = future_to_task_id[future]
+                    try:
+                        result_dict = future.result()
+                        # Reconstruct BenchmarkResult from dict
+                        result = BenchmarkResult(**result_dict)
+                        results_dict[task_id] = result
+                        completed = len(results_dict)
                         print(
-                            f"Progress: {len(processed_results)}/{len(shuffled_tasks)} tasks completed"
+                            f"Progress: {completed}/{len(shuffled_tasks)} tasks completed"
                         )
-                except Exception as e:
-                    print(f"Exception in task {task.task_id}: {e}")
-                    error_result = BenchmarkResult(
-                        task_id=task.task_id,
-                        task_question=task.task_question,
-                        ground_truth=task.ground_truth,
-                        file_path=task.file_path,
-                        model_boxed_answer="",
-                        status="failed",
-                        metadata=task.metadata.copy(),
-                        error_message=str(e),
-                    )
-                    with results_lock:
-                        processed_results.append(error_result)
+                    except Exception as e:
+                        print(f"Exception in task {task_id}: {e}")
+                        # Get original task for error result
+                        _, original_task = task_index_map[task_id]
+                        error_result = BenchmarkResult(
+                            task_id=original_task.task_id,
+                            task_question=original_task.task_question,
+                            ground_truth=original_task.ground_truth,
+                            file_path=original_task.file_path,
+                            model_boxed_answer="",
+                            status="failed",
+                            metadata=original_task.metadata.copy(),
+                            error_message=str(e),
+                        )
+                        results_dict[task_id] = error_result
+        except KeyboardInterrupt:
+            print("\n⚠️  Received interrupt signal, shutting down...")
+            raise
 
-        # Start all tasks as daemon threads
-        threads = []
-        for task in shuffled_tasks:
-            thread = threading.Thread(target=worker, args=(task,))
-            thread.daemon = True  # Daemon threads die with main process
-            threads.append(thread)
-            thread.start()
-
-        # Wait for all threads to complete (or get killed by Ctrl-C)
-        for thread in threads:
-            thread.join()
+        # Reconstruct results in original task order
+        processed_results = [results_dict[task.task_id] for task in shuffled_tasks]
 
         # Sort results to maintain original task order
         task_id_to_index = {task.task_id: i for i, task in enumerate(tasks)}
@@ -655,6 +752,7 @@ class GenericEvaluator(BenchmarkEvaluator):
                     print(f"Warning: Failed to parse line {i + 1}: {e}")
                     continue
 
+        gc.collect()
         self.tasks = tasks
         print(f"Loaded {len(tasks)} tasks")
         return tasks

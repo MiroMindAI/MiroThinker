@@ -5,14 +5,15 @@ LLM_MODEL=${LLM_MODEL:-"MiroThinker-Models"}
 BASE_URL=${BASE_URL:-"https://your-api.com/v1"}
 
 # Configuration parameters
-NUM_RUNS=${NUM_RUNS:-2}
-BENCHMARK_NAME="xbench_deepresearch"
+NUM_RUNS=${NUM_RUNS:-3}
+BENCHMARK_NAME="browsecomp"
 LLM_PROVIDER=${LLM_PROVIDER:-"qwen"}
 AGENT_SET=${AGENT_SET:-"evaluation_os"}
-MAX_CONTEXT_LENGTH=${MAX_CONTEXT_LENGTH:-40960}
+MAX_CONTEXT_LENGTH=${MAX_CONTEXT_LENGTH:-262144}
 MAX_CONCURRENT=${MAX_CONCURRENT:-10}
 PASS_AT_K=${PASS_AT_K:-1}
-TEMPERATURE=${TEMPERATURE:-0.3}
+TEMPERATURE=${TEMPERATURE:-1.0}
+API_KEY=${API_KEY:-"xxx"}
 
 # Set results directory
 RESULTS_DIR="../../logs/${BENCHMARK_NAME}/$(date +%m%d)/${LLM_PROVIDER}_${LLM_MODEL}_${AGENT_SET}"
@@ -45,10 +46,11 @@ for i in $(seq 1 $NUM_RUNS); do
             llm.async_client=true \
             llm.temperature=$TEMPERATURE \
             llm.max_context_length=$MAX_CONTEXT_LENGTH \
+            llm.api_key=$API_KEY \
             benchmark.execution.max_tasks=null \
             benchmark.execution.max_concurrent=$MAX_CONCURRENT \
             benchmark.execution.pass_at_k=$PASS_AT_K \
-            benchmark.data.data_dir=../../data/xbench_deepresearch \
+            benchmark.data.data_dir=../../data/browsecomp_200 \
             agent=$AGENT_SET \
             hydra.run.dir=${RESULTS_DIR}/$RUN_ID \
             2>&1 | tee "$RESULTS_DIR/${RUN_ID}_output.log" 

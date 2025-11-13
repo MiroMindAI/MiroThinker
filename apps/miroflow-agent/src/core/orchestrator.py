@@ -1,17 +1,8 @@
-# Copyright 2025 Miromind.ai
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# Copyright (c) 2025 Miromind.ai
+# This source code is licensed under the MIT License.
 
+import asyncio
+import gc
 import json
 import logging
 import os
@@ -36,6 +27,8 @@ from ..utils.parsing_utils import extract_llm_response_text
 from ..utils.prompt_utils import (
     generate_agent_specific_system_prompt,
     generate_agent_summarize_prompt,
+    mcp_tags,
+    refusal_keywords,
 )
 from ..utils.wrapper_utils import ErrorBox, ResponseBox
 
@@ -83,8 +76,10 @@ class Orchestrator:
         self.tool_definitions = tool_definitions
         self.sub_agent_tool_definitions = sub_agent_tool_definitions
         # call this once, then use cache value
-        self._list_sub_agent_tools = _list_tools(sub_agent_tool_managers)
-        self.max_repeat_queries = 3
+        self._list_sub_agent_tools = None
+        if sub_agent_tool_managers:
+            self._list_sub_agent_tools = _list_tools(sub_agent_tool_managers)
+        self.max_repeat_queries = 5
 
         # Pass task_log to llm_client
         if self.llm_client and task_log:
@@ -290,7 +285,7 @@ class Orchestrator:
             Tuple[Optional[str], bool, Optional[Any], List[Dict[str, Any]]]:
                 (response_text, should_break, tool_calls_info, message_history)
         """
-
+        original_message_history = message_history
         try:
             response, message_history = await self.llm_client.create_message(
                 system_prompt=system_prompt,
@@ -304,12 +299,9 @@ class Orchestrator:
             if ErrorBox.is_error_box(response):
                 await self._stream_show_error(str(response))
                 response = None
-            should_break = False
             if ResponseBox.is_response_box(response):
                 if response.has_extra_info():
                     extra_info = response.get_extra_info()
-                    if extra_info.get("should_break", False):
-                        should_break = True
                     if extra_info.get("warning_msg"):
                         await self._stream_show_error(
                             extra_info.get("warning_msg", "Empty warning message")
@@ -323,7 +315,7 @@ class Orchestrator:
                     f"{purpose} | LLM Call Failed",
                     f"{purpose} failed - no response received",
                 )
-                return "", True, None, message_history
+                return "", False, None, original_message_history
 
             # Use client's response processing method
             assistant_response_text, should_break, message_history = (
@@ -355,8 +347,8 @@ class Orchestrator:
                 f"{purpose} | LLM Call ERROR",
                 f"{purpose} error: {str(e)}",
             )
-            # Return empty response with should_break=True to indicate error
-            return "", True, None, message_history
+            # Return empty response with should_break=False, need to retry
+            return "", False, None, original_message_history
 
     async def run_sub_agent(
         self, sub_agent_name, task_description, keep_tool_result: int = -1
@@ -414,7 +406,10 @@ class Orchestrator:
         ) + generate_agent_specific_system_prompt(agent_type=sub_agent_name)
 
         # Limit sub-agent turns
-        max_turns = self.cfg.agent.sub_agents[sub_agent_name].max_turns
+        if self.cfg.agent.sub_agents:
+            max_turns = self.cfg.agent.sub_agents[sub_agent_name].max_turns
+        else:
+            max_turns = 0
         turn_count = 0
         should_hard_stop = False
 
@@ -474,16 +469,40 @@ class Orchestrator:
                     f"{sub_agent_name} | Turn: {turn_count} | LLM Call",
                     "LLM call failed",
                 )
-                break
+                await asyncio.sleep(5)
+                continue
 
             # Use tool calls parsed from LLM response
             if not tool_calls:
-                self.task_log.log_step(
-                    "info",
-                    f"{sub_agent_name} | Turn: {turn_count} | LLM Call",
-                    f"No tool calls found in {sub_agent_name}, ending on turn {turn_count}",
-                )
-                break
+                if any(mcp_tag in assistant_response_text for mcp_tag in mcp_tags):
+                    turn_count = turn_count - 1
+                    if message_history[-1]["role"] == "assistant":
+                        message_history = message_history[:-1]
+                    self.task_log.log_step(
+                        "info",
+                        f"Main Agent | Turn: {turn_count} | LLM Call",
+                        "The format of the tool call is incorrect. Rollback one round.",
+                    )
+                    continue
+                elif any(
+                    keyword in assistant_response_text for keyword in refusal_keywords
+                ):
+                    turn_count = turn_count - 1
+                    if message_history[-1]["role"] == "assistant":
+                        message_history = message_history[:-1]
+                    self.task_log.log_step(
+                        "info",
+                        f"Main Agent | Turn: {turn_count} | LLM Call",
+                        "LLM refused to answer the question. Rollback one round.",
+                    )
+                    continue
+                else:
+                    self.task_log.log_step(
+                        "info",
+                        f"{sub_agent_name} | Turn: {turn_count} | LLM Call",
+                        f"No tool calls found in {sub_agent_name}, ending on turn {turn_count}",
+                    )
+                    break
 
             # Execute tool calls
             tool_calls_data = []
@@ -664,6 +683,8 @@ class Orchestrator:
                 message_history, summary_prompt
             )
 
+        if message_history[-1]["role"] == "user":
+            message_history.pop(-1)
         message_history.append({"role": "user", "content": summary_prompt})
 
         await self._stream_tool_call(
@@ -739,7 +760,7 @@ class Orchestrator:
                 "info", "Main Agent", f"Associated file: {task_file_name}"
             )
 
-        # 1. Process input
+        # Process input
         initial_user_content, processed_task_desc = process_input(
             task_description, task_file_name
         )
@@ -750,12 +771,15 @@ class Orchestrator:
         if task_file_name:
             user_input += f"\n[Attached file: {task_file_name}]"
 
-        # 2. Get tool definitions
+        # Get tool definitions
         if not self.tool_definitions:
             tool_definitions = (
                 await self.main_agent_tool_manager.get_all_tool_definitions()
             )
-            tool_definitions += expose_sub_agents_as_tools(self.cfg.agent.sub_agents)
+            if self.cfg.agent.sub_agents is not None:
+                tool_definitions += expose_sub_agents_as_tools(
+                    self.cfg.agent.sub_agents
+                )
         else:
             tool_definitions = self.tool_definitions
         if not tool_definitions:
@@ -769,13 +793,14 @@ class Orchestrator:
             "info", "Main Agent", f"Number of tools: {len(tool_definitions)}"
         )
 
-        # 3. Generate system prompt
+        # Generate system prompt
         system_prompt = self.llm_client.generate_agent_system_prompt(
             date=date.today(),
             mcp_servers=tool_definitions,
         ) + generate_agent_specific_system_prompt(agent_type="main")
+        system_prompt = system_prompt.strip()
 
-        # 4. Main loop: LLM <-> Tools
+        # Main loop: LLM <-> Tools
         max_turns = self.cfg.agent.main_agent.max_turns
         turn_count = 0
         error_msg = ""
@@ -820,24 +845,47 @@ class Orchestrator:
                         "should break is True, breaking the loop",
                     )
                     break
-
             else:
                 self.task_log.log_step(
                     "info",
                     f"Main Agent | Turn: {turn_count} | LLM Call",
-                    "No valid response from LLM, breaking the loop",
+                    "No valid response from LLM, retrying",
                 )
-                break
+                await asyncio.sleep(5)
+                continue
 
             if not tool_calls:
-                self.task_log.log_step(
-                    "info",
-                    f"Main Agent | Turn: {turn_count} | LLM Call",
-                    "LLM did not request tool usage, ending process.",
-                )
-                break
+                if any(mcp_tag in assistant_response_text for mcp_tag in mcp_tags):
+                    turn_count = turn_count - 1
+                    if message_history[-1]["role"] == "assistant":
+                        message_history = message_history[:-1]
+                    self.task_log.log_step(
+                        "info",
+                        f"Main Agent | Turn: {turn_count} | LLM Call",
+                        "The format of the tool call is incorrect. Rollback one round.",
+                    )
+                    continue
+                elif any(
+                    keyword in assistant_response_text for keyword in refusal_keywords
+                ):
+                    turn_count = turn_count - 1
+                    if message_history[-1]["role"] == "assistant":
+                        message_history = message_history[:-1]
+                    self.task_log.log_step(
+                        "info",
+                        f"Main Agent | Turn: {turn_count} | LLM Call",
+                        "LLM refused to answer the question. Rollback one round.",
+                    )
+                    continue
+                else:
+                    self.task_log.log_step(
+                        "info",
+                        f"Main Agent | Turn: {turn_count} | LLM Call",
+                        "LLM did not request tool usage, ending process.",
+                    )
+                    break
 
-            # 7. Execute tool calls (execute in order)
+            # Execute tool calls (execute in order)
             tool_calls_data = []
             all_tool_results_content_with_id = []
 
@@ -857,14 +905,14 @@ class Orchestrator:
 
                 call_start_time = time.time()
                 try:
-                    if server_name.startswith("agent-"):
+                    if server_name.startswith("agent-") and self.cfg.agent.sub_agents:
                         await self._stream_end_llm("main")
                         await self._stream_end_agent("main", self.current_agent_id)
                         query_str = self._get_query_str_from_tool_call(
                             tool_name, arguments
                         )
                         if query_str:
-                            cache_name = self.current_agent_id + "_" + tool_name
+                            cache_name = "main_" + tool_name
                             self.used_queries.setdefault(cache_name, defaultdict(int))
                             count = self.used_queries[cache_name][query_str]
                             if count > 0:
@@ -897,7 +945,7 @@ class Orchestrator:
                             tool_name, arguments
                         )
                         if query_str:
-                            cache_name = self.current_agent_id + "_" + tool_name
+                            cache_name = "main_" + tool_name
                             self.used_queries.setdefault(cache_name, defaultdict(int))
                             count = self.used_queries[cache_name][query_str]
                             if count > 0:
@@ -985,6 +1033,7 @@ class Orchestrator:
                 tool_result_for_llm = self.output_formatter.format_tool_result_for_user(
                     tool_result
                 )
+
                 all_tool_results_content_with_id.append((call_id, tool_result_for_llm))
 
             # Update 'last_call_tokens'
@@ -1023,7 +1072,11 @@ class Orchestrator:
                 break
 
             if should_hard_stop:
-                break
+                self.task_log.log_step(
+                    "warning",
+                    f"Main Agent | Turn: {turn_count} | Repeat Tool Call Detected",
+                    "Multiple repeated tool invocations have been detected",
+                )
 
         await self._stream_end_llm("main")
         await self._stream_end_agent("main", self.current_agent_id)
@@ -1064,6 +1117,8 @@ class Orchestrator:
                 message_history, summary_prompt
             )
 
+        if message_history[-1]["role"] == "user":
+            message_history.pop(-1)
         message_history.append({"role": "user", "content": summary_prompt})
 
         # Use unified LLM call processing
@@ -1137,5 +1192,5 @@ class Orchestrator:
             "Main Agent | Task Completed",
             f"Main agent task {task_id} completed successfully",
         )
-
+        gc.collect()
         return final_summary, final_boxed_answer

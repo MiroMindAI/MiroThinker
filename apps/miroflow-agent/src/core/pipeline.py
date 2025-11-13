@@ -1,16 +1,5 @@
-# Copyright 2025 Miromind.ai
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# Copyright (c) 2025 Miromind.ai
+# This source code is licensed under the MIT License.
 
 
 import traceback
@@ -85,8 +74,9 @@ async def execute_task_pipeline(
 
     # Set task_log for all ToolManager instances
     main_agent_tool_manager.set_task_log(task_log)
-    for sub_agent_tool_manager in sub_agent_tool_managers.values():
-        sub_agent_tool_manager.set_task_log(task_log)
+    if sub_agent_tool_managers:
+        for sub_agent_tool_manager in sub_agent_tool_managers.values():
+            sub_agent_tool_manager.set_task_log(task_log)
 
     try:
         # Initialize LLM client
@@ -174,7 +164,14 @@ def create_pipeline_components(cfg: DictConfig):
         tool_blacklist=main_agent_blacklist,
     )
 
+    # Create OutputFormatter
+    output_formatter = OutputFormatter()
     sub_agent_tool_managers = {}
+
+    # For single agent mode
+    if not cfg.agent.sub_agents:
+        return main_agent_tool_manager, {}, output_formatter
+
     for sub_agent in cfg.agent.sub_agents:
         sub_agent_mcp_server_configs, sub_agent_blacklist = (
             create_mcp_server_parameters(cfg, cfg.agent.sub_agents[sub_agent])
@@ -184,8 +181,5 @@ def create_pipeline_components(cfg: DictConfig):
             tool_blacklist=sub_agent_blacklist,
         )
         sub_agent_tool_managers[sub_agent] = sub_agent_tool_manager
-
-    # Create OutputFormatter
-    output_formatter = OutputFormatter()
 
     return main_agent_tool_manager, sub_agent_tool_managers, output_formatter

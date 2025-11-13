@@ -1,16 +1,5 @@
-# Copyright 2025 Miromind.ai
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# Copyright (c) 2025 Miromind.ai
+# This source code is licensed under the MIT License.
 
 import asyncio
 import dataclasses
@@ -131,6 +120,9 @@ class AnthropicClient(BaseClient):
                     top_p=self.top_p if self.top_p != 1.0 else NOT_GIVEN,
                     top_k=self.top_k if self.top_k != -1 else NOT_GIVEN,
                     max_tokens=self.max_tokens,
+                    repetition_penalty=self.repetition_penalty
+                    if self.repetition_penalty != 1.0
+                    else NOT_GIVEN,
                     system=[
                         {
                             "type": "text",
@@ -148,6 +140,9 @@ class AnthropicClient(BaseClient):
                     top_p=self.top_p if self.top_p != 1.0 else NOT_GIVEN,
                     top_k=self.top_k if self.top_k != -1 else NOT_GIVEN,
                     max_tokens=self.max_tokens,
+                    repetition_penalty=self.repetition_penalty
+                    if self.repetition_penalty != 1.0
+                    else NOT_GIVEN,
                     system=[
                         {
                             "type": "text",

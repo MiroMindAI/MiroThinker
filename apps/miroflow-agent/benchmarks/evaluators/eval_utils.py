@@ -1,17 +1,7 @@
-# Copyright 2025 Miromind.ai
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# Copyright (c) 2025 Miromind.ai
+# This source code is licensed under the MIT License.
 
+import asyncio
 import os
 import re
 import string
@@ -451,7 +441,7 @@ async def verify_answer_browsecomp(
 
 
 # ================================================
-# verify_answer_xbench_deepresearch
+# verify_answer_xbench_deepsearch
 
 # Prompt from XBench-Evals
 # https://github.com/xbench-ai/xbench-evals/blob/main/eval_grader.py#L25
@@ -476,11 +466,11 @@ JUDGE_PROMPT_XBENCH = """
 """.strip()
 
 
-async def verify_answer_xbench_deepresearch(
+async def verify_answer_xbench_deepsearch(
     question: str, target: str, predicted_answer: str
 ) -> str:
     """
-    Use XBench-DeepResearch judge to verify if the predicted answer is correct.
+    Use XBench-DeepSearch judge to verify if the predicted answer is correct.
     """
 
     def parse_match_result(match):
@@ -533,7 +523,7 @@ async def verify_answer_xbench_deepresearch(
 # ================================================
 
 
-async def verify_answer_for_datasets(
+async def _verify_answer_for_datasets_core(
     benchmark_name: str,
     question: str,
     target: str,
@@ -557,32 +547,62 @@ async def verify_answer_for_datasets(
         result = await verify_answer_gaia_validation_text_103(
             question, target, predicted_answer
         )
-        return result, "gaia_validation_text_103_scorer"
+        return result, "gaia_validation_text_103_judge"
 
-    # For other gaia datasets, use gaia scorer
-    elif "gaia" in benchmark_name:
-        result = await verify_answer_gaia(question, target, predicted_answer)
-        return result, "gaia_scorer"
+    elif "browsecomp" in benchmark_name:
+        result = await verify_answer_browsecomp(question, target, predicted_answer)
+        return result, "browsecomp_judge"
 
-    elif benchmark_name == "webwalkerqa":
+    elif "hle" in benchmark_name:
+        result = await verify_answer_hle(question, target, predicted_answer)
+        return result, "hle_judge"
+
+    elif benchmark_name in ["webwalkerqa", "frames", "seal-0"]:
         result = await verify_answer_gaia_validation_text_103(
             question, target, predicted_answer
         )
-        return result, "gaia_validation_text_103_scorer"
-
-    elif benchmark_name == "browsecomp" or benchmark_name == "browsecomp_zh":
-        result = await verify_answer_browsecomp(question, target, predicted_answer)
-        return result, "browsecomp_judge"
+        return result, "gaia_validation_text_103_judge"
 
     elif benchmark_name == "simpleqa" or benchmark_name == "collect_trace":
         result = await verify_answer_simpleqa(question, target, predicted_answer)
         return result, "simpleqa_judge"
 
-    elif benchmark_name == "xbench_deepresearch":
-        result = await verify_answer_xbench_deepresearch(
+    elif benchmark_name == "xbench_deepsearch":
+        result = await verify_answer_xbench_deepsearch(
             question, target, predicted_answer
         )
-        return result, "xbench_deepresearch_judge"
+        return result, "xbench_deepsearch_judge"
+
     else:
-        result = await verify_answer_hle(question, target, predicted_answer)
-        return result, "hle_judge"
+        result = await verify_answer_gaia_validation_text_103(
+            question, target, predicted_answer
+        )
+        return result, "gaia_validation_text_103_judge"
+
+
+async def verify_answer_for_datasets(
+    benchmark_name: str,
+    question: str,
+    target: str,
+    predicted_answer: str,
+    max_retries: int = 10,
+    retry_interval: int = 5,
+) -> tuple[str, str]:
+    """
+    Wrapper with retry logic for NOT_ATTEMPTED results.
+    """
+    for attempt in range(1, max_retries + 1):
+        result, judge_type = await _verify_answer_for_datasets_core(
+            benchmark_name, question, target, predicted_answer
+        )
+        if result != "NOT_ATTEMPTED":
+            return result, judge_type
+        if attempt < max_retries:
+            print(
+                f"[Retry {attempt}/{max_retries}] Got NOT_ATTEMPTED, retrying in {retry_interval}s..."
+            )
+            await asyncio.sleep(retry_interval)
+
+    # still NOT_ATTEMPTED after retries
+    print(f"All {max_retries} attempts resulted in NOT_ATTEMPTED.")
+    return "NOT_ATTEMPTED", "retry_wrapper"

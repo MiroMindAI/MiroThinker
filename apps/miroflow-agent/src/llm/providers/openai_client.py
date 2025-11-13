@@ -1,16 +1,5 @@
-# Copyright 2025 Miromind.ai
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# Copyright (c) 2025 Miromind.ai
+# This source code is licensed under the MIT License.
 
 import asyncio
 import dataclasses
@@ -123,6 +112,7 @@ class OpenAIClient(BaseClient):
             "tools": [],
             "stream": False,
             "top_p": self.top_p,
+            "extra_body": {},
         }
         # Check if the model is GPT-5, and adjust the parameter accordingly
         if "gpt-5" in self.model_name:
@@ -131,6 +121,13 @@ class OpenAIClient(BaseClient):
         else:
             # Use 'max_tokens' for GPT-4 and other models
             params["max_tokens"] = self.max_tokens
+
+        # Add repetition_penalty if it's not the default value
+        if self.repetition_penalty != 1.0:
+            params["extra_body"]["repetition_penalty"] = self.repetition_penalty
+
+        if "deepseek-v3-1" in self.model_name:
+            params["extra_body"]["thinking"] = {"type": "enabled"}
 
         try:
             if self.async_client:
@@ -144,6 +141,36 @@ class OpenAIClient(BaseClient):
                 "LLM | Response Status",
                 f"{getattr(response.choices[0], 'finish_reason', 'N/A')}",
             )
+
+            # Check if response was truncated due to length limit
+            finish_reason = getattr(response.choices[0], "finish_reason", None)
+            if finish_reason == "length":
+                self.task_log.log_step(
+                    "warning",
+                    "LLM | Length Limit Reached",
+                    "Response was truncated due to length limit, retrying...",
+                )
+                raise Exception("Response truncated due to length limit, please retry.")
+
+            # Check if the last 100 characters of the response appear more than 5 times in the response content.
+            # If so, treat it as a severe repeat and trigger a retry.
+            if hasattr(response.choices[0], "message") and hasattr(
+                response.choices[0].message, "content"
+            ):
+                resp_content = response.choices[0].message.content or ""
+            else:
+                resp_content = getattr(response.choices[0], "text", "")
+
+            if resp_content and len(resp_content) >= 50:
+                tail_50 = resp_content[-50:]
+                repeat_count = resp_content.count(tail_50)
+                if repeat_count > 5:
+                    self.task_log.log_step(
+                        "warning",
+                        "LLM | Repeat Detected",
+                        "Severe repeat: the last 50 chars appeared over 5 times, retrying...",
+                    )
+                    raise Exception("Severe repeat detected in response, please retry.")
 
             return response, messages_history
 

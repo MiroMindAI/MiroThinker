@@ -1,16 +1,5 @@
-# Copyright 2025 Miromind.ai
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# Copyright (c) 2025 Miromind.ai
+# This source code is licensed under the MIT License.
 
 import json
 import logging
@@ -21,13 +10,77 @@ from json_repair import repair_json
 logger = logging.getLogger("miroflow_agent")
 
 
+def filter_none_values(arguments: dict) -> dict:
+    """
+    Filter out keys with None values from arguments dictionary.
+    """
+    if not isinstance(arguments, dict):
+        return arguments
+    return {k: v for k, v in arguments.items() if v is not None}
+
+
+def _fix_backslash_escapes(json_str: str) -> str:
+    """
+    Fix common backslash escape issues in JSON strings.
+    This handles cases where backslashes in string values are not properly escaped.
+
+    Common issues:
+    - Unescaped backslashes before non-escape characters
+
+    Note: This is a conservative fix that preserves valid escape sequences
+    (\\, \", \/, \b, \f, \n, \r, \t) and only fixes clearly problematic cases.
+    """
+    fixed_str = json_str
+
+    # Fix backslashes that are not part of valid escape sequences
+    # Valid JSON escape sequences: \\, \", \/, \b, \f, \n, \r, \t, \uXXXX
+    # Pattern: backslash not followed by a valid escape character
+    # This regex matches \ followed by anything except valid escape chars
+    # But we need to be careful not to match already-escaped backslashes (\\)
+
+    # Strategy: Find all backslashes, but skip those that are:
+    # 1. Already escaped (\\)
+    # 2. Part of valid escape sequences (\", \/, \b, \f, \n, \r, \t, \u)
+
+    # More conservative approach: Only fix backslashes before uppercase letters
+    # (common in Windows paths) and other clearly problematic patterns
+    # This avoids breaking valid JSON escape sequences
+
+    # Fix backslashes before uppercase letters (Windows paths like C:\Users)
+    fixed_str = re.sub(
+        r"(?<!\\)\\([A-Z])",  # Backslash before uppercase letter, not already escaped
+        r"\\\\\1",
+        fixed_str,
+    )
+
+    # Fix backslashes before digits (common in paths like \1, \2)
+    fixed_str = re.sub(
+        r"(?<!\\)\\([0-9])",  # Backslash before digit, not already escaped
+        r"\\\\\1",
+        fixed_str,
+    )
+
+    # Fix other unescaped backslashes that are not part of valid escape sequences
+    # This is more aggressive but should be safe after json_repair fails
+    # Valid escape chars: \\, ", /, b, f, n, r, t, u
+    # Use a capturing group to preserve the character after backslash
+    fixed_str = re.sub(
+        r'(?<!\\)\\([^\\"/bfnrtu])',  # Backslash followed by invalid escape char
+        r"\\\\\1",  # Escape it and preserve the character
+        fixed_str,
+    )
+
+    return fixed_str
+
+
 def safe_json_loads(arguments_str: str) -> dict:
     """
     Safely parse a JSON string with multiple fallbacks:
     1. Try standard json.loads()
-    2. If it fails, try json_repair
-    3. If it still fails, apply simple rule-based fixes
-    4. If all attempts fail, return an error object
+    2. If it fails, apply simple rule-based fixes (quotes, booleans, None)
+    3. If it still fails, try to fix backslash escape issues
+    4. If it still fails, try json_repair
+    5. If all attempts fail, return an error object
     """
     # Step 1: Try standard JSON parsing
     try:
@@ -35,14 +88,7 @@ def safe_json_loads(arguments_str: str) -> dict:
     except json.JSONDecodeError:
         logger.warning(f"Unable to parse JSON: {arguments_str}")
 
-    # Step 2: Try json_repair to fix common issues
-    try:
-        repaired = repair_json(arguments_str, ensure_ascii=False)
-        return json.loads(repaired)
-    except Exception:
-        logger.info("json_repair also failed, trying fallback fixes.")
-
-    # Step 3: Apply simple string replacements as a last resort
+    # Step 2: Apply simple string replacements
     try:
         fixed = (
             arguments_str.replace("'", '"')
@@ -52,11 +98,30 @@ def safe_json_loads(arguments_str: str) -> dict:
         )
         return json.loads(fixed)
     except json.JSONDecodeError:
-        logger.error(
-            f"Error: Still unable to parse JSON after all attempts: {arguments_str}"
-        )
+        logger.debug("Simple string replacements didn't fix the JSON")
 
-    # Step 4: Give up and return error information
+    # Step 3: Try to fix backslash escape issues
+    try:
+        fixed_escapes = _fix_backslash_escapes(arguments_str)
+        # Also apply simple fixes in case both are needed
+        fixed_escapes = (
+            fixed_escapes.replace("'", '"')
+            .replace("None", "null")
+            .replace("True", "true")
+            .replace("False", "false")
+        )
+        return json.loads(fixed_escapes)
+    except (json.JSONDecodeError, Exception) as e:
+        logger.debug(f"Backslash escape fixing didn't work: {e}")
+
+    # Step 4: Try json_repair to fix common issues
+    try:
+        repaired = repair_json(arguments_str, ensure_ascii=False)
+        return json.loads(repaired)
+    except Exception as e:
+        logger.info(f"json_repair also failed: {e}")
+
+    # Step 5: Give up and return error information
     return {
         "error": "Failed to parse arguments",
         "raw": arguments_str,
@@ -100,6 +165,7 @@ def parse_llm_response_for_tool_calls(llm_response_content_text):
                 server_name, tool_name = item.get("name").rsplit("-", maxsplit=1)
                 arguments_str = item.get("arguments")
                 arguments = safe_json_loads(arguments_str)
+                arguments = filter_none_values(arguments)
                 tool_calls.append(
                     dict(
                         server_name=server_name,
@@ -147,6 +213,7 @@ def parse_llm_response_for_tool_calls(llm_response_content_text):
                         "raw": arguments_str,
                     }
 
+            arguments = filter_none_values(arguments)
             tool_calls.append(
                 dict(
                     server_name=server_name,
@@ -173,6 +240,7 @@ def parse_llm_response_for_tool_calls(llm_response_content_text):
 
         # Parse JSON string to dictionary
         arguments = safe_json_loads(arguments_str)
+        arguments = filter_none_values(arguments)
 
         tool_calls.append(
             {

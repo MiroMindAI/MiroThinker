@@ -1,29 +1,19 @@
-# Copyright 2025 Miromind.ai
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# Copyright (c) 2025 Miromind.ai
+# This source code is licensed under the MIT License.
 
 import re
 
 
 class OutputFormatter:
     def _extract_boxed_content(self, text: str) -> str:
-        """
+        r"""
         Extract the content of the last \boxed{...} occurrence in the given text.
         Supports:
           - Arbitrary levels of nested braces
           - Escaped braces (\{ and \})
           - Whitespace between \boxed and the opening brace
           - Empty content inside braces
+          - Incomplete boxed expressions (extracts to end of string as fallback)
         Returns an empty string if no match is found.
         """
         if not text:
@@ -31,8 +21,10 @@ class OutputFormatter:
 
         _BOXED_RE = re.compile(r"\\boxed\b", re.DOTALL)
 
-        last = ""
+        last_result = None  # Track the last boxed content (complete or incomplete)
         i = 0
+        n = len(text)
+
         while True:
             # Find the next \boxed occurrence
             m = _BOXED_RE.search(text, i)
@@ -41,7 +33,6 @@ class OutputFormatter:
             j = m.end()
 
             # Skip any whitespace after \boxed
-            n = len(text)
             while j < n and text[j].isspace():
                 j += 1
 
@@ -54,6 +45,7 @@ class OutputFormatter:
             depth = 0
             k = j
             escaped = False
+            found_closing = False
             while k < n:
                 ch = text[k]
                 if escaped:
@@ -66,15 +58,22 @@ class OutputFormatter:
                     depth -= 1
                     # When depth returns to zero, the boxed content ends
                     if depth == 0:
-                        last = text[j + 1 : k]
+                        last_result = text[j + 1 : k]
                         i = k + 1
+                        found_closing = True
                         break
                 k += 1
-            else:
-                # No closing brace found — stop processing
-                break
 
-        return last.strip()
+            # If we didn't find a closing brace, this is an incomplete boxed
+            # Store it as the last result (will be overwritten if we find more boxed later)
+            if not found_closing and depth > 0:
+                last_result = text[j + 1 : n]
+                i = k  # Continue from where we stopped
+            elif not found_closing:
+                i = j + 1  # Move past this invalid boxed
+
+        # Return the last boxed content found (complete or incomplete)
+        return last_result.strip() if last_result else ""
 
     def format_tool_result_for_user(self, tool_call_execution_result):
         """

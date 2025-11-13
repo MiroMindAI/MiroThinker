@@ -1,16 +1,5 @@
-# Copyright 2025 Miromind.ai
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# Copyright (c) 2025 Miromind.ai
+# This source code is licensed under the MIT License.
 
 import os
 import sys
@@ -59,6 +48,11 @@ OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1")
 # API for Sougou Search
 TENCENTCLOUD_SECRET_ID = os.environ.get("TENCENTCLOUD_SECRET_ID")
 TENCENTCLOUD_SECRET_KEY = os.environ.get("TENCENTCLOUD_SECRET_KEY")
+
+# API for Summary LLM
+SUMMARY_LLM_API_KEY = os.environ.get("SUMMARY_LLM_API_KEY")
+SUMMARY_LLM_BASE_URL = os.environ.get("SUMMARY_LLM_BASE_URL")
+SUMMARY_LLM_MODEL_NAME = os.environ.get("SUMMARY_LLM_MODEL_NAME")
 
 
 # MCP server configuration generation function
@@ -121,18 +115,6 @@ def create_mcp_server_parameters(cfg: DictConfig, agent_cfg: DictConfig):
         configs.append(
             {
                 "name": "tool-python",
-                "params": StdioServerParameters(
-                    command=sys.executable,
-                    args=["-m", "miroflow_tools.mcp_servers.python_mcp_server"],
-                    env={"E2B_API_KEY": E2B_API_KEY},
-                ),
-            }
-        )
-
-    if agent_cfg.get("tools", None) is not None and "tool-code" in agent_cfg["tools"]:
-        configs.append(
-            {
-                "name": "tool-code",
                 "params": StdioServerParameters(
                     command=sys.executable,
                     args=["-m", "miroflow_tools.mcp_servers.python_mcp_server"],
@@ -278,6 +260,69 @@ def create_mcp_server_parameters(cfg: DictConfig, agent_cfg: DictConfig):
             }
         )
 
+    if (
+        agent_cfg.get("tools", None) is not None
+        and "search_and_scrape_webpage" in agent_cfg["tools"]
+    ):
+        configs.append(
+            {
+                "name": "search_and_scrape_webpage",
+                "params": StdioServerParameters(
+                    command=sys.executable,
+                    args=[
+                        "-m",
+                        "miroflow_tools.dev_mcp_servers.search_and_scrape_webpage",
+                    ],
+                    env={
+                        "SERPER_API_KEY": SERPER_API_KEY,
+                        "SERPER_BASE_URL": SERPER_BASE_URL,
+                    },
+                ),
+            }
+        )
+
+    if (
+        agent_cfg.get("tools", None) is not None
+        and "jina_scrape_llm_summary" in agent_cfg["tools"]
+    ):
+        configs.append(
+            {
+                "name": "jina_scrape_llm_summary",
+                "params": StdioServerParameters(
+                    command=sys.executable,
+                    args=[
+                        "-m",
+                        "miroflow_tools.dev_mcp_servers.jina_scrape_llm_summary",
+                    ],
+                    env={
+                        "JINA_API_KEY": JINA_API_KEY,
+                        "JINA_BASE_URL": JINA_BASE_URL,
+                        "SUMMARY_LLM_BASE_URL": SUMMARY_LLM_BASE_URL,
+                        "SUMMARY_LLM_MODEL_NAME": SUMMARY_LLM_MODEL_NAME,
+                        "SUMMARY_LLM_API_KEY": SUMMARY_LLM_API_KEY,
+                    },
+                ),
+            }
+        )
+
+    if (
+        agent_cfg.get("tools", None) is not None
+        and "stateless_python" in agent_cfg["tools"]
+    ):
+        configs.append(
+            {
+                "name": "stateless_python",
+                "params": StdioServerParameters(
+                    command=sys.executable,
+                    args=[
+                        "-m",
+                        "miroflow_tools.dev_mcp_servers.stateless_python_server",
+                    ],
+                    env={"E2B_API_KEY": E2B_API_KEY},
+                ),
+            }
+        )
+
     blacklist = set()
     for black_list_item in agent_cfg.get("tool_blacklist", []):
         blacklist.add((black_list_item[0], black_list_item[1]))
@@ -323,14 +368,19 @@ def get_env_info(cfg: DictConfig) -> dict:
         "llm_min_p": cfg.llm.min_p,
         "llm_top_k": cfg.llm.top_k,
         "llm_max_tokens": cfg.llm.max_tokens,
+        "llm_repetition_penalty": cfg.llm.repetition_penalty,
         "llm_async_client": cfg.llm.async_client,
         "keep_tool_result": cfg.llm.keep_tool_result,
         # Agent Configuration
         "main_agent_max_turns": cfg.agent.main_agent.max_turns,
-        **{
-            f"sub_{sub_agent}_max_turns": cfg.agent.sub_agents[sub_agent].max_turns
-            for sub_agent in cfg.agent.sub_agents
-        },
+        **(
+            {
+                f"sub_{sub_agent}_max_turns": cfg.agent.sub_agents[sub_agent].max_turns
+                for sub_agent in cfg.agent.sub_agents
+            }
+            if cfg.agent.sub_agents is not None
+            else {}
+        ),
         # API Keys (masked for security)
         "has_serper_api_key": bool(SERPER_API_KEY),
         "has_jina_api_key": bool(JINA_API_KEY),
@@ -339,6 +389,7 @@ def get_env_info(cfg: DictConfig) -> dict:
         "has_e2b_api_key": bool(E2B_API_KEY),
         "has_tencent_secret_id": bool(TENCENTCLOUD_SECRET_ID),
         "has_tencent_secret_key": bool(TENCENTCLOUD_SECRET_KEY),
+        "has_summary_llm_api_key": bool(SUMMARY_LLM_API_KEY),
         # Base URLs
         "openai_base_url": OPENAI_BASE_URL,
         "anthropic_base_url": ANTHROPIC_BASE_URL,
@@ -347,4 +398,5 @@ def get_env_info(cfg: DictConfig) -> dict:
         "whisper_base_url": WHISPER_BASE_URL,
         "vision_base_url": VISION_BASE_URL,
         "reasoning_base_url": REASONING_BASE_URL,
+        "summary_llm_base_url": SUMMARY_LLM_BASE_URL,
     }

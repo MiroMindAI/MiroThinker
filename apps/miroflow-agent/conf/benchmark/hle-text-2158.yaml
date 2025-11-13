@@ -1,0 +1,15 @@
+# conf/benchmark/hle-text-2158.yaml
+defaults:
+  - default
+  - _self_
+
+name: "hle-text-2158"
+
+data:
+  data_dir: "../../data/hle-text-2158"
+
+execution:
+  max_tasks: null  # null means no limit
+  max_concurrent: 5
+  pass_at_k: 1
+  format_error_retry_limit: 0

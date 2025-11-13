@@ -1,16 +1,5 @@
-# Copyright 2025 Miromind.ai
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# Copyright (c) 2025 Miromind.ai
+# This source code is licensed under the MIT License.
 
 import asyncio
 import json
@@ -110,6 +99,10 @@ async def scrape_website(url: str) -> str:
     # Validate URL format
     if not url or not url.startswith(("http://", "https://")):
         return f"Invalid URL: '{url}'. URL must start with http:// or https://"
+
+    # Avoid duplicate Jina URL prefix
+    if url.startswith("https://r.jina.ai/") and url.count("http") >= 2:
+        url = url[len("https://r.jina.ai/") :]
 
     # Check for restricted domains
     if "huggingface.co/datasets" in url or "huggingface.co/spaces" in url:
