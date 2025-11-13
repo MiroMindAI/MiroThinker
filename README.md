@@ -25,20 +25,12 @@
 
 </div>
 
-<div align="center">
-  <img src="assets/futurex-09-12.png" width="100%" alt="MiroFlow" />
-</div>
-
-______________________________________________________________________
-
 This repo is the official implementation of the MiroMind Research Agent Project. It is a leading-performance, fully open-source system designed to perform multi-step internet research for addressing complex challenges such as future event prediction. The project currently comprises four key components:
 
 - 🤔 **MiroThinker**: an open-source agent foundation model that natively supports tool-assisted reasoning, achieving open-source state-of-the-art performance across multiple benchmarks (e.g., FutureX, GAIA, HLE, xBench-DeepSearch, BrowserComp, and Frames Benchmarks), included in this repo. See [\[Quick Start\]](#-quick-start) for a quick start.
 - 🤖 **MiroFlow**: an open-source research agent framework that offers reproducible state-of-the-art performance across multiple benchmarks. See [MiroFlow](https://github.com/MiroMindAI/MiroFlow).
 - 📊 **MiroVerse**: 147k premium open-source training data supporting research agent training. See [MiroVerse](https://huggingface.co/datasets/miromind-ai/MiroVerse-v0.1).
 - 🚧 **MiroTrain / MiroRL**: The training infra that supports stable and efficient training for the research agent models. See [MiroTrain](https://github.com/MiroMindAI/MiroTrain) / [MiroRL](https://github.com/MiroMindAI/MiroRL)
-
-______________________________________________________________________
 
 ## 📋 Table of Contents
 
@@ -53,8 +45,6 @@ ______________________________________________________________________
 - 📄 [License](#-license)
 - 🙏 [Acknowledgments](#-acknowledgments-and-contributors)
 
-______________________________________________________________________
-
 ## 📰 News & Updates
 
 - **\[2025-09-11\]** 🎉🎉 MiroThinker-72B-Preview ranked 4th in this week’s FutureX benchmark. See [FutureX](https://futurex-ai.github.io/).
@@ -64,11 +54,39 @@ ______________________________________________________________________
 - **\[2025-08-22\]** Introducing streamlined deployment options for MiroThinker models with optimized resource usage and faster startup times. Experience the interactive demo: [🚀 Try Gradio Demo](apps/gradio-demo)
 - **\[2025-08-08\]** [MiroThinker-v0.1](https://huggingface.co/collections/miromind-ai/mirothinker-v01-689301b6d0563321862d44a1) released. Models, framework, and data are now fully open-sourced!
 
-______________________________________________________________________
-
 ## 📝 Introduction
 
 **MiroThinker** is an open-source agent foundation model. Designed as a research agent for complex, long-horizon problem solving, it integrates strong capabilities in task decomposition, multi-hop reasoning, retrieval-augmented generation, code execution, web browsing, and document/file processing, enabling a wide range of real-world applications.
+
+### MiroThinker-v1.0
+
+MiroThinker v1.0 is an open-source research agent designed to advance tool-augmented reasoning and information-seeking capabilities. 
+
+Unlike previous agents that scale only model size or context length, MiroThinker introduces **interactive scaling** at the model level, systematically training the model to handle deeper and more frequent agent–environment interactions as a third dimension of performance improvement. Interactive scaling leverages environment feedback and external information acquisition to correct errors and refine trajectories. 
+
+Empirical results demonstrate the effectiveness of this interactive scaling. Performance across several benchmarks improves predictably as the model engages in increasingly deep and frequent interactions with its environment.
+
+**Key Features**
+
+- MiroThinker v1.0 supports a 256K context window, long-horizon reasoning, and deep multi-step analysis.
+- Handles up to 600 tool calls per task — a substantial improvement over previous open-source research agents.
+- Released in 8B, 30B, and 72B parameter scales, accompanied by a comprehensive suite of tools and workflows to flexibly support diverse research settings and compute budgets.
+
+<div align="center">
+  
+|      Model Name      |         Base Model          | Max Length | Max Tool Calls |                              HF Link                               |
+|:--------------------:|:---------------------------:|:----------:|:--------------:|:------------------------------------------------------------------:|
+| MiroThinker-v1.0-8B  |        Qwen3-8B             |    256K    |      600       | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-v1.0-8B)  |
+| MiroThinker-v1.0-30B | Qwen3-30B-A3B-Thinking-2507 |    256K    |      600       | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-v1.0-30B) |
+| MiroThinker-v1.0-72B |    Qwen2.5-72B-Instruct     |    256K    |      600       | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-v1.0-72B) |
+
+</div>
+
+MiroThinker v1.0 demonstrates strong general-research performance across a broad range of benchmarks, achieving 37.7%, 47.1%, 55.6%, and 81.9% on HLE-Text, BrowseComp, BrowseComp-ZH, and GAIA-Text-103, respectively. These results surpass previous open-source agents and narrow the gap with commercial counterparts such as GPT-5-high.
+
+<div align="center">
+  <img src="https://huggingface.co/datasets/miromind-ai/MiroFlow-Benchmarks/resolve/main/assets/MiroThinker_v1.0_Performance_1.png" width="100%" alt="MiroThinker" />
+</div>
 
 ### MiroThinker-v0.2
 
@@ -83,6 +101,8 @@ In this new version, we introduced three key improvements:
 
 Compared to v0.1, MiroThinker-v0.2 delivers consistent gains across benchmarks. For example, scores improved from **57.3 → 64.1** on **GAIA-Text-103** and from **17.0 → 29.4** on **BrowseComp-ZH**, reflecting substantial advancements in the model’s general research agent capabilities.
 
+<div align="center">
+
 |        Model Name        |      Base Model       | Max Length |                                HF Link                                 |
 |:------------------------:|:---------------------:|:----------:|:----------------------------------------------------------------------:|
 | MiroThinker-4B-SFT-v0.2  |       Qwen3-4B        |    64K     | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-4B-SFT-v0.2)  |
@@ -95,6 +115,8 @@ Compared to v0.1, MiroThinker-v0.2 delivers consistent gains across benchmarks. 
 | MiroThinker-32B-DPO-v0.2 |       Qwen3-32B       |    64K     | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-32B-DPO-v0.2) |
 | MiroThinker-72B-SFT-v0.2 | Qwen2.5-72B-Instruct  |    64K     |                              Coming Soon                               |
 | MiroThinker-72B-DPO-v0.2 | Qwen2.5-72B-Instruct  |    64K     |                              Coming Soon                               |
+
+</div>
 
 </details>
 
@@ -121,8 +143,6 @@ We have released the **MiroThinker v0.1** series, including both SFT and DPO var
 
 </details>
 
-______________________________________________________________________
-
 ## ✨ Key Features
 
 ### 🤖 **MiroThinker-Optimized Framework**
@@ -147,13 +167,13 @@ ______________________________________________________________________
 - **SEAL-0**: A benchmark for evaluating LLMs on conflicting-evidence web questions. ([paper](https://arxiv.org/abs/2506.01062))
 - **AIME2025**: American Invitational Mathematics Examination 2025. ([website](https://artificialanalysis.ai/evaluations/aime-2025))
 
-______________________________________________________________________
-
 ## 📈 Performance on Benchmarks
 
 ### MiroThinker-v1.0
 
-TODO
+<div>
+  <img src="https://huggingface.co/datasets/miromind-ai/MiroFlow-Benchmarks/resolve/main/assets/MiroThinker_v1.0_Performance_2.png" width="90%" alt="MiroThinker" />
+</div>
 
 ### MiroThinker-v0.2
 
@@ -163,7 +183,7 @@ TODO
 #### Comparison with SOTA Research Agents
 
 <div>
-  <img src="https://huggingface.co/datasets/miromind-ai/MiroFlow-Benchmarks/resolve/main/assets/MiroThinker_v0.2_Performance_0.png" width="80%" alt="MiroThinker" />
+  <img src="https://huggingface.co/datasets/miromind-ai/MiroFlow-Benchmarks/resolve/main/assets/MiroThinker_v1.0_Performance_2.png" width="90%" alt="MiroThinker" />
 </div>
 
 #### GAIA Benchmark
@@ -243,8 +263,6 @@ TODO
 1. As [MiroVerse-v0.1](https://huggingface.co/datasets/miromind-ai/MiroVerse-v0.1) mainly contains English data, the model’s Chinese capability is limited. We plan to add more Chinese data to improve performance in the next version.
 
 </details>
-
-______________________________________________________________________
 
 ## 🚀 Quick Start
 
@@ -475,8 +493,6 @@ uv run bash scripts/collect_trace_gpt5.sh
 # Collect Traces for DPO
 uv run bash scripts/collect_trace_qwen3.sh
 ```
-
-______________________________________________________________________
 
 ## 📞 Support
 
