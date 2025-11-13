@@ -7,7 +7,7 @@
 <div align="center">
 
 [![DEMO](https://img.shields.io/badge/Demo-FFB300?style=for-the-badge&logo=airplayvideo&logoColor=white)](https://dr.miromind.ai/)
-[![MODELS](https://img.shields.io/badge/Models-5EDDD2?style=for-the-badge&logo=huggingface&logoColor=ffffff&labelColor)](https://huggingface.co/collections/miromind-ai/mirothinker-v02-68af084a18035f57b17cd902)
+[![MODELS](https://img.shields.io/badge/Models-5EDDD2?style=for-the-badge&logo=huggingface&logoColor=ffffff&labelColor)](https://huggingface.co/collections/miromind-ai/mirothinker-v10)
 [![DATA](https://img.shields.io/badge/Data-0040A1?style=for-the-badge&logo=huggingface&logoColor=ffffff&labelColor)](https://huggingface.co/datasets/miromind-ai/MiroVerse-v0.1)
 [![Blog](https://img.shields.io/badge/Blog-4285F4?style=for-the-badge&logo=google-chrome&logoColor=white)](https://miromind.ai/blog/miromind-research-agent)
 
@@ -70,11 +70,10 @@ ______________________________________________________________________
 
 **MiroThinker** is an open-source agent foundation model. Designed as a research agent for complex, long-horizon problem solving, it integrates strong capabilities in task decomposition, multi-hop reasoning, retrieval-augmented generation, code execution, web browsing, and document/file processing, enabling a wide range of real-world applications.
 
-<div align="center">
-  <img src="https://huggingface.co/datasets/miromind-ai/MiroFlow-Benchmarks/resolve/main/assets/MiroThinker_v0.2_Performance_2.png" width="100%" alt="MiroThinker"/>
-</div>
-
 ### MiroThinker-v0.2
+
+<details>
+  <summary>Click here to open</summary>
 
 In this new version, we introduced three key improvements:
 
@@ -96,6 +95,8 @@ Compared to v0.1, MiroThinker-v0.2 delivers consistent gains across benchmarks. 
 | MiroThinker-32B-DPO-v0.2 |       Qwen3-32B       |    64K     | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-32B-DPO-v0.2) |
 | MiroThinker-72B-SFT-v0.2 | Qwen2.5-72B-Instruct  |    64K     |                              Coming Soon                               |
 | MiroThinker-72B-DPO-v0.2 | Qwen2.5-72B-Instruct  |    64K     |                              Coming Soon                               |
+
+</details>
 
 ### MiroThinker-v0.1
 
@@ -141,22 +142,23 @@ ______________________________________________________________________
 - **BrowseComp-ZH**: A Chinese version of BrowseComp. ([paper](https://arxiv.org/abs/2504.19314))
 - **WebWalkerQA**: Web navigation and question answering. ([paper](https://arxiv.org/abs/2501.07572))
 - **Frames**: Factuality, Retrieval, And reasoning MEasurement Set. ([paper](https://arxiv.org/abs/2409.12941))
-- **XBench-DeepResearch**: A benchmark for deep research agents. ([website](https://xbench.org/agi/aisearch))
+- **XBench-DeepSearch**: A benchmark for deep research agents. ([website](https://xbench.org/agi/aisearch))
 - **FutureX**: A live benchmark designed for predicting unknown future. ([website](https://futurex-ai.github.io/))
+- **SEAL-0**: A benchmark for evaluating LLMs on conflicting-evidence web questions. ([paper](https://arxiv.org/abs/2506.01062))
+- **AIME2025**: American Invitational Mathematics Examination 2025. ([website](https://artificialanalysis.ai/evaluations/aime-2025))
 
 ______________________________________________________________________
 
 ## 📈 Performance on Benchmarks
 
-> \[!IMPORTANT\]
->
-> <div>
-> To prevent data leakage during searches, we block Hugging Face domains to ensure the model doesn't access answers through shortcuts.
-> For the detailed implementation, see
-> <a href="https://github.com/MiroMindAI/mirage/blob/MiroFlow-MiroThinker/libs/miroflow-tools/src/miroflow_tools/manager.py#L277">here</a>.
-> </div>
+### MiroThinker-v1.0
+
+TODO
 
 ### MiroThinker-v0.2
+
+<details>
+  <summary>Click here to open</summary>
 
 #### Comparison with SOTA Research Agents
 
@@ -169,6 +171,8 @@ ______________________________________________________________________
 <div>
   <img src="https://huggingface.co/datasets/miromind-ai/MiroFlow-Benchmarks/resolve/main/assets/MiroThinker_v0.2_Performance_1.png" width="80%" alt="MiroThinker" />
 </div>
+
+</details>
 
 ### MiroThinker-v0.1
 
