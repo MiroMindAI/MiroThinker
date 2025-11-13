@@ -9,6 +9,7 @@
 [![DEMO](https://img.shields.io/badge/Demo-FFB300?style=for-the-badge&logo=airplayvideo&logoColor=white)](https://dr.miromind.ai/)
 [![MODELS](https://img.shields.io/badge/Models-5EDDD2?style=for-the-badge&logo=huggingface&logoColor=ffffff&labelColor)](https://huggingface.co/collections/miromind-ai/mirothinker-v10)
 [![DATA](https://img.shields.io/badge/Data-0040A1?style=for-the-badge&logo=huggingface&logoColor=ffffff&labelColor)](https://huggingface.co/datasets/miromind-ai/MiroVerse-v0.1)
+[![Paper](https://img.shields.io/badge/Paper-B31B1B?style=for-the-badge&logo=arxiv&logoColor=white)](https://github.com/MiroMindAI/MiroThinker/blob/main/assets/MiroThinker_v1.0_Technical_Report.pdf)
 [![Blog](https://img.shields.io/badge/Blog-4285F4?style=for-the-badge&logo=google-chrome&logoColor=white)](https://miromind.ai/#blog)
 
 [![GITHUB](https://img.shields.io/badge/Github-24292F?style=for-the-badge&logo=github&logoColor=white)](https://github.com/MiroMindAI)
@@ -27,7 +28,7 @@
 
 This repo is the official implementation of the MiroMind Research Agent Project. It is a leading-performance, fully open-source system designed to perform multi-step internet research for addressing complex challenges such as future event prediction. The project currently comprises four key components:
 
-- 🤔 **MiroThinker**: an open-source agent foundation model that natively supports tool-assisted reasoning, achieving open-source state-of-the-art performance across multiple benchmarks (e.g., FutureX, GAIA, HLE, xBench-DeepSearch, BrowserComp, and Frames Benchmarks), included in this repo. See [\[Quick Start\]](#-quick-start) for a quick start.
+- 🤔 **MiroThinker**: an open-source agent foundation model that natively supports tool-assisted reasoning, achieving open-source state-of-the-art performance across multiple benchmarks (e.g., HLE, BrowserComp, BrowserComp-ZH, GAIA, xBench-DeepSearch, FutureX, and Frames Benchmarks), included in this repo. See [\[Quick Start\]](#-quick-start) for a quick start.
 - 🤖 **MiroFlow**: an open-source research agent framework that offers reproducible state-of-the-art performance across multiple benchmarks. See [MiroFlow](https://github.com/MiroMindAI/MiroFlow).
 - 📊 **MiroVerse**: 147k premium open-source training data supporting research agent training. See [MiroVerse](https://huggingface.co/datasets/miromind-ai/MiroVerse-v0.1).
 - 🚧 **MiroTrain / MiroRL**: The training infra that supports stable and efficient training for the research agent models. See [MiroTrain](https://github.com/MiroMindAI/MiroTrain) / [MiroRL](https://github.com/MiroMindAI/MiroRL)
@@ -43,26 +44,25 @@ This repo is the official implementation of the MiroMind Research Agent Project.
 - 📊 [Trace Collection](#-trace-collection)
 - 📞 [Support](#-support)
 - 📄 [License](#-license)
-- 🙏 [Acknowledgments](#-acknowledgments-and-contributors)
+- 🙏 [Acknowledgments](#-acknowledgments)
 
 ## 📰 News & Updates
 
-- **\[2025-09-11\]** 🎉🎉 MiroThinker-72B-Preview ranked 4th in this week’s FutureX benchmark. See [FutureX](https://futurex-ai.github.io/).
+- **\[2025-11-13\]** 🎉🎉🎉 [MiroThinker-v1.0](https://huggingface.co/collections/miromind-ai/mirothinker-v10) is now released! Introducing **interactive scaling** as a third dimension of performance improvement, MiroThinker v1.0 supports 256K context window and up to 600 tool calls per task. Available in 8B, 30B, and 72B parameter scales, achieving 37.7%, 47.1%, 55.6%, and 81.9% on HLE-Text, BrowseComp, BrowseComp-ZH, and GAIA-Text-103, respectively. See [Technical Report](https://github.com/MiroMindAI/MiroThinker/blob/main/assets/MiroThinker_v1.0_Technical_Report.pdf) for more details.
+- **\[2025-09-11\]** 🎉🎉 MiroThinker-72B-Preview ranked 4th in this week's FutureX benchmark. See [FutureX](https://futurex-ai.github.io/).
 - **\[2025-09-08\]** 🎉 [MiroThinker-v0.2](https://huggingface.co/collections/miromind-ai/mirothinker-v02-68af084a18035f57b17cd902) is now released, achieving open-source SOTA performance across multiple benchmarks, including HLE (17.8%), HLE-Text-Only (19.1%), BrowserComp-EN (17.2%), BrowserComp-ZH (29.4%), xBench-DeepSearch (56.0%), and Frames (74.8%).
-- **\[2025-09-04\]** Our in-development model, MiroThinker-72B-Preview, ranked 6th in this week’s [FutureX benchmark](https://futurex-ai.github.io/). We will release the stable version of MiroThinker-72B soon.
 - **\[2025-09-07\]** We supported more benchmarks, including [BrowseComp-ZH](https://arxiv.org/abs/2504.19314), [XBench-DeepResearch](https://xbench.org/agi/aisearch), and [FutureX](https://futurex-ai.github.io/). We plan to add more benchmarks in the future.
+- **\[2025-09-04\]** Our in-development model, MiroThinker-72B-Preview, ranked 6th in this week's [FutureX benchmark](https://futurex-ai.github.io/). We will release the stable version of MiroThinker-72B soon.
 - **\[2025-08-22\]** Introducing streamlined deployment options for MiroThinker models with optimized resource usage and faster startup times. Experience the interactive demo: [🚀 Try Gradio Demo](apps/gradio-demo)
 - **\[2025-08-08\]** [MiroThinker-v0.1](https://huggingface.co/collections/miromind-ai/mirothinker-v01-689301b6d0563321862d44a1) released. Models, framework, and data are now fully open-sourced!
 
 ## 📝 Introduction
 
-**MiroThinker** is an open-source agent foundation model. Designed as a research agent for complex, long-horizon problem solving, it integrates strong capabilities in task decomposition, multi-hop reasoning, retrieval-augmented generation, code execution, web browsing, and document/file processing, enabling a wide range of real-world applications.
-
 ### MiroThinker-v1.0
 
-MiroThinker v1.0 is an open-source research agent designed to advance tool-augmented reasoning and information-seeking capabilities. 
+MiroThinker v1.0 is an open-source research agent designed to advance tool-augmented reasoning and information-seeking capabilities.
 
-Unlike previous agents that scale only model size or context length, MiroThinker introduces **interactive scaling** at the model level, systematically training the model to handle deeper and more frequent agent–environment interactions as a third dimension of performance improvement. Interactive scaling leverages environment feedback and external information acquisition to correct errors and refine trajectories. 
+Unlike previous agents that scale only model size or context length, MiroThinker introduces **interactive scaling** at the model level, systematically training the model to handle deeper and more frequent agent–environment interactions as a third dimension of performance improvement. Interactive scaling leverages environment feedback and external information acquisition to correct errors and refine trajectories.
 
 Empirical results demonstrate the effectiveness of this interactive scaling. Performance across several benchmarks improves predictably as the model engages in increasingly deep and frequent interactions with its environment.
 
@@ -73,7 +73,7 @@ Empirical results demonstrate the effectiveness of this interactive scaling. Per
 - Released in 8B, 30B, and 72B parameter scales, accompanied by a comprehensive suite of tools and workflows to flexibly support diverse research settings and compute budgets.
 
 <div align="center">
-  
+
 |      Model Name      |         Base Model          | Max Length | Max Tool Calls |                              HF Link                               |
 |:--------------------:|:---------------------------:|:----------:|:--------------:|:------------------------------------------------------------------:|
 | MiroThinker-v1.0-8B  |        Qwen3-8B             |    256K    |      600       | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-v1.0-8B)  |
@@ -132,6 +132,8 @@ Compared to v0.1, MiroThinker-v0.2 delivers consistent gains across benchmarks. 
 
 We have released the **MiroThinker v0.1** series, including both SFT and DPO variants at parameter scales of **8B**, **14B**, and **32B**. Notably, MiroThinker-v0.1 achieves **state-of-the-art performance** among open-source models on the [GAIA benchmark](https://huggingface.co/datasets/gaia-benchmark/GAIA), a rigorous evaluation suite for advanced agentic capabilities, demonstrating its strength in long-context, decision-intensive, and real-world task scenarios.
 
+<div align="center">
+
 | Model Name                | Base Model | Max Length | HF Link                                                               |
 | :-----------------------: |:----------:|:----------:| :--------------------------------------------------------------------:|
 | MiroThinker-8B-SFT-v0.1   |  Qwen3-8B  |    40K     | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-8B-SFT-v0.1)  |
@@ -140,6 +142,8 @@ We have released the **MiroThinker v0.1** series, including both SFT and DPO var
 | MiroThinker-14B-DPO-v0.1  | Qwen3-14B  |    40K     | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-14B-DPO-v0.1) |
 | MiroThinker-32B-SFT-v0.1  | Qwen3-32B  |    40K     | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-32B-SFT-v0.1) |
 | MiroThinker-32B-DPO-v0.1  | Qwen3-32B  |    40K     | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-32B-DPO-v0.1) |
+
+</div>
 
 </details>
 
@@ -171,7 +175,7 @@ We have released the **MiroThinker v0.1** series, including both SFT and DPO var
 
 ### MiroThinker-v1.0
 
-<div>
+<div align="center">
   <img src="https://huggingface.co/datasets/miromind-ai/MiroFlow-Benchmarks/resolve/main/assets/MiroThinker_v1.0_Performance_2.png" width="90%" alt="MiroThinker" />
 </div>
 
@@ -182,13 +186,13 @@ We have released the **MiroThinker v0.1** series, including both SFT and DPO var
 
 #### Comparison with SOTA Research Agents
 
-<div>
+<div align="center">
   <img src="https://huggingface.co/datasets/miromind-ai/MiroFlow-Benchmarks/resolve/main/assets/MiroThinker_v1.0_Performance_2.png" width="90%" alt="MiroThinker" />
 </div>
 
 #### GAIA Benchmark
 
-<div>
+<div align="center">
   <img src="https://huggingface.co/datasets/miromind-ai/MiroFlow-Benchmarks/resolve/main/assets/MiroThinker_v0.2_Performance_1.png" width="80%" alt="MiroThinker" />
 </div>
 
@@ -201,6 +205,8 @@ We have released the **MiroThinker v0.1** series, including both SFT and DPO var
 
 #### GAIA Benchmark
 
+<div align="center">
+
 | **Method**                   | Text-103<br>Best Pass@1 | Text-103<br>Pass@1 (Avg@8) | Val-165<br>Best Pass@1 | Val-165<br>Pass@1 (Avg@8) |
 |------------------------------|:-----------------------:|:--------------------------:|:----------------------:|:-------------------------:|
 | **🔹—— 7B/8B Models ——**     |                         |                            |                        |                           |
@@ -210,14 +216,14 @@ We have released the **MiroThinker v0.1** series, including both SFT and DPO var
 | WebSailor-7B                 |          37.9           |             -              |           -            |             -             |
 | CK-Pro-8B                    |          40.3           |             -              |          32.7          |             -             |
 | **MiroThinker-8B-SFT-v0.1**  |          44.7           |            40.1            |          34.6          |           31.8            |
-|     + Commercial Tools       |          46.6           |            42.1            |          37.6          |           33.9            |
+|     + Commercial Tools       |          46.6           |            42.1            |          37.6          |           33.9            |
 | **MiroThinker-8B-DPO-v0.1**  |          46.6           |            44.8            |          37.0          |           35.4            |
-|     + Commercial Tools       |        **50.5**         |          **46.7**          |        **38.2**        |         **35.9**          |
+|     + Commercial Tools       |        **50.5**         |          **46.7**          |        **38.2**        |         **35.9**          |
 | **🔹—— 14B Models ——**       |                         |                            |                        |                           |
 | **MiroThinker-14B-SFT-v0.1** |          47.6           |            44.4            |          37.0          |           34.4            |
-|     + Commercial Tools       |          49.5           |            47.5            |          41.8          |           39.8            |
+|     + Commercial Tools       |          49.5           |            47.5            |          41.8          |           39.8            |
 | **MiroThinker-14B-DPO-v0.1** |          48.5           |            46.6            |          42.4          |           39.2            |
-|     + Commercial Tools       |        **52.4**         |          **48.5**          |        **45.5**        |         **42.0**          |
+|     + Commercial Tools       |        **52.4**         |          **48.5**          |        **45.5**        |         **42.0**          |
 | **🔹—— 32B Models ——**       |                         |                            |                        |                           |
 | Qwen3-32B                    |          31.1           |            26.7            |          29.7          |           26.4            |
 | Search-o1-32B                |          28.2           |             -              |           -            |             -             |
@@ -226,9 +232,11 @@ We have released the **MiroThinker v0.1** series, including both SFT and DPO var
 | WebSailor-32B                |          53.2           |             -              |           -            |             -             |
 | WebShaper-QwQ-32B            |          53.3           |             -              |           -            |             -             |
 | **MiroThinker-32B-SFT-v0.1** |          55.3           |            51.3            |          44.9          |           42.7            |
-|     + Commercial Tools       |          58.3           |            54.2            |          48.5          |           45.8            |
+|     + Commercial Tools       |          58.3           |            54.2            |          48.5          |           45.8            |
 | **MiroThinker-32B-DPO-v0.1** |          57.3           |            54.1            |          48.5          |           45.9            |
-|     + Commercial Tools       |        **60.2**         |          **57.9**          |        **50.9**        |         **48.9**          |
+|     + Commercial Tools       |        **60.2**         |          **57.9**          |        **50.9**        |         **48.9**          |
+
+</div>
 
 1. Following the practices of WebThinker, WebAgents, and CognitiveKernel, we report the Best Pass@1, the highest score across three runs, which often reflects stronger performance, though it may exhibit some variability. To provide a more stable measure, we additionally report Pass@1 (Avg@8), which offers greater consistency at the cost of slightly lower scores.
 
@@ -239,6 +247,8 @@ We have released the **MiroThinker v0.1** series, including both SFT and DPO var
 1. Replacing these open-source tools with commercial alternatives can yield performance gains. Commercial tools were mainly used for multimodal capabilities and certain complex reasoning subtasks. The majority of tasks, including planning, browsing, refinement, navigation, and more, were handled by our models.
 
 #### More Benchmarks
+
+<div align="center">
 
 | Method                       | HLE<br>Pass@1 | Frames<br>Pass@1 | BrowseComp<br>Pass@1 | BrowseComp-ZH<br>Pass@1 | WebWalkerQA<br>Pass@1 |
 |------------------------------|:-------------:|:----------------:|:--------------------:|:-----------------------:|:---------------------:|
@@ -257,6 +267,8 @@ We have released the **MiroThinker v0.1** series, including both SFT and DPO var
 | WebShaper-32B                |       -       |        -         |          -           |            -            |         51.4          |
 | **MiroThinker-32B-SFT-v0.1** |     10.2      |       70.4       |         10.6         |          13.8           |         45.7          |
 | **MiroThinker-32B-DPO-v0.1** |     11.8      |       71.7       |         13.0         |          17.0           |         49.3          |
+
+</div>
 
 1. MiroThinker’s performance was tested with this repository and open-source tools; other models’ results are from their papers and official sites.
 
@@ -317,6 +329,8 @@ We currently support two tool configurations for benchmark testing:
 
 The tool lists for these two settings are shown in the table below:
 
+<div align="center">
+
 |         Tool Set          |                         Default Setting <br>with Open-Source Tools                          |                        Advanced Setting <br>with Commercial Tools                        |
 |:-------------------------:|:-------------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------:|
 |       Google Search       |                                [Serper](https://serper.dev/)                                |                              [Serper](https://serper.dev/)                               |
@@ -324,6 +338,8 @@ The tool lists for these two settings are shown in the table below:
 |    Audio Transcription    |       [Whisper-Large-v3-Turbo](https://huggingface.co/openai/whisper-large-v3-turbo)        | [GPT-4o mini Transcribe](https://platform.openai.com/docs/models/gpt-4o-mini-transcribe) |
 | Visual Question Answering |       [Qwen2.5-VL-72B-Instruct](https://huggingface.co/Qwen/Qwen2.5-VL-72B-Instruct)        |   [Claude Sonnet 3.7](https://docs.anthropic.com/en/docs/about-claude/models/overview)   |
 |         Reasoning         | [Qwen3-235B-A22B-Thinking-2507](https://huggingface.co/Qwen/Qwen3-235B-A22B-Thinking-2507)  |   [Claude Sonnet 3.7](https://docs.anthropic.com/en/docs/about-claude/models/overview)   |
+
+</div>
 
 Configure the following variables in your `.env` file according to the mode you choose:
 
@@ -395,7 +411,7 @@ python3 -m sglang.launch_server \
     --chat-template assets/qwen3_nonthinking.jinja
 ```
 
-This will start a server at: `http://0.0.0.0:$PORT$`. Use this as your server base URL.
+This will start a server at: `http://0.0.0.0:$PORT`. Use this as your server base URL.
 
 #### Option 2: Quantized Light-Weight Options
 
@@ -498,21 +514,24 @@ uv run bash scripts/collect_trace_qwen3.sh
 
 - **Issues**: For questions or bug reports, please use [GitHub Issues](https://github.com/MiroMindAI/MiroThinker/issues).
 - **QA Documentation**: See [QA.md](assets/QA.md) for additional guidelines
+- **Email**: You can also reach us via email at service@miromind.ai
 
 ## 📄 License
 
-This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## 🙏 Acknowledgments
 
 - **Benchmark Contributors** for the comprehensive evaluation datasets
 - **Open Source Community** for the tools and libraries that make this possible
 
-We thank all contributors who have helped make MiroFlow better:
+We thank all contributors who have helped make MiroThinker better:
 
-<a href="https://github.com/MiroMindAI/MiroFlow/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=MiroMindAI/MiroThinker" />
-</a>
+<div align="center">
+  <a href="https://github.com/MiroMindAI/MiroThinker/graphs/contributors">
+    <img src="https://contrib.rocks/image?repo=MiroMindAI/MiroThinker" />
+  </a>
+</div>
 
 Join our community and help us build the future of AI agents!
 
