@@ -14,6 +14,7 @@
 
 import glob
 import json
+import math
 import os
 import re
 from dataclasses import dataclass
@@ -116,6 +117,23 @@ def find_latest_end_time(completed_files: List[str]) -> Optional[datetime]:
     return latest_time or datetime.now().replace(tzinfo=None)
 
 
+def calculate_mean_and_std(values: List[float]) -> Tuple[float, float]:
+    """Calculate mean and standard deviation of a list of values"""
+    if not values:
+        return 0.0, 0.0
+
+    n = len(values)
+    mean = sum(values) / n
+
+    if n == 1:
+        return mean, 0.0
+
+    variance = sum((x - mean) ** 2 for x in values) / (n - 1)
+    std = math.sqrt(variance)
+
+    return mean, std
+
+
 def estimate_completion_time(
     total_tasks: int, completed_tasks: int, completed_files: List[str]
 ) -> str:
@@ -168,6 +186,13 @@ class TaskStats:
     # Completed files for timing analysis
     completed_files: List[str] = None
 
+    # Turn statistics
+    total_turns: int = 0
+    completed_tasks_with_turns: int = 0
+
+    # No boxed content found statistics
+    no_boxed_found: int = 0
+
     def __post_init__(self):
         if self.completed_files is None:
             self.completed_files = []
@@ -183,6 +208,15 @@ class TaskStats:
     def completion_rate(self) -> float:
         """Calculate completion rate percentage"""
         return (self.completed / self.total * 100) if self.total > 0 else 0.0
+
+    @property
+    def average_turns(self) -> float:
+        """Calculate average turns per completed task"""
+        return (
+            (self.total_turns / self.completed_tasks_with_turns)
+            if self.completed_tasks_with_turns > 0
+            else 0.0
+        )
 
 
 @dataclass
@@ -234,6 +268,7 @@ class SummaryStats:
     total_running: int = 0
     total_failed: int = 0
     total_judge_correct: int = 0
+    total_no_boxed_found: int = 0
 
     @property
     def total_judge_accuracy(self) -> float:
@@ -246,20 +281,25 @@ class SummaryStats:
 
     def average_run_accuracy(
         self, run_stats_list: List[Tuple[str, TaskStats]]
-    ) -> float:
-        """Calculate average accuracy across individual runs"""
+    ) -> Tuple[float, float]:
+        """Calculate overall accuracy (mean) and standard deviation across individual runs"""
         if not run_stats_list:
-            return 0.0
+            return 0.0, 0.0
 
-        total_accuracy = 0.0
-        valid_runs = 0
+        # Mean accuracy is the overall accuracy (weighted average)
+        # This matches the OVERALL JUDGE ACCURACY calculation
+        mean = self.total_judge_accuracy
 
-        for run_name, stats in run_stats_list:
-            if stats.completed > 0:
-                total_accuracy += stats.judge_accuracy
-                valid_runs += 1
+        # Standard deviation is calculated from individual run accuracies
+        accuracies = [
+            stats.judge_accuracy for _, stats in run_stats_list if stats.completed > 0
+        ]
 
-        return total_accuracy / valid_runs if valid_runs > 0 else 0.0
+        if not accuracies:
+            return mean, 0.0
+
+        _, std = calculate_mean_and_std(accuracies)
+        return mean, std
 
     @property
     def total_completion_rate(self) -> float:
@@ -464,6 +504,28 @@ class ProgressChecker:
             )
         return False
 
+    def _calculate_turns(self, data: Dict) -> int:
+        """Calculate number of turns from task data (excluding system prompt)"""
+        try:
+            main_agent_history = data.get("main_agent_message_history", {})
+            message_history = main_agent_history.get("message_history", [])
+
+            if not message_history:
+                return 0
+
+            # Filter out system messages and count total messages, then divide by 2
+            # Turn count = (total messages excluding system) / 2
+            non_system_messages = [
+                msg for msg in message_history if msg.get("role") != "system"
+            ]
+
+            # Each turn consists of user + assistant, so divide by 2
+            turn_count = len(non_system_messages) // 2
+
+            return turn_count
+        except (KeyError, TypeError, IndexError):
+            return 0
+
     def analyze_run_directory(self, run_dir: str, task_id_pattern: str) -> TaskStats:
         """Analyze a single run directory and return statistics"""
         latest_files = self._get_latest_task_files(run_dir, task_id_pattern)
@@ -492,6 +554,20 @@ class ProgressChecker:
                     )
                     if is_correct:
                         stats.judge_correct += 1
+
+                    # Check if final_boxed_answer contains "No \\boxed{} content found"
+                    final_boxed_answer = data.get("final_boxed_answer", "")
+                    if (
+                        isinstance(final_boxed_answer, str)
+                        and "No \\boxed{} content found" in final_boxed_answer
+                    ):
+                        stats.no_boxed_found += 1
+
+                    # Calculate turns for completed tasks
+                    turns = self._calculate_turns(data)
+                    if turns > 0:
+                        stats.total_turns += turns
+                        stats.completed_tasks_with_turns += 1
                 else:
                     stats.failed += 1
 
@@ -541,6 +617,10 @@ class ProgressChecker:
             if stats.completed > 0:
                 run_info += f" | Accuracy: {stats.judge_correct}/{stats.completed} ({stats.judge_accuracy:.1f}%)"
 
+                # Add average turns information (show even if some tasks are still running)
+                if stats.completed_tasks_with_turns > 0:
+                    run_info += f" | Avg Turns: {stats.average_turns:.1f}"
+
             print(run_info)
             print()
 
@@ -556,6 +636,7 @@ class ProgressChecker:
             summary.total_running += stats.running
             summary.total_failed += stats.failed
             summary.total_judge_correct += stats.judge_correct
+            summary.total_no_boxed_found += stats.no_boxed_found
 
         # Display summary after all runs are processed
         self._display_summary(
@@ -607,6 +688,15 @@ class ProgressChecker:
                 f"Judge Accuracy: {summary.total_judge_correct}/{summary.total_completed} {accuracy_bar}"
             )
 
+            # Calculate and display overall average turns
+            total_turns = sum(stats.total_turns for _, stats in run_stats_list)
+            total_tasks_with_turns = sum(
+                stats.completed_tasks_with_turns for _, stats in run_stats_list
+            )
+            if total_tasks_with_turns > 0:
+                overall_avg_turns = total_turns / total_tasks_with_turns
+                print(f"Overall Average Turns: {overall_avg_turns:.1f}")
+
         # Display each run's correct percentage
         if run_stats_list:
             print()
@@ -621,6 +711,18 @@ class ProgressChecker:
                     print(
                         f"  {run_name}: {stats.judge_correct}/{stats.completed} (N/A)"
                     )
+
+            # Display mean accuracy and standard deviation
+            mean_acc, std_acc = summary.average_run_accuracy(run_stats_list)
+            if mean_acc > 0:
+                print()
+                print(f"MEAN ACCURACY: {mean_acc:.1f}% ± {std_acc:.1f}%")
+
+            # Display no boxed content found statistics
+            if summary.total_completed > 0:
+                print(
+                    f"No \\boxed{{}} content found: {summary.total_no_boxed_found}/{summary.total_completed} ({summary.total_no_boxed_found / summary.total_completed * 100:.1f}%)"
+                )
 
         print("=" * 80)
         print()
@@ -713,6 +815,12 @@ class ProgressChecker:
                 output_buffer.write(
                     f"Judge Accuracy: {summary.total_judge_correct}/{summary.total_completed} ({accuracy:.1f}%)\n"
                 )
+                no_boxed_percentage = (
+                    summary.total_no_boxed_found / summary.total_completed * 100
+                )
+                output_buffer.write(
+                    f"No \\boxed{{}} content found: {summary.total_no_boxed_found}/{summary.total_completed} ({no_boxed_percentage:.1f}%)\n"
+                )
 
             # Write individual run accuracies
             if run_stats_list:
@@ -726,6 +834,20 @@ class ProgressChecker:
                     else:
                         output_buffer.write(
                             f"  {run_name}: {stats.judge_correct}/{stats.completed} (N/A)\n"
+                        )
+
+                # Write mean accuracy and standard deviation
+                mean_acc, std_acc = summary.average_run_accuracy(run_stats_list)
+                if mean_acc > 0:
+                    output_buffer.write(
+                        f"\nMEAN ACCURACY: {mean_acc:.1f}% ± {std_acc:.1f}%\n"
+                    )
+                    if summary.total_completed > 0:
+                        no_boxed_percentage = (
+                            summary.total_no_boxed_found / summary.total_completed * 100
+                        )
+                        output_buffer.write(
+                            f"No \\boxed{{}} content found: {summary.total_no_boxed_found}/{summary.total_completed} ({no_boxed_percentage:.1f}%)\n"
                         )
 
             output_buffer.write("=" * 80 + "\n")
@@ -834,11 +956,25 @@ class GAIAProgressChecker(ProgressChecker):
                     if is_correct:
                         stats.judge_correct += 1
 
+                    # Check if final_boxed_answer contains "No \\boxed{} content found"
+                    final_boxed_answer = data.get("final_boxed_answer", "")
+                    if (
+                        isinstance(final_boxed_answer, str)
+                        and "No \\boxed{} content found" in final_boxed_answer
+                    ):
+                        stats.no_boxed_found += 1
+
                     task_id = self._extract_task_id(
                         os.path.basename(json_file), task_id_pattern
                     )
                     if task_id:
                         self._update_difficulty_stats(stats, task_id, is_correct)
+
+                    # Calculate turns for completed tasks
+                    turns = self._calculate_turns(data)
+                    if turns > 0:
+                        stats.total_turns += turns
+                        stats.completed_tasks_with_turns += 1
                 else:
                     stats.failed += 1
             except Exception as e:
@@ -880,6 +1016,10 @@ class GAIAProgressChecker(ProgressChecker):
             if stats.completed > 0:
                 run_info += f" | Accuracy: {stats.judge_correct}/{stats.completed} ({stats.judge_accuracy:.1f}%)"
 
+                # Add average turns information (show even if some tasks are still running)
+                if stats.completed_tasks_with_turns > 0:
+                    run_info += f" | Avg Turns: {stats.average_turns:.1f}"
+
             print(run_info)
             print()
 
@@ -908,6 +1048,7 @@ class GAIAProgressChecker(ProgressChecker):
         summary.total_running += stats.running
         summary.total_failed += stats.failed
         summary.total_judge_correct += stats.judge_correct
+        summary.total_no_boxed_found += stats.no_boxed_found
 
         # Update difficulty level summary stats
         summary.level1_completed += stats.level1_completed
@@ -1003,6 +1144,18 @@ class GAIAProgressChecker(ProgressChecker):
                         f"  {run_name}: {stats.judge_correct}/{stats.completed} (N/A)"
                     )
 
+            # Display mean accuracy and standard deviation
+            mean_acc, std_acc = summary.average_run_accuracy(run_stats_list)
+            if mean_acc > 0:
+                print()
+                print(f"MEAN ACCURACY: {mean_acc:.1f}% ± {std_acc:.1f}%")
+
+            # Display no boxed content found statistics
+            if summary.total_completed > 0:
+                print(
+                    f"No \\boxed{{}} content found: {summary.total_no_boxed_found}/{summary.total_completed} ({summary.total_no_boxed_found / summary.total_completed * 100:.1f}%)"
+                )
+
         # Display overall judge accuracy after individual runs
         if summary.total_completed > 0:
             print()
@@ -1010,6 +1163,15 @@ class GAIAProgressChecker(ProgressChecker):
             print(
                 f"OVERALL JUDGE ACCURACY: {summary.total_judge_correct}/{summary.total_completed} {accuracy_bar}"
             )
+
+            # Calculate and display overall average turns
+            total_turns = sum(stats.total_turns for _, stats in run_stats_list)
+            total_tasks_with_turns = sum(
+                stats.completed_tasks_with_turns for _, stats in run_stats_list
+            )
+            if total_tasks_with_turns > 0:
+                overall_avg_turns = total_turns / total_tasks_with_turns
+                print(f"OVERALL AVERAGE TURNS: {overall_avg_turns:.1f}")
 
         # Display difficulty level summary if available
         if (

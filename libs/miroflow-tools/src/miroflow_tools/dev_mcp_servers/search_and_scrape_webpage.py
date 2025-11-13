@@ -26,7 +26,6 @@ from tenacity import (
 )
 
 from ..mcp_servers.utils.url_unquote import decode_http_urls_in_dict
-from .redis_cache_async import redis_cache_async
 
 # Configure logging
 logger = logging.getLogger("miroflow")
@@ -115,75 +114,75 @@ async def google_search(
             "error": "Search query 'q' is required and cannot be empty",
             "results": [],
         }
-    # Build search parameters for caching
-    search_params = {
-        "q": q.strip(),
-        "gl": gl,
-        "hl": hl,
-        "location": location,
-        "num": num if num is not None else 10,
-        "tbs": tbs,
-        "page": page,
-        "autocorrect": autocorrect,
-    }
-    # Try to get from cache first
-    cached_result = await redis_cache_async.get_google_search_cache(search_params)
-    if cached_result:
-        logger.info(f"Returning cached Serper search result for query: {q[:50]}...")
-        return cached_result
 
     try:
-        # Build payload with all supported parameters
-        payload: dict[str, Any] = {
-            "q": q.strip(),
-            "gl": gl,
-            "hl": hl,
-        }
+        # Helper function to perform a single search
+        async def perform_search(search_query: str) -> tuple[list, dict]:
+            """Perform a search and return organic results and search parameters."""
+            # Build payload with all supported parameters
+            payload: dict[str, Any] = {
+                "q": search_query.strip(),
+                "gl": gl,
+                "hl": hl,
+            }
 
-        # Add optional parameters if provided
-        if location:
-            payload["location"] = location
-        if num is not None:
-            payload["num"] = num
-        else:
-            payload["num"] = 10  # Default
-        if tbs:
-            payload["tbs"] = tbs
-        if page is not None:
-            payload["page"] = page
-        if autocorrect is not None:
-            payload["autocorrect"] = autocorrect
+            # Add optional parameters if provided
+            if location:
+                payload["location"] = location
+            if num is not None:
+                payload["num"] = num
+            else:
+                payload["num"] = 10  # Default
+            if tbs:
+                payload["tbs"] = tbs
+            if page is not None:
+                payload["page"] = page
+            if autocorrect is not None:
+                payload["autocorrect"] = autocorrect
 
-        # Set up headers
-        headers = {
-            "X-API-KEY": SERPER_API_KEY,
-            "Content-Type": "application/json",
-        }
+            # Set up headers
+            headers = {
+                "X-API-KEY": SERPER_API_KEY,
+                "Content-Type": "application/json",
+            }
 
-        # Make the API request
-        response = await make_serper_request(payload, headers)
-        data = response.json()
+            # Make the API request
+            response = await make_serper_request(payload, headers)
+            data = response.json()
 
-        # filter out HuggingFace dataset or space urls
-        organic_results = []
-        if "organic" in data:
-            for item in data["organic"]:
-                if _is_huggingface_dataset_or_space_url(item.get("link", "")):
-                    continue
-                organic_results.append(item)
+            # filter out HuggingFace dataset or space urls
+            organic_results = []
+            if "organic" in data:
+                for item in data["organic"]:
+                    if _is_huggingface_dataset_or_space_url(item.get("link", "")):
+                        continue
+                    organic_results.append(item)
+
+            return organic_results, data.get("searchParameters", {})
+
+        # Perform initial search
+        original_query = q.strip()
+        organic_results, search_params = await perform_search(original_query)
+
+        # If no results and query contains quotes, retry without quotes
+        if not organic_results and '"' in original_query:
+            # Remove all types of quotes
+            query_without_quotes = original_query.replace('"', "").strip()
+            if query_without_quotes:  # Make sure we still have a valid query
+                logger.info(
+                    f"No results found for query with quotes: '{original_query}'. "
+                    f"Retrying with query without quotes: '{query_without_quotes}'"
+                )
+                organic_results, search_params = await perform_search(
+                    query_without_quotes
+                )
 
         # Build comprehensive response
         response_data = {
             "organic": organic_results,
-            "searchParameters": data.get("searchParameters", {}),
+            "searchParameters": search_params,
         }
         response_data = decode_http_urls_in_dict(response_data)
-
-        # Cache the successful result
-        await redis_cache_async.set_google_search_cache(
-            search_params, response_data, ttl_seconds=86400
-        )  # 24 hour TTL
-        logger.info(f"Cached google search result for query: {q[:50]}...")
 
         return response_data
 

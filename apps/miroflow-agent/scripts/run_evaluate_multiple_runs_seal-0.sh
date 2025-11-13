@@ -5,12 +5,12 @@ LLM_MODEL=${LLM_MODEL:-"MiroThinker-Models"}
 BASE_URL=${BASE_URL:-"https://your-api.com/v1"}
 
 # Configuration parameters
-NUM_RUNS=${NUM_RUNS:-1}
-BENCHMARK_NAME="debug"
+NUM_RUNS=${NUM_RUNS:-8}
+BENCHMARK_NAME="seal-0"
 LLM_PROVIDER=${LLM_PROVIDER:-"qwen"}
 AGENT_SET=${AGENT_SET:-"evaluation_os"}
 MAX_CONTEXT_LENGTH=${MAX_CONTEXT_LENGTH:-262144}
-MAX_CONCURRENT=${MAX_CONCURRENT:-1}
+MAX_CONCURRENT=${MAX_CONCURRENT:-10}
 PASS_AT_K=${PASS_AT_K:-1}
 TEMPERATURE=${TEMPERATURE:-1.0}
 API_KEY=${API_KEY:-"xxx"}
@@ -50,7 +50,7 @@ for i in $(seq 1 $NUM_RUNS); do
             benchmark.execution.max_tasks=null \
             benchmark.execution.max_concurrent=$MAX_CONCURRENT \
             benchmark.execution.pass_at_k=$PASS_AT_K \
-            benchmark.data.data_dir=../../data/debug \
+            benchmark.data.data_dir=../../data/seal-0 \
             agent=$AGENT_SET \
             hydra.run.dir=${RESULTS_DIR}/$RUN_ID \
             2>&1 | tee "$RESULTS_DIR/${RUN_ID}_output.log" 

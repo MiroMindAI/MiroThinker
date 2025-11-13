@@ -669,6 +669,10 @@ async def scrape_website(url: str) -> str:
     if not url or not url.startswith(("http://", "https://")):
         return f"Invalid URL: '{url}'. URL must start with http:// or https://"
 
+    # Avoid duplicate Jina URL prefix
+    if url.startswith("https://r.jina.ai/") and url.count("http") >= 2:
+        url = url[len("https://r.jina.ai/") :]
+
     # Check for restricted domains
     if "huggingface.co/datasets" in url or "huggingface.co/spaces" in url:
         return "You are trying to scrape a Hugging Face dataset for answers, please do not use the scrape tool for this purpose."

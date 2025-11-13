@@ -14,7 +14,6 @@
 
 import asyncio
 import dataclasses
-import json
 from abc import ABC
 from typing import (
     Any,
@@ -75,6 +74,7 @@ class BaseClient(ABC):
         self.api_key: Optional[str] = self.cfg.llm.get("api_key")
         self.base_url: Optional[str] = self.cfg.llm.get("base_url")
         self.use_tool_calls: Optional[bool] = self.cfg.llm.get("use_tool_calls")
+        self.repetition_penalty: float = self.cfg.llm.get("repetition_penalty", 1.0)
 
         self.token_usage = self._reset_token_usage()
         self.client = self._create_client()
@@ -97,74 +97,98 @@ class BaseClient(ABC):
     def _remove_tool_result_from_messages(
         self, messages, keep_tool_result
     ) -> List[Dict]:
-        """Remove tool results from messages"""
+        """Remove tool results from messages
+
+        Args:
+            messages: List of message dictionaries
+            keep_tool_result: Number of tool results to keep. -1 means keep all.
+
+        Returns:
+            List of messages with tool results filtered according to keep_tool_result
+        """
         messages_copy = [m.copy() for m in messages]
-        if keep_tool_result >= 0:
-            # Find indices of all user messages
-            user_indices = [
-                i
-                for i, msg in enumerate(messages_copy)
-                if msg.get("role") == "user" or msg.get("role") == "tool"
-            ]
 
-            if (
-                len(user_indices) > 1
-            ):  # Only proceed if there are more than one user message
-                first_user_idx = user_indices[0]  # Always keep the first user message
+        if keep_tool_result == -1:
+            # No processing needed, keep all messages
+            return messages_copy
 
-                # Calculate how many messages to keep from the end
-                # If keep_tool_result is 0, we only keep the first message
-                num_to_keep = (
-                    0
-                    if keep_tool_result == 0
-                    else min(keep_tool_result, len(user_indices) - 1)
-                )
+        # Find indices of all user/tool messages (these are tool results)
+        user_indices = [
+            i
+            for i, msg in enumerate(messages_copy)
+            if msg.get("role") == "user" or msg.get("role") == "tool"
+        ]
 
-                # Get indices of messages to keep from the end
-                last_indices_to_keep = (
-                    user_indices[-num_to_keep:] if num_to_keep > 0 else []
-                )
-
-                # Combine first message and last k messages
-                indices_to_keep = [first_user_idx] + last_indices_to_keep
-
-                self.task_log.log_step(
-                    "info",
-                    "LLM | Message Retention",
-                    f"Message retention summary: Total user messages: {len(user_indices)}, Keeping first message at index: {first_user_idx}, Keeping last {num_to_keep} messages at indices: {last_indices_to_keep}, Total messages to keep: {len(indices_to_keep)}",
-                )
-
-                for i, msg in enumerate(messages_copy):
-                    if (
-                        msg.get("role") == "user" or msg.get("role") == "tool"
-                    ) and i not in indices_to_keep:
-                        self.task_log.log_step(
-                            "info",
-                            "LLM | Message Retention",
-                            f"Omitting content for user message at index {i}",
-                        )
-                        msg["content"] = "Tool result is omitted to save tokens."
-            elif user_indices:  # This means only 1 user message exists
-                self.task_log.log_step(
-                    "info",
-                    "LLM | Message Retention",
-                    "Only 1 user message found. Keeping it as is.",
-                )
-            else:  # No user messages at all
-                self.task_log.log_step(
-                    "info",
-                    "LLM | Message Retention",
-                    "No user messages found in the history.",
-                )
-
+        if len(user_indices) == 0:
+            # No user/tool messages found
             self.task_log.log_step(
                 "info",
                 "LLM | Message Retention",
-                f"Messages after potential content omission: {json.dumps(messages_copy, indent=4, ensure_ascii=False)}",
+                "No user/tool messages found in the history.",
             )
-        elif keep_tool_result == -1:
-            # No processing needed
-            pass
+            return messages_copy
+
+        # The first user message is the initial task, not a tool result
+        # Tool results start from the second user message onwards
+        if len(user_indices) == 1:
+            # Only one user message (the initial task), no tool results to filter
+            self.task_log.log_step(
+                "info",
+                "LLM | Message Retention",
+                "Only 1 user message found (initial task). Keeping it as is.",
+            )
+            return messages_copy
+
+        # Tool result indices (excluding the first user message which is the initial task)
+        tool_result_indices = user_indices[1:]
+        first_user_idx = user_indices[
+            0
+        ]  # Always keep the first user message (initial task)
+
+        # Calculate how many tool results to keep from the end
+        if keep_tool_result == 0:
+            # Keep 0 tool results, only keep the initial task
+            num_tool_results_to_keep = 0
+        else:
+            # Keep the last keep_tool_result tool results
+            num_tool_results_to_keep = min(keep_tool_result, len(tool_result_indices))
+
+        # Get indices of tool results to keep from the end
+        tool_result_indices_to_keep = (
+            tool_result_indices[-num_tool_results_to_keep:]
+            if num_tool_results_to_keep > 0
+            else []
+        )
+
+        # Combine first message (initial task) and tool results to keep
+        indices_to_keep = [first_user_idx] + tool_result_indices_to_keep
+
+        self.task_log.log_step(
+            "info",
+            "LLM | Message Retention",
+            f"Message retention summary: Total user/tool messages: {len(user_indices)}, "
+            f"Initial task at index: {first_user_idx}, "
+            f"Keeping last {num_tool_results_to_keep} tool results at indices: {tool_result_indices_to_keep}, "
+            f"Total messages to keep: {len(indices_to_keep)}",
+        )
+
+        # Replace content of tool results that should be omitted
+        for i, msg in enumerate(messages_copy):
+            if (
+                msg.get("role") == "user" or msg.get("role") == "tool"
+            ) and i not in indices_to_keep:
+                # Preserve the message structure but replace content
+                if isinstance(msg.get("content"), list):
+                    # For Anthropic format
+                    msg["content"] = [
+                        {
+                            "type": "text",
+                            "text": "Tool result is omitted to save tokens.",
+                        }
+                    ]
+                else:
+                    # For OpenAI format
+                    msg["content"] = "Tool result is omitted to save tokens."
 
         return messages_copy
 
@@ -182,16 +206,11 @@ class BaseClient(ABC):
         """
         Call LLM to generate response, supports tool calls - unified implementation
         """
-        # Filter message history
-        filtered_history = self._filter_message_history(
-            message_history, keep_tool_result
-        )
-
         # Unified LLM call processing
         try:
             response, message_history = await self._create_message(
                 system_prompt,
-                filtered_history,
+                message_history,
                 tool_definitions,
                 keep_tool_result=keep_tool_result,
             )
@@ -238,19 +257,6 @@ class BaseClient(ABC):
         else:
             # If client has no close method, or is async, we skip
             pass
-
-    def _filter_message_history(
-        self, message_history: List[Dict], keep_tool_result: int
-    ) -> List[Dict]:
-        """Filter message history, keep specified number of tool results"""
-        if keep_tool_result == -1:
-            return message_history
-
-        # Complex filtering logic can be implemented here
-        # For now, simply return the last keep_tool_result messages
-        if keep_tool_result > 0 and len(message_history) > keep_tool_result:
-            return message_history[-keep_tool_result:]
-        return message_history
 
     def _format_response_for_log(self, response) -> Dict:
         """Format response for logging"""

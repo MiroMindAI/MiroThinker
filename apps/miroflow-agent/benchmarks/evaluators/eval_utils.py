@@ -558,22 +558,21 @@ async def _verify_answer_for_datasets_core(
         result = await verify_answer_gaia_validation_text_103(
             question, target, predicted_answer
         )
-        return result, "gaia_validation_text_103_scorer"
+        return result, "gaia_validation_text_103_judge"
 
-    # For other gaia datasets, use gaia scorer
-    elif "gaia" in benchmark_name:
-        result = await verify_answer_gaia(question, target, predicted_answer)
-        return result, "gaia_scorer"
+    elif "browsecomp" in benchmark_name:
+        result = await verify_answer_browsecomp(question, target, predicted_answer)
+        return result, "browsecomp_judge"
 
-    elif benchmark_name == "webwalkerqa":
+    elif "hle" in benchmark_name:
+        result = await verify_answer_hle(question, target, predicted_answer)
+        return result, "hle_judge"
+
+    elif benchmark_name in ["webwalkerqa", "frames", "seal-0"]:
         result = await verify_answer_gaia_validation_text_103(
             question, target, predicted_answer
         )
-        return result, "gaia_validation_text_103_scorer"
-
-    elif benchmark_name == "browsecomp" or benchmark_name == "browsecomp_zh":
-        result = await verify_answer_browsecomp(question, target, predicted_answer)
-        return result, "browsecomp_judge"
+        return result, "gaia_validation_text_103_judge"
 
     elif benchmark_name == "simpleqa" or benchmark_name == "collect_trace":
         result = await verify_answer_simpleqa(question, target, predicted_answer)
@@ -584,9 +583,12 @@ async def _verify_answer_for_datasets_core(
             question, target, predicted_answer
         )
         return result, "xbench_deepresearch_judge"
+
     else:
-        result = await verify_answer_hle(question, target, predicted_answer)
-        return result, "hle_judge"
+        result = await verify_answer_gaia_validation_text_103(
+            question, target, predicted_answer
+        )
+        return result, "gaia_validation_text_103_judge"
 
 
 async def verify_answer_for_datasets(
@@ -594,7 +596,7 @@ async def verify_answer_for_datasets(
     question: str,
     target: str,
     predicted_answer: str,
-    max_retries: int = 3,
+    max_retries: int = 10,
     retry_interval: int = 5,
 ) -> tuple[str, str]:
     """

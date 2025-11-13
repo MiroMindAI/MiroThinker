@@ -10,3 +10,4 @@ max_tokens: 4096
 api_key: ""
 base_url: https://api.anthropic.com
 keep_tool_result: -1
+repetition_penalty: 1.0

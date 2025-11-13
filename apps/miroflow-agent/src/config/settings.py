@@ -134,18 +134,6 @@ def create_mcp_server_parameters(cfg: DictConfig, agent_cfg: DictConfig):
             }
         )
 
-    if agent_cfg.get("tools", None) is not None and "tool-code" in agent_cfg["tools"]:
-        configs.append(
-            {
-                "name": "tool-code",
-                "params": StdioServerParameters(
-                    command=sys.executable,
-                    args=["-m", "miroflow_tools.mcp_servers.python_mcp_server"],
-                    env={"E2B_API_KEY": E2B_API_KEY},
-                ),
-            }
-        )
-
     if agent_cfg.get("tools", None) is not None and "tool-vqa" in agent_cfg["tools"]:
         configs.append(
             {
@@ -328,6 +316,24 @@ def create_mcp_server_parameters(cfg: DictConfig, agent_cfg: DictConfig):
             }
         )
 
+    if (
+        agent_cfg.get("tools", None) is not None
+        and "stateless_python" in agent_cfg["tools"]
+    ):
+        configs.append(
+            {
+                "name": "stateless_python",
+                "params": StdioServerParameters(
+                    command=sys.executable,
+                    args=[
+                        "-m",
+                        "miroflow_tools.dev_mcp_servers.stateless_python_server",
+                    ],
+                    env={"E2B_API_KEY": E2B_API_KEY},
+                ),
+            }
+        )
+
     blacklist = set()
     for black_list_item in agent_cfg.get("tool_blacklist", []):
         blacklist.add((black_list_item[0], black_list_item[1]))
@@ -373,6 +379,7 @@ def get_env_info(cfg: DictConfig) -> dict:
         "llm_min_p": cfg.llm.min_p,
         "llm_top_k": cfg.llm.top_k,
         "llm_max_tokens": cfg.llm.max_tokens,
+        "llm_repetition_penalty": cfg.llm.repetition_penalty,
         "llm_async_client": cfg.llm.async_client,
         "keep_tool_result": cfg.llm.keep_tool_result,
         # Agent Configuration

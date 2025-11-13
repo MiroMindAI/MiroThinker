@@ -131,6 +131,9 @@ class AnthropicClient(BaseClient):
                     top_p=self.top_p if self.top_p != 1.0 else NOT_GIVEN,
                     top_k=self.top_k if self.top_k != -1 else NOT_GIVEN,
                     max_tokens=self.max_tokens,
+                    repetition_penalty=self.repetition_penalty
+                    if self.repetition_penalty != 1.0
+                    else NOT_GIVEN,
                     system=[
                         {
                             "type": "text",
@@ -148,6 +151,9 @@ class AnthropicClient(BaseClient):
                     top_p=self.top_p if self.top_p != 1.0 else NOT_GIVEN,
                     top_k=self.top_k if self.top_k != -1 else NOT_GIVEN,
                     max_tokens=self.max_tokens,
+                    repetition_penalty=self.repetition_penalty
+                    if self.repetition_penalty != 1.0
+                    else NOT_GIVEN,
                     system=[
                         {
                             "type": "text",

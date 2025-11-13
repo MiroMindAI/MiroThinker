@@ -1,12 +1,12 @@
-# conf/benchmark/webwalkerqa.yaml
+# conf/benchmark/hle-text-2158.yaml
 defaults:
   - default
   - _self_
 
-name: "webwalkerqa"
+name: "hle-text-2158"
 
 data:
-  data_dir: "../../data/webwalkerqa"
+  data_dir: "../../data/hle-text-2158"
 
 execution:
   max_tasks: null  # null means no limit

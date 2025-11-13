@@ -21,8 +21,6 @@ from typing import Any, Dict
 import httpx
 from mcp.server.fastmcp import FastMCP
 
-from .redis_cache_async import redis_cache_async
-
 # Configure logging
 logger = logging.getLogger("miroflow")
 
@@ -42,10 +40,11 @@ async def scrape_and_extract_info(
     url: str, info_to_extract: str, custom_headers: Dict[str, str] = None
 ) -> Dict[str, Any]:
     """
-    Scrape content from a URL and extract specific types of information using LLM.
+    Scrape content from a URL, including web pages, PDFs, code files, and other supported resources, and extract meaningful information using an LLM.
+    If you need to extract information from a PDF, please use this tool.
 
     Args:
-        url (str): The URL to scrape content from
+        url (str): The URL to scrape content from. Supports various types of URLs such as web pages, PDFs, raw text/code files (e.g., GitHub, Gist), and similar sources.
         info_to_extract (str): The specific types of information to extract (usually a question)
         custom_headers (Dict[str, str]): Additional headers to include in the scraping request
 
@@ -68,23 +67,9 @@ async def scrape_and_extract_info(
             "scrape_stats": {},
             "tokens_used": 0,
         }
-    mcp_complete_cache = await redis_cache_async.get_scrape_and_extract_info_cache(
-        url, info_to_extract, SUMMARY_LLM_MODEL_NAME, custom_headers
-    )
-    if mcp_complete_cache:
-        logger.info(
-            f"Returning cached Jina scrape and extract result for URL: {url[:50]}..."
-        )
-        return mcp_complete_cache
-    scrape_url_with_jina_cache = await redis_cache_async.get_scrape_url_with_jina_cache(
-        url, custom_headers
-    )
-    if scrape_url_with_jina_cache:
-        logger.info(f"Only returning cached Jina scrape result for URL: {url[:50]}...")
-        scrape_result = scrape_url_with_jina_cache
-    else:
-        # First, scrape the content
-        scrape_result = await scrape_url_with_jina(url, custom_headers)
+
+    # First, scrape the content
+    scrape_result = await scrape_url_with_jina(url, custom_headers)
 
     if not scrape_result["success"]:
         logger.error(
@@ -107,19 +92,6 @@ async def scrape_and_extract_info(
         model=SUMMARY_LLM_MODEL_NAME,
         max_tokens=8192,
     )
-    if extracted_result["success"]:
-        await redis_cache_async.set_scrape_and_extract_info_cache(
-            url,
-            info_to_extract,
-            SUMMARY_LLM_MODEL_NAME,
-            extracted_result,
-            custom_headers,
-            ttl_seconds=604800,
-        )  # 7 days TTL
-        await redis_cache_async.set_scrape_url_with_jina_cache(
-            url, scrape_result, custom_headers, ttl_seconds=604800
-        )  # 7 days TTL
-        logger.info(f"Cached Jina scrape and extract result for URL: {url[:50]}...")
 
     # Combine results
     return {
@@ -458,7 +430,7 @@ async def extract_info_with_llm(
             "messages": [
                 {"role": "user", "content": prompt},
             ],
-            # "temperature": 0.7,
+            "temperature": 1.0,
             # "top_p": 0.8,
             # "top_k": 20,
         }
@@ -492,6 +464,12 @@ async def extract_info_with_llm(
                         json=payload,
                         timeout=httpx.Timeout(None, connect=30, read=300),
                     )
+                    if response.text and len(response.text) >= 50:
+                        tail_50 = response.text[-50:]
+                        repeat_count = response.text.count(tail_50)
+                        if repeat_count > 5:
+                            logger.info("Repeat detected in extract_info_with_llm")
+                            continue
 
                 # Check if the request was successful
                 if (

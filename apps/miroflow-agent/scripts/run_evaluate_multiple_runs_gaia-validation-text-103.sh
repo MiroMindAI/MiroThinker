@@ -9,10 +9,11 @@ NUM_RUNS=${NUM_RUNS:-8}
 BENCHMARK_NAME="gaia-validation-text-103"
 LLM_PROVIDER=${LLM_PROVIDER:-"qwen"}
 AGENT_SET=${AGENT_SET:-"evaluation_os"}
-MAX_CONTEXT_LENGTH=${MAX_CONTEXT_LENGTH:-40960}
+MAX_CONTEXT_LENGTH=${MAX_CONTEXT_LENGTH:-262144}
 MAX_CONCURRENT=${MAX_CONCURRENT:-10}
 PASS_AT_K=${PASS_AT_K:-1}
-TEMPERATURE=${TEMPERATURE:-0.3}
+TEMPERATURE=${TEMPERATURE:-1.0}
+API_KEY=${API_KEY:-"xxx"}
 
 # Set results directory
 RESULTS_DIR="../../logs/${BENCHMARK_NAME}/$(date +%m%d)/${LLM_PROVIDER}_${LLM_MODEL}_${AGENT_SET}"
@@ -45,6 +46,7 @@ for i in $(seq 1 $NUM_RUNS); do
             llm.async_client=true \
             llm.temperature=$TEMPERATURE \
             llm.max_context_length=$MAX_CONTEXT_LENGTH \
+            llm.api_key=$API_KEY \
             benchmark.execution.max_tasks=null \
             benchmark.execution.max_concurrent=$MAX_CONCURRENT \
             benchmark.execution.pass_at_k=$PASS_AT_K \
