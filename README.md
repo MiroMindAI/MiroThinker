@@ -48,9 +48,9 @@ This repo is the official implementation of the MiroMind Research Agent Project.
 
 ## 📰 News & Updates
 
-- **\[2025-11-13\]** 🎉🎉🎉 [MiroThinker-v1.0](https://huggingface.co/collections/miromind-ai/mirothinker-v10) is now released! Introducing **interactive scaling** as a third dimension of performance improvement, MiroThinker v1.0 supports 256K context window and up to 600 tool calls per task. Available in 8B, 30B, and 72B parameter scales, achieving 37.7%, 47.1%, 55.6%, and 81.9% on HLE-Text, BrowseComp, BrowseComp-ZH, and GAIA-Text-103, respectively. See [Technical Report](https://github.com/MiroMindAI/MiroThinker/blob/main/assets/MiroThinker_v1.0_Technical_Report.pdf) for more details.
-- **\[2025-09-11\]** 🎉🎉 MiroThinker-72B-Preview ranked 4th in this week's FutureX benchmark. See [FutureX](https://futurex-ai.github.io/).
-- **\[2025-09-08\]** 🎉 [MiroThinker-v0.2](https://huggingface.co/collections/miromind-ai/mirothinker-v02-68af084a18035f57b17cd902) is now released, achieving open-source SOTA performance across multiple benchmarks, including HLE (17.8%), HLE-Text-Only (19.1%), BrowserComp-EN (17.2%), BrowserComp-ZH (29.4%), xBench-DeepSearch (56.0%), and Frames (74.8%).
+- **\[2025-11-13\]** 🎉🎉 [MiroThinker-v1.0](https://huggingface.co/collections/miromind-ai/mirothinker-v10) is now released! Introducing **interactive scaling** as a third dimension of performance improvement, MiroThinker v1.0 supports 256K context window and up to 600 tool calls per task. Available in 8B, 30B, and 72B parameter scales, achieving 37.7%, 47.1%, 55.6%, and 81.9% on HLE-Text, BrowseComp, BrowseComp-ZH, and GAIA-Text-103, respectively. See [Technical Report](https://github.com/MiroMindAI/MiroThinker/blob/main/assets/MiroThinker_v1.0_Technical_Report.pdf) for more details.
+- **\[2025-09-11\]** 🎉 MiroThinker-72B-Preview ranked 4th in this week's FutureX benchmark. See [FutureX](https://futurex-ai.github.io/).
+- **\[2025-09-08\]** [MiroThinker-v0.2](https://huggingface.co/collections/miromind-ai/mirothinker-v02) is now released, achieving open-source SOTA performance across multiple benchmarks, including HLE (17.8%), HLE-Text-Only (19.1%), BrowserComp-EN (17.2%), BrowserComp-ZH (29.4%), xBench-DeepSearch (56.0%), and Frames (74.8%).
 - **\[2025-09-07\]** We supported more benchmarks, including [BrowseComp-ZH](https://arxiv.org/abs/2504.19314), [XBench-DeepSearch](https://xbench.org/agi/aisearch), and [FutureX](https://futurex-ai.github.io/). We plan to add more benchmarks in the future.
 - **\[2025-09-04\]** Our in-development model, MiroThinker-72B-Preview, ranked 6th in this week's [FutureX benchmark](https://futurex-ai.github.io/). We will release the stable version of MiroThinker-72B soon.
 - **\[2025-08-22\]** Introducing streamlined deployment options for MiroThinker models with optimized resource usage and faster startup times. Experience the interactive demo: [🚀 Try Gradio Demo](apps/gradio-demo)
@@ -62,7 +62,7 @@ This repo is the official implementation of the MiroMind Research Agent Project.
 
 MiroThinker v1.0 is an open-source research agent designed to advance tool-augmented reasoning and information-seeking capabilities.
 
-Unlike previous agents that scale only model size or context length, MiroThinker introduces **interactive scaling** at the model level, systematically training the model to handle deeper and more frequent agent–environment interactions as a third dimension of performance improvement. Interactive scaling leverages environment feedback and external information acquisition to correct errors and refine trajectories.
+Unlike previous agents that scale only model size or context length, MiroThinker v1.0 introduces **interactive scaling** at the model level, systematically training the model to handle deeper and more frequent agent–environment interactions as a third dimension of performance improvement. Interactive scaling leverages environment feedback and external information acquisition to correct errors and refine trajectories.
 
 Empirical results demonstrate the effectiveness of this interactive scaling. Performance across several benchmarks improves predictably as the model engages in increasingly deep and frequent interactions with its environment.
 
@@ -99,7 +99,7 @@ In this new version, we introduced three key improvements:
 - **Unified DPO training** with a single preference dataset across all models.
 - **Extended context length** from 40k to 64k for more challenging multi-turn tool-use tasks.
 
-Compared to v0.1, MiroThinker-v0.2 delivers consistent gains across benchmarks. For example, scores improved from **57.3 → 64.1** on **GAIA-Text-103** and from **17.0 → 29.4** on **BrowseComp-ZH**, reflecting substantial advancements in the model’s general research agent capabilities.
+Compared to v0.1, MiroThinker v0.2 delivers consistent gains across benchmarks. For example, scores improved from **57.3 → 64.1** on **GAIA-Text-103** and from **17.0 → 29.4** on **BrowseComp-ZH**, reflecting substantial advancements in the model’s general research agent capabilities.
 
 <div align="center">
 
@@ -130,7 +130,7 @@ Compared to v0.1, MiroThinker-v0.2 delivers consistent gains across benchmarks. 
   <p><strong>Performance of Open-Source Models on GAIA-Validation Benchmark.</strong></p>
 </div>
 
-We have released the **MiroThinker v0.1** series, including both SFT and DPO variants at parameter scales of **8B**, **14B**, and **32B**. Notably, MiroThinker-v0.1 achieves **state-of-the-art performance** among open-source models on the [GAIA benchmark](https://huggingface.co/datasets/gaia-benchmark/GAIA), a rigorous evaluation suite for advanced agentic capabilities, demonstrating its strength in long-context, decision-intensive, and real-world task scenarios.
+We have released the **MiroThinker v0.1** series, including both SFT and DPO variants at parameter scales of **8B**, **14B**, and **32B**. Notably, MiroThinker v0.1 achieves **state-of-the-art performance** among open-source models on the [GAIA benchmark](https://huggingface.co/datasets/gaia-benchmark/GAIA), a rigorous evaluation suite for advanced agentic capabilities, demonstrating its strength in long-context, decision-intensive, and real-world task scenarios.
 
 <div align="center">
 
@@ -176,7 +176,7 @@ We have released the **MiroThinker v0.1** series, including both SFT and DPO var
 ### MiroThinker-v1.0
 
 <div align="center">
-  <img src="https://huggingface.co/datasets/miromind-ai/MiroFlow-Benchmarks/resolve/main/assets/MiroThinker_v1.0_Performance_2.png" width="90%" alt="MiroThinker" />
+  <img src="https://huggingface.co/datasets/miromind-ai/MiroFlow-Benchmarks/resolve/main/assets/MiroThinker_v1.0_Performance_2.png" width="100%" alt="MiroThinker" />
 </div>
 
 ### MiroThinker-v0.2
