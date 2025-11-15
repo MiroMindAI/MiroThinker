@@ -1,4 +1,4 @@
-# Copyright (c) 2025 Miromind.ai
+# Copyright (c) 2025 MiroMind
 # This source code is licensed under the MIT License.
 
 import asyncio
@@ -537,7 +537,7 @@ async def _verify_answer_for_datasets_core(
     if predicted_answer == target:
         return "CORRECT", "exact_match"
 
-    # For gaia-validation, use gaia scorer
+    # For gaia-validation, use gaia_scorer
     if benchmark_name == "gaia-validation":
         result = await verify_answer_gaia(question, target, predicted_answer)
         return result, "gaia_scorer"
@@ -549,30 +549,36 @@ async def _verify_answer_for_datasets_core(
         )
         return result, "gaia_validation_text_103_judge"
 
+    # For browsecomp and browsecomp-zh, use browsecomp_judge
     elif "browsecomp" in benchmark_name:
         result = await verify_answer_browsecomp(question, target, predicted_answer)
         return result, "browsecomp_judge"
 
+    # For hle, hle-text-500, and hle-text-2158, use hle_judge
     elif "hle" in benchmark_name:
         result = await verify_answer_hle(question, target, predicted_answer)
         return result, "hle_judge"
 
+    # For webwalkerqa, frames, and seal-0, use gaia_validation_text_103_judge
     elif benchmark_name in ["webwalkerqa", "frames", "seal-0"]:
         result = await verify_answer_gaia_validation_text_103(
             question, target, predicted_answer
         )
         return result, "gaia_validation_text_103_judge"
 
+    # For simpleqa, use simpleqa_judge
     elif benchmark_name == "simpleqa" or benchmark_name == "collect_trace":
         result = await verify_answer_simpleqa(question, target, predicted_answer)
         return result, "simpleqa_judge"
 
+    # For xbench_deepsearch, use xbench_deepsearch_judge
     elif benchmark_name == "xbench_deepsearch":
         result = await verify_answer_xbench_deepsearch(
             question, target, predicted_answer
         )
         return result, "xbench_deepsearch_judge"
 
+    # For other benchmarks, use gaia_validation_text_103_judge
     else:
         result = await verify_answer_gaia_validation_text_103(
             question, target, predicted_answer
