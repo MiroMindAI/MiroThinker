@@ -396,9 +396,9 @@ The following optional tools are available but were not used in MiroThinker v1.0
 | `tool-transcribe-os` | Open-Source  | Audio transcription using Whisper           |
 | `tool-reasoning`     | Commercial   | Reasoning engine using Claude               |
 | `tool-reasoning-os`  | Open-Source  | Reasoning engine (open-source alternative)  |
-| `tool-reading`       | Commercial   | Document reading using MarkItDown           |
+| `tool-reading`       | Open-Source  | Document reading using MarkItDown           |
 | `tool-google-search` | Commercial   | Web search using Google + scraping          |
-| `tool-sougou-search` | Open-Source  | Web search using Sougou (Chinese)           |
+| `tool-sougou-search` | Commercial   | Web search using Sougou (Chinese)           |
 
 > **📖 Local Deployment**: For instructions on deploying open-source tools (`tool-vqa-os`, `tool-transcribe-os`, `tool-reasoning-os`) locally, see [Local Tool Deployment Guide](assets/LOCAL-TOOL-DEPLOYMENT.md).
 
