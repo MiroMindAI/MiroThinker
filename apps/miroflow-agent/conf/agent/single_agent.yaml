@@ -10,7 +10,7 @@ main_agent:
     - search_and_scrape_webpage
     - jina_scrape_llm_summary
     - tool-python
-  max_turns: 400  # Maximum number of turns for main agent execution
+  max_turns: 600  # Maximum number of turns for main agent execution
 
 sub_agents:
 
