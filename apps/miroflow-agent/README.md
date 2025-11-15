@@ -5,14 +5,14 @@
 The simplest way to run a case is using the default command:
 
 ```bash
-# Run Claude-3.7-Sonnet with open-source tool set
-uv run python main.py llm=claude-3-7 agent=evaluation_os benchmark=debug
+# Run Claude-3.7-Sonnet with single-agent configuration
+uv run python main.py llm=claude-3-7 agent=single_agent_keep5 benchmark=debug
 
-# Run GPT-5 with open-source tool set
-uv run python main.py llm=gpt-5 agent=evaluation_os benchmark=debug
+# Run GPT-5 with single-agent configuration
+uv run python main.py llm=gpt-5 agent=single_agent_keep5 benchmark=debug
 
 # Use a different benchmark configuration
-uv run python main.py llm=qwen-3 agent=evaluation_os benchmark=debug llm.base_url=<base_url>
+uv run python main.py llm=qwen-3 agent=single_agent_keep5 benchmark=debug llm.base_url=<base_url>
 ```
 
 This will execute the default task: "What is the title of today's arxiv paper in computer science?"
@@ -20,7 +20,7 @@ This will execute the default task: "What is the title of today's arxiv paper in
 ## Available Configurations
 
 - **LLM Models**: `claude-3-7`, `gpt-5`, `qwen-3`
-- **Agent Configs**: `evaluation_os`, `evaluation`
+- **Agent Configs**: `single_agent`, `single_agent_keep5`, `multi_agent`, `multi_agent_os`
 - **Benchmark Configs**: `debug`, `browsecomp`, `frames`, etc.
 
 ### Customizing the Task

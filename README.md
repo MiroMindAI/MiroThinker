@@ -315,7 +315,7 @@ cp .env.example .env
 # Edit .env with your actual API keys based on your chosen configuration
 ```
 
-> **📝 Environment Variables**: The `.env.example` file contains all available environment variables. Configure the variables according to the tools used in your chosen agent configuration (see [Tool Configuration](#tool-configuration) section below).
+> **📝 Environment Variables**: The `.env.example` file contains all available environment variables. Configure the variables according to the tools used in your chosen agent configuration (see [Tool Configuration](#tool-configuration) section).
 
 ### Tool Configuration
 
@@ -333,13 +333,17 @@ MiroThinker v1.0 uses the following MCP servers in its evaluation (see [MiroFlow
 
 The following optional tools are available but were not used in MiroThinker v1.0 evaluation:
 
-| Category | Commercial | Open-Source |
-|:---------|:-----------|:-----------|
-| **Vision Processing** | `tool-vqa` (Claude) | `tool-vqa-os` |
-| **Audio Processing** | `tool-transcribe` (OpenAI) | `tool-transcribe-os` (Whisper) |
-| **Reasoning Engine** | `tool-reasoning` (Claude) | `tool-reasoning-os` |
-| **Document Reading** | `tool-reading` (MarkItDown) | - |
-| **Web Searching** | `tool-google-search` (Google + scraping) | `tool-sougou-search` (Sougou, Chinese) |
+| Tool Name | Type | Description |
+|:----------|:-----|:------------|
+| `tool-vqa` | Commercial | Vision processing using Claude |
+| `tool-vqa-os` | Open-Source | Vision processing (open-source alternative) |
+| `tool-transcribe` | Commercial | Audio transcription using OpenAI |
+| `tool-transcribe-os` | Open-Source | Audio transcription using Whisper |
+| `tool-reasoning` | Commercial | Reasoning engine using Claude |
+| `tool-reasoning-os` | Open-Source | Reasoning engine (open-source alternative) |
+| `tool-reading` | Commercial | Document reading using MarkItDown |
+| `tool-google-search` | Commercial | Web search using Google + scraping |
+| `tool-sougou-search` | Open-Source | Web search using Sougou (Chinese) |
 
 See the [MiroFlow Tools README](libs/miroflow-tools/README.md) for complete documentation of all available tools.
 
@@ -351,9 +355,8 @@ The `apps/miroflow-agent/conf/agent/` directory contains several pre-configured 
 |:-------------------|:------------|:----------|:------------------|:-------------------------------|
 | **`single_agent.yaml`** | Single-agent configuration used in MiroThinker v1.0 | 600 | Keep all results | `SERPER_API_KEY`, `SERPER_BASE_URL`, `JINA_API_KEY`, `JINA_BASE_URL`, `E2B_API_KEY`, `SUMMARY_LLM_BASE_URL`, `SUMMARY_LLM_MODEL_NAME`, `SUMMARY_LLM_API_KEY` |
 | **`single_agent_keep5.yaml`** | Single-agent with recency-based context retention | 600 | Keep 5 most recent | Same as `single_agent.yaml` |
-| **`default.yaml`** | Default multi-agent configuration with all tools | 20 | Keep all results | `E2B_API_KEY`, `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `SERPER_API_KEY`, `SERPER_BASE_URL`, `JINA_API_KEY`, `JINA_BASE_URL` |
-| **`evaluation.yaml`** | Multi-agent with commercial tools (v0.1/v0.2) | 50 | Keep all results | Same as `default.yaml` |
-| **`evaluation_os.yaml`** | Multi-agent with open-source tools (v0.1/v0.2) | 50 | Keep all results | `E2B_API_KEY`, `VISION_API_KEY`, `VISION_BASE_URL`, `VISION_MODEL_NAME`, `WHISPER_API_KEY`, `WHISPER_BASE_URL`, `WHISPER_MODEL_NAME`, `REASONING_API_KEY`, `REASONING_BASE_URL`, `REASONING_MODEL_NAME`, `SERPER_API_KEY`, `SERPER_BASE_URL`, `JINA_API_KEY`, `JINA_BASE_URL` |
+| **`multi_agent.yaml`** | Multi-agent with commercial tools (v0.1/v0.2) | 50 | Keep all results | `E2B_API_KEY`, `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `SERPER_API_KEY`, `SERPER_BASE_URL`, `JINA_API_KEY`, `JINA_BASE_URL` |
+| **`multi_agent_os.yaml`** | Multi-agent with open-source tools (v0.1/v0.2) | 50 | Keep all results | `E2B_API_KEY`, `VISION_API_KEY`, `VISION_BASE_URL`, `VISION_MODEL_NAME`, `WHISPER_API_KEY`, `WHISPER_BASE_URL`, `WHISPER_MODEL_NAME`, `REASONING_API_KEY`, `REASONING_BASE_URL`, `REASONING_MODEL_NAME`, `SERPER_API_KEY`, `SERPER_BASE_URL`, `JINA_API_KEY`, `JINA_BASE_URL` |
 
 > **💡 Note**: All environment variables are listed in `apps/miroflow-agent/.env.example`. Copy it to `.env` and fill in the values for the tools you plan to use.
 
@@ -514,7 +517,7 @@ uv run main.py llm=qwen-3 agent=single_agent llm.base_url=https://your_base_url/
 
 #### 2. **Run comprehensive benchmark evaluation**
 
-> **Note:** For MiroThinker v1.0, use `single_agent` or `single_agent_keep5` configurations. The `evaluation` and `evaluation_os` configurations are for v0.1/v0.2.
+> **Note:** For MiroThinker v1.0, use `single_agent` or `single_agent_keep5` configurations. The `multi_agent` and `multi_agent_os` configurations are for v0.1/v0.2.
 
 ```bash
 # GAIA-Val-165

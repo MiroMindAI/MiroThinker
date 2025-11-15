@@ -1,4 +1,4 @@
-# conf/agent/evaluation.yaml
+# conf/agent/multi_agent.yaml
 # The name of tools and sub-agents defined in: apps/miroflow-agent/src/config/settings.py
 # Each sub-agent prompt is written in: apps/miroflow-agent/src/utils/prompt_utils.py
 defaults:
@@ -23,4 +23,5 @@ sub_agents:
       - tool-python
     max_turns: 50
 
-keep_tool_result: -1 
+keep_tool_result: -1
+

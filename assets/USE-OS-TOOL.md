@@ -3,10 +3,10 @@
 This project supports **two tool configuration modes** for benchmark testing:
 
 1. **Default Setting with Open-Source Tools** — Uses open-source tools as much as possible.
-   *Config file:* [`evaluation_os.yaml`](../apps/miroflow-agent/conf/agent/evaluation_os.yaml)
+   *Config file:* [`multi_agent_os.yaml`](../apps/miroflow-agent/conf/agent/multi_agent_os.yaml)
 
 1. **Advanced Setting with Commercial Tools** — Uses commercial tools with advanced features.
-   *Config file:* [`evaluation.yaml`](../apps/miroflow-agent/conf/agent/evaluation.yaml)
+   *Config file:* [`multi_agent.yaml`](../apps/miroflow-agent/conf/agent/multi_agent.yaml)
 
 ## Tool List
 

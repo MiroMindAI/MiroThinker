@@ -35,7 +35,7 @@ uv run python benchmarks/common_benchmark.py \
     benchmark.execution.max_tasks=null \
     benchmark.execution.max_concurrent=10 \
     benchmark.execution.pass_at_k=1 \
-    agent=evaluation \
+    agent=single_agent \
     hydra.run.dir=$LOG_DIR \
     2>&1 | tee "$LOG_DIR/output.log"
 
