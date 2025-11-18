@@ -846,12 +846,14 @@ Join our community and help us build the future of AI agents!
 
 ### References
 
+If you find this project useful in your research, please consider cite:
+
 ```
-@misc{2025mirothinker,
-    title={MiroThinker: An open-source agentic model series trained for deep research and complex, long-horizon problem solving},
-    author={MiroMind AI Team},
-    howpublished={\url{https://github.com/MiroMindAI/MiroThinker}},
-    year={2025}
+@article{miromind2025mirothinker,
+  title={MiroThinker: Pushing the Performance Boundaries of Open-Source Research Agents via Model, Context, and Interactive Scaling},
+  author={MiroMind Team and Bai, Song and Bing, Lidong and Chen, Carson and Chen, Guanzheng and Chen, Yuntao and Chen, Zhe and Chen, Ziyi and Dai, Jifeng and Dong, Xuan and others},
+  journal={arXiv preprint arXiv:2511.11793},
+  year={2025}
 }
 ```
 
