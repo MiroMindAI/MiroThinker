@@ -7,8 +7,6 @@ import json
 import os
 import random
 import re
-import signal
-import sys
 from abc import ABC
 from concurrent.futures import ProcessPoolExecutor
 from dataclasses import asdict, dataclass, field
@@ -20,6 +18,7 @@ import hydra
 # Import from the new modular structure
 from evaluators.eval_utils import verify_answer_for_datasets
 from omegaconf import DictConfig, OmegaConf
+
 from src.core.pipeline import (
     create_pipeline_components,
     execute_task_pipeline,
@@ -516,56 +515,62 @@ class BenchmarkEvaluator(ABC):
         }
         results_dict = {}  # Store results by task_id to maintain order
 
-        def signal_handler(signum, frame):
-            """Handle SIGINT signal"""
-            sys.exit(1)
-
-        # Set up signal handler
-        # Register SIGINT and SIGTERM for graceful shutdown on Ctrl-C and termination
-        signal.signal(signal.SIGINT, signal_handler)
-        signal.signal(signal.SIGTERM, signal_handler)
-
+        executor = None
         try:
-            with ProcessPoolExecutor(max_workers=max_concurrent) as executor:
-                # Submit all tasks
-                future_to_task_id = {}
-                for args in worker_args:
-                    task_dict = args[0]  # First element is task_dict
-                    future = executor.submit(_task_worker, *args)
-                    future_to_task_id[future] = task_dict["task_id"]
+            executor = ProcessPoolExecutor(max_workers=max_concurrent)
+            # Submit all tasks
+            future_to_task_id = {}
+            for args in worker_args:
+                task_dict = args[0]  # First element is task_dict
+                future = executor.submit(_task_worker, *args)
+                future_to_task_id[future] = task_dict["task_id"]
 
-                # Collect results as they complete
-                from concurrent.futures import as_completed
+            # Collect results as they complete
+            from concurrent.futures import as_completed
 
-                for future in as_completed(future_to_task_id):
-                    task_id = future_to_task_id[future]
-                    try:
-                        result_dict = future.result()
-                        # Reconstruct BenchmarkResult from dict
-                        result = BenchmarkResult(**result_dict)
-                        results_dict[task_id] = result
-                        completed = len(results_dict)
-                        print(
-                            f"Progress: {completed}/{len(shuffled_tasks)} tasks completed"
-                        )
-                    except Exception as e:
-                        print(f"Exception in task {task_id}: {e}")
-                        # Get original task for error result
-                        _, original_task = task_index_map[task_id]
-                        error_result = BenchmarkResult(
-                            task_id=original_task.task_id,
-                            task_question=original_task.task_question,
-                            ground_truth=original_task.ground_truth,
-                            file_path=original_task.file_path,
-                            model_boxed_answer="",
-                            status="failed",
-                            metadata=original_task.metadata.copy(),
-                            error_message=str(e),
-                        )
-                        results_dict[task_id] = error_result
+            for future in as_completed(future_to_task_id):
+                task_id = future_to_task_id[future]
+                try:
+                    result_dict = future.result()
+                    # Reconstruct BenchmarkResult from dict
+                    result = BenchmarkResult(**result_dict)
+                    results_dict[task_id] = result
+                    completed = len(results_dict)
+                    print(
+                        f"Progress: {completed}/{len(shuffled_tasks)} tasks completed"
+                    )
+                except Exception as e:
+                    print(f"Exception in task {task_id}: {e}")
+                    # Get original task for error result
+                    _, original_task = task_index_map[task_id]
+                    error_result = BenchmarkResult(
+                        task_id=original_task.task_id,
+                        task_question=original_task.task_question,
+                        ground_truth=original_task.ground_truth,
+                        file_path=original_task.file_path,
+                        model_boxed_answer="",
+                        status="failed",
+                        metadata=original_task.metadata.copy(),
+                        error_message=str(e),
+                    )
+                    results_dict[task_id] = error_result
         except KeyboardInterrupt:
-            print("\n⚠️  Received interrupt signal, shutting down...")
+            print("\n⚠️  Received interrupt signal, shutting down gracefully...")
+            if executor:
+                print(
+                    "  Cancelling pending tasks and shutting down worker processes..."
+                )
+                # Cancel all pending futures
+                for future in future_to_task_id:
+                    future.cancel()
+                # Shutdown executor without waiting for pending tasks
+                executor.shutdown(wait=False, cancel_futures=True)
+            print("  Shutdown complete.")
             raise
+        finally:
+            # Ensure executor is properly cleaned up
+            if executor:
+                executor.shutdown(wait=True)
 
         # Reconstruct results in original task order
         processed_results = [results_dict[task.task_id] for task in shuffled_tasks]
