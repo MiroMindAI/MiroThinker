@@ -20,7 +20,7 @@ logger = logging.getLogger("miroflow_agent")
 class OpenAIClient(BaseClient):
     def _create_client(self) -> Union[AsyncOpenAI, OpenAI]:
         """Create LLM client"""
-        http_client_args = {}
+        http_client_args = {"headers": {"x-upstream-session-id": self.task_id}}
         if self.async_client:
             return AsyncOpenAI(
                 api_key=self.api_key,
