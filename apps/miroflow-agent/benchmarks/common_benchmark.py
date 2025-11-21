@@ -556,12 +556,38 @@ class BenchmarkEvaluator(ABC):
         except KeyboardInterrupt:
             print("\n⚠️  Received interrupt signal, shutting down gracefully...")
             if executor:
-                print(
-                    "  Cancelling pending tasks and shutting down worker processes..."
-                )
+                print("  Cancelling pending tasks and terminating worker processes...")
                 # Cancel all pending futures
                 for future in future_to_task_id:
                     future.cancel()
+
+                # Forcefully terminate worker processes
+                # Access internal processes and terminate them
+                if hasattr(executor, "_processes") and executor._processes:
+                    for pid, process in executor._processes.items():
+                        try:
+                            if process.is_alive():
+                                print(f"    Terminating worker process {pid}...")
+                                process.terminate()
+                        except Exception as e:
+                            print(
+                                f"    Warning: Failed to terminate process {pid}: {e}"
+                            )
+
+                    # Give processes a short time to terminate gracefully
+                    import time
+
+                    time.sleep(0.5)
+
+                    # Force kill any remaining processes
+                    for pid, process in executor._processes.items():
+                        try:
+                            if process.is_alive():
+                                print(f"    Force killing worker process {pid}...")
+                                process.kill()
+                        except Exception as e:
+                            print(f"    Warning: Failed to kill process {pid}: {e}")
+
                 # Shutdown executor without waiting for pending tasks
                 executor.shutdown(wait=False, cancel_futures=True)
             print("  Shutdown complete.")
@@ -569,7 +595,10 @@ class BenchmarkEvaluator(ABC):
         finally:
             # Ensure executor is properly cleaned up
             if executor:
-                executor.shutdown(wait=True)
+                try:
+                    executor.shutdown(wait=True)
+                except Exception:
+                    pass  # Ignore errors during cleanup
 
         # Reconstruct results in original task order
         processed_results = [results_dict[task.task_id] for task in shuffled_tasks]
