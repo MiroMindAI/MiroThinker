@@ -515,13 +515,20 @@ class ProgressChecker:
         except (KeyError, TypeError, IndexError):
             return 0
 
-    def analyze_run_directory(self, run_dir: str, task_id_pattern: str) -> TaskStats:
-        """Analyze a single run directory and return statistics"""
+    def analyze_run_directory(
+        self, run_dir: str, task_id_pattern: str
+    ) -> Tuple[TaskStats, Dict[str, bool]]:
+        """Analyze a single run directory and return statistics and task results
+
+        Returns:
+            Tuple[TaskStats, Dict[str, bool]]: Statistics and a mapping of task_id -> is_correct
+        """
         latest_files = self._get_latest_task_files(run_dir, task_id_pattern)
 
         # Use the correct total tasks
         stats = TaskStats(total=self.total_tasks_per_run)
         completed_files = []  # Track completed files for timing analysis
+        task_results = {}  # Track task_id -> is_correct mapping
 
         for json_file in latest_files:
             try:
@@ -543,6 +550,12 @@ class ProgressChecker:
                     )
                     if is_correct:
                         stats.judge_correct += 1
+
+                    # Extract task ID and store result
+                    filename = os.path.basename(json_file)
+                    task_id = self._extract_task_id(filename, task_id_pattern)
+                    if task_id:
+                        task_results[task_id] = is_correct
 
                     # Check if final_boxed_answer contains "No \\boxed{} content found"
                     final_boxed_answer = data.get("final_boxed_answer", "")
@@ -572,7 +585,7 @@ class ProgressChecker:
 
         # Store completed files in stats for timing analysis
         stats.completed_files = completed_files
-        return stats
+        return stats, task_results
 
     def run_analysis(
         self, benchmark_name_std: str, task_id_pattern: str
@@ -582,6 +595,7 @@ class ProgressChecker:
         summary = SummaryStats()
         run_stats_list = []  # Store statistics for each run
         all_completed_files = []  # Collect all completed files for timing analysis
+        all_task_results = {}  # Collect task_id -> list of is_correct across all runs
 
         print()
         print("=" * 80)
@@ -592,7 +606,7 @@ class ProgressChecker:
         # Analyze each run directory
         for run_dir in self.run_dirs:
             run_name = os.path.basename(run_dir)
-            stats = self.analyze_run_directory(run_dir, task_id_pattern)
+            stats, task_results = self.analyze_run_directory(run_dir, task_id_pattern)
 
             if stats.total == 0:
                 print(f"{run_name}: No task files found")
@@ -619,6 +633,12 @@ class ProgressChecker:
             # Collect completed files for timing analysis
             all_completed_files.extend(stats.completed_files)
 
+            # Collect task results for Pass@n calculation
+            for task_id, is_correct in task_results.items():
+                if task_id not in all_task_results:
+                    all_task_results[task_id] = []
+                all_task_results[task_id].append(is_correct)
+
             # Update summary statistics
             summary.total_tasks += stats.total
             summary.total_completed += stats.completed
@@ -629,10 +649,36 @@ class ProgressChecker:
 
         # Display summary after all runs are processed
         self._display_summary(
-            summary, run_stats_list, all_completed_files, benchmark_name_std
+            summary,
+            run_stats_list,
+            all_completed_files,
+            benchmark_name_std,
+            all_task_results,
         )
 
         return summary
+
+    def _calculate_pass_at_n(
+        self, all_task_results: Dict[str, List[bool]], total_tasks: int
+    ) -> Tuple[int, float]:
+        """Calculate Pass@n: number of tasks with at least one correct answer across all runs
+
+        Returns:
+            Tuple[int, float]: (pass_at_n_count, pass_at_n_percentage)
+        """
+        if not all_task_results or total_tasks == 0:
+            return 0, 0.0
+
+        pass_at_n_count = 0
+        for task_id, results in all_task_results.items():
+            # If at least one run got it correct, this task passes
+            if any(results):
+                pass_at_n_count += 1
+
+        pass_at_n_percentage = (
+            (pass_at_n_count / total_tasks * 100) if total_tasks > 0 else 0.0
+        )
+        return pass_at_n_count, pass_at_n_percentage
 
     def _display_summary(
         self,
@@ -640,6 +686,7 @@ class ProgressChecker:
         run_stats_list: List[Tuple[str, TaskStats]],
         completed_files: List[str],
         benchmark_name_std: str,
+        all_task_results: Dict[str, List[bool]] = None,
     ):
         """Display summary statistics"""
         print("=" * 80)
@@ -701,11 +748,33 @@ class ProgressChecker:
                         f"  {run_name}: {stats.judge_correct}/{stats.completed} (N/A)"
                     )
 
-            # Display mean accuracy and standard deviation
+            # Display mean accuracy and standard deviation (Pass@1 Acc (Avg@n))
+            num_runs = len(run_stats_list)
             mean_acc, std_acc = summary.average_run_accuracy(run_stats_list)
             if mean_acc > 0:
                 print()
-                print(f"MEAN ACCURACY: {mean_acc:.1f}% ± {std_acc:.1f}%")
+                if num_runs > 1:
+                    print(
+                        f"Pass@1 Acc (Avg@{num_runs}): {mean_acc:.1f}% ± {std_acc:.1f}%"
+                    )
+                else:
+                    print(f"MEAN ACCURACY: {mean_acc:.1f}% ± {std_acc:.1f}%")
+
+            # Display Pass@n if multiple runs
+            if num_runs > 1 and all_task_results:
+                # Calculate total unique tasks (use the first run's total as reference)
+                first_run_total = (
+                    run_stats_list[0][1].total
+                    if run_stats_list
+                    else summary.total_tasks
+                )
+                pass_at_n_count, pass_at_n_percentage = self._calculate_pass_at_n(
+                    all_task_results, first_run_total
+                )
+                pass_at_n_bar = create_progress_bar(pass_at_n_percentage)
+                print(
+                    f"Pass@{num_runs}: {pass_at_n_count}/{first_run_total} {pass_at_n_bar}"
+                )
 
             # Display no boxed content found statistics
             if summary.total_completed > 0:
@@ -718,7 +787,11 @@ class ProgressChecker:
 
         # Save analysis results to log file
         self._save_analysis_log(
-            summary, run_stats_list, completed_files, benchmark_name_std
+            summary,
+            run_stats_list,
+            completed_files,
+            benchmark_name_std,
+            all_task_results,
         )
 
     def _save_analysis_log(
@@ -727,6 +800,7 @@ class ProgressChecker:
         run_stats_list: List[Tuple[str, TaskStats]],
         completed_files: List[str],
         benchmark_name_std: str,
+        all_task_results: Dict[str, List[bool]] = None,
     ) -> None:
         """Save analysis results to a log file in the target directory"""
         try:
@@ -825,12 +899,33 @@ class ProgressChecker:
                             f"  {run_name}: {stats.judge_correct}/{stats.completed} (N/A)\n"
                         )
 
-                # Write mean accuracy and standard deviation
+                # Write mean accuracy and standard deviation (Pass@1 Acc (Avg@n))
+                num_runs = len(run_stats_list)
                 mean_acc, std_acc = summary.average_run_accuracy(run_stats_list)
                 if mean_acc > 0:
-                    output_buffer.write(
-                        f"\nMEAN ACCURACY: {mean_acc:.1f}% ± {std_acc:.1f}%\n"
+                    if num_runs > 1:
+                        output_buffer.write(
+                            f"\nPass@1 Acc (Avg@{num_runs}): {mean_acc:.1f}% ± {std_acc:.1f}%\n"
+                        )
+                    else:
+                        output_buffer.write(
+                            f"\nMEAN ACCURACY: {mean_acc:.1f}% ± {std_acc:.1f}%\n"
+                        )
+
+                # Write Pass@n if multiple runs
+                if num_runs > 1 and all_task_results:
+                    first_run_total = (
+                        run_stats_list[0][1].total
+                        if run_stats_list
+                        else summary.total_tasks
                     )
+                    pass_at_n_count, pass_at_n_percentage = self._calculate_pass_at_n(
+                        all_task_results, first_run_total
+                    )
+                    output_buffer.write(
+                        f"Pass@{num_runs}: {pass_at_n_count}/{first_run_total} ({pass_at_n_percentage:.1f}%)\n"
+                    )
+
                     if summary.total_completed > 0:
                         no_boxed_percentage = (
                             summary.total_no_boxed_found / summary.total_completed * 100
@@ -918,13 +1013,18 @@ class GAIAProgressChecker(ProgressChecker):
 
     def analyze_run_directory(
         self, run_dir: str, task_id_pattern: str
-    ) -> GAIATaskStats:
-        """Analyze a single run directory and return statistics (GAIA-specific)"""
+    ) -> Tuple[GAIATaskStats, Dict[str, bool]]:
+        """Analyze a single run directory and return statistics (GAIA-specific)
+
+        Returns:
+            Tuple[GAIATaskStats, Dict[str, bool]]: Statistics and a mapping of task_id -> is_correct
+        """
         latest_files = self._get_latest_task_files(
             run_dir, task_id_pattern
         )  # 直接用父类的实现
         stats = GAIATaskStats(total=len(latest_files))
         completed_files = []
+        task_results = {}  # Track task_id -> is_correct mapping
 
         for json_file in latest_files:
             try:
@@ -958,6 +1058,7 @@ class GAIAProgressChecker(ProgressChecker):
                     )
                     if task_id:
                         self._update_difficulty_stats(stats, task_id, is_correct)
+                        task_results[task_id] = is_correct
 
                     # Calculate turns for completed tasks
                     turns = self._calculate_turns(data)
@@ -971,7 +1072,7 @@ class GAIAProgressChecker(ProgressChecker):
                 stats.failed += 1
 
         stats.completed_files = completed_files
-        return stats
+        return stats, task_results
 
     def run_analysis(
         self, benchmark_name_std: str, task_id_pattern: str
@@ -981,6 +1082,7 @@ class GAIAProgressChecker(ProgressChecker):
         summary = GAIASummaryStats()
         run_stats_list = []  # Store statistics for each run
         all_completed_files = []  # Collect all completed files for timing analysis
+        all_task_results = {}  # Collect task_id -> list of is_correct across all runs
 
         print()
         print("=" * 80)
@@ -991,7 +1093,7 @@ class GAIAProgressChecker(ProgressChecker):
         # Analyze each run directory
         for run_dir in self.run_dirs:
             run_name = os.path.basename(run_dir)
-            stats = self.analyze_run_directory(run_dir, task_id_pattern)
+            stats, task_results = self.analyze_run_directory(run_dir, task_id_pattern)
 
             if stats.total == 0:
                 print(f"{run_name}: No task files found")
@@ -1018,12 +1120,22 @@ class GAIAProgressChecker(ProgressChecker):
             # Collect completed files for timing analysis
             all_completed_files.extend(stats.completed_files)
 
+            # Collect task results for Pass@n calculation
+            for task_id, is_correct in task_results.items():
+                if task_id not in all_task_results:
+                    all_task_results[task_id] = []
+                all_task_results[task_id].append(is_correct)
+
             # Update summary statistics
             self._update_summary_stats(summary, stats)
 
         # Display summary after all runs are processed
         self._display_summary(
-            summary, run_stats_list, all_completed_files, benchmark_name_std
+            summary,
+            run_stats_list,
+            all_completed_files,
+            benchmark_name_std,
+            all_task_results,
         )
 
         return summary
@@ -1053,6 +1165,7 @@ class GAIAProgressChecker(ProgressChecker):
         run_stats_list: List[Tuple[str, GAIATaskStats]],
         completed_files: List[str],
         benchmark_name_std: str,
+        all_task_results: Dict[str, List[bool]] = None,
     ):
         """Display summary statistics"""
         print("=" * 80)
@@ -1133,11 +1246,33 @@ class GAIAProgressChecker(ProgressChecker):
                         f"  {run_name}: {stats.judge_correct}/{stats.completed} (N/A)"
                     )
 
-            # Display mean accuracy and standard deviation
+            # Display mean accuracy and standard deviation (Pass@1 Acc (Avg@n))
+            num_runs = len(run_stats_list)
             mean_acc, std_acc = summary.average_run_accuracy(run_stats_list)
             if mean_acc > 0:
                 print()
-                print(f"MEAN ACCURACY: {mean_acc:.1f}% ± {std_acc:.1f}%")
+                if num_runs > 1:
+                    print(
+                        f"Pass@1 Acc (Avg@{num_runs}): {mean_acc:.1f}% ± {std_acc:.1f}%"
+                    )
+                else:
+                    print(f"MEAN ACCURACY: {mean_acc:.1f}% ± {std_acc:.1f}%")
+
+            # Display Pass@n if multiple runs
+            if num_runs > 1 and all_task_results:
+                # Use the first run's total as reference
+                first_run_total = (
+                    run_stats_list[0][1].total
+                    if run_stats_list
+                    else summary.total_tasks
+                )
+                pass_at_n_count, pass_at_n_percentage = self._calculate_pass_at_n(
+                    all_task_results, first_run_total
+                )
+                pass_at_n_bar = create_progress_bar(pass_at_n_percentage)
+                print(
+                    f"Pass@{num_runs}: {pass_at_n_count}/{first_run_total} {pass_at_n_bar}"
+                )
 
             # Display no boxed content found statistics
             if summary.total_completed > 0:
