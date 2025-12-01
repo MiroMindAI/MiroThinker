@@ -3,6 +3,7 @@
 
 
 import traceback
+import uuid
 from typing import Any, Dict, List, Optional
 
 from miroflow_tools.manager import ToolManager
@@ -80,7 +81,9 @@ async def execute_task_pipeline(
 
     try:
         # Initialize LLM client
-        llm_client = ClientFactory(task_id=task_id, cfg=cfg, task_log=task_log)
+        random_uuid = str(uuid.uuid4())
+        unique_id = f"{task_id}-{random_uuid}"
+        llm_client = ClientFactory(task_id=unique_id, cfg=cfg, task_log=task_log)
 
         # Initialize orchestrator
         orchestrator = Orchestrator(
