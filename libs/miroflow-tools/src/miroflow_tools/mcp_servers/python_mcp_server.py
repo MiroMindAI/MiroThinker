@@ -87,7 +87,7 @@ def truncate_result(result: str) -> str:
 
 
 @mcp.tool()
-async def create_sandbox(timeout=DEFAULT_TIMEOUT) -> str:
+async def create_sandbox(timeout: int = DEFAULT_TIMEOUT) -> str:
     """Create a linux sandbox.
 
     Args:
