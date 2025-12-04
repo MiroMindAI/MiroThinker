@@ -160,6 +160,10 @@ async def scrape_url_with_jina(
             "all_content_displayed": False,
         }
 
+    # Avoid duplicate Jina URL prefix
+    if url.startswith("https://r.jina.ai/") and url.count("http") >= 2:
+        url = url[len("https://r.jina.ai/") :]
+
     # Construct the Jina.ai API URL
     jina_url = f"{JINA_BASE_URL}/{url}"
 
