@@ -529,6 +529,22 @@ async def extract_info_with_llm(
                     raise e
 
             except httpx.HTTPStatusError as e:
+                # If using GPT-5 with service_tier parameter, remove it and retry
+                if (
+                    "gpt-5" in model.lower() or "gpt5" in model.lower()
+                ) and "service_tier" in payload:
+                    logger.info(
+                        f"Jina Scrape and Extract Info: HTTP error with GPT-5 service_tier parameter: {e}, response.text: {response.text}. Removing service_tier and retrying."
+                    )
+                    # Remove service_tier parameter
+                    payload.pop("service_tier", None)
+
+                    # Retry without service_tier parameter
+                    if attempt < len(connect_retry_delays):
+                        await asyncio.sleep(delay)
+                        continue
+
+                # Otherwise, log and raise the error
                 logger.error(
                     f"Jina Scrape and Extract Info: HTTP error for LLM API: {e}, response.text: {response.text}"
                 )
