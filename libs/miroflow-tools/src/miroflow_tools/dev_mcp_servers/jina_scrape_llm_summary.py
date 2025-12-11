@@ -198,7 +198,6 @@ async def scrape_url_with_jina(
             except httpx.ConnectTimeout as e:
                 # connection timeout, retry
                 if attempt < len(retry_delays):
-                    delay = retry_delays[attempt]
                     logger.info(
                         f"Jina Scrape: Connection timeout, {delay}s before next attempt (attempt {attempt + 1})"
                     )
@@ -213,7 +212,6 @@ async def scrape_url_with_jina(
             except httpx.ConnectError as e:
                 # connection error, retry
                 if attempt < len(retry_delays):
-                    delay = retry_delays[attempt]
                     logger.info(
                         f"Jina Scrape: Connection error: {e}, {delay}s before next attempt"
                     )
@@ -228,7 +226,6 @@ async def scrape_url_with_jina(
             except httpx.ReadTimeout as e:
                 # read timeout, retry
                 if attempt < len(retry_delays):
-                    delay = retry_delays[attempt]
                     logger.info(
                         f"Jina Scrape: Read timeout, {delay}s before next attempt (attempt {attempt + 1})"
                     )
@@ -241,15 +238,25 @@ async def scrape_url_with_jina(
                     raise e
 
             except httpx.HTTPStatusError as e:
-                if attempt < len(retry_delays):
+                status_code = e.response.status_code
+
+                # Retryable: 5xx (server errors) + specific 4xx (408, 409, 425, 429)
+                should_retry = status_code >= 500 or status_code in [408, 409, 425, 429]
+
+                if should_retry and attempt < len(retry_delays):
                     logger.info(
-                        f"Jina Scrape: HTTP error: {e}, response.text: {response.text}, url: {url}, {delay}s before next attempt (attempt {attempt + 1})"
+                        f"Jina Scrape: HTTP {status_code} (retryable), retry in {delay}s, url: {url}"
                     )
                     await asyncio.sleep(delay)
                     continue
+                elif should_retry:
+                    logger.error(
+                        f"Jina Scrape: HTTP {status_code} retry exhausted, url: {url}"
+                    )
+                    raise e
                 else:
                     logger.error(
-                        f"Jina Scrape: HTTP error retry attempts exhausted, url: {url}"
+                        f"Jina Scrape: HTTP {status_code} (non-retryable), url: {url}"
                     )
                     raise e
 
@@ -488,7 +495,6 @@ async def extract_info_with_llm(
             except httpx.ConnectTimeout as e:
                 # connection timeout, retry
                 if attempt < len(connect_retry_delays):
-                    delay = connect_retry_delays[attempt]
                     logger.info(
                         f"Jina Scrape and Extract Info: Connection timeout, {delay}s before next attempt (attempt {attempt + 1})"
                     )
@@ -503,7 +509,6 @@ async def extract_info_with_llm(
             except httpx.ConnectError as e:
                 # connection error, retry
                 if attempt < len(connect_retry_delays):
-                    delay = connect_retry_delays[attempt]
                     logger.info(
                         f"Jina Scrape and Extract Info: Connection error: {e}, {delay}s before next attempt"
                     )
@@ -529,18 +534,34 @@ async def extract_info_with_llm(
                     raise e
 
             except httpx.HTTPStatusError as e:
-                # HTTP status error, retry with service_tier set to default
-                if attempt < len(connect_retry_delays):
+                status_code = e.response.status_code
+
+                # Special case: GPT-5 service_tier parameter compatibility issue
+                if (
+                    "gpt-5" in model.lower() or "gpt5" in model.lower()
+                ) and "service_tier" in payload:
                     logger.info(
-                        f"Jina Scrape and Extract Info: HTTP error for LLM API: {e}, response.text: {response.text}, retrying with service_tier disabled (attempt {attempt})"
+                        "Extract Info: GPT-5 service_tier error, removing and retrying"
                     )
-                    if "service_tier" in payload:
-                        del payload["service_tier"]
+                    payload.pop("service_tier", None)
+                    if attempt < len(connect_retry_delays):
+                        await asyncio.sleep(delay)
+                        continue
+
+                # Retryable: 5xx (server errors) + specific 4xx (408, 409, 425, 429)
+                should_retry = status_code >= 500 or status_code in [408, 409, 425, 429]
+
+                if should_retry and attempt < len(connect_retry_delays):
+                    logger.info(
+                        f"Extract Info: HTTP {status_code} (retryable), retry in {delay}s"
+                    )
+                    await asyncio.sleep(delay)
                     continue
+                elif should_retry:
+                    logger.error(f"Extract Info: HTTP {status_code} retry exhausted")
+                    raise e
                 else:
-                    logger.error(
-                        f"Jina Scrape and Extract Info: HTTP error retry attempts exhausted: {e}, response.text: {response.text}"
-                    )
+                    logger.error(f"Extract Info: HTTP {status_code} (non-retryable)")
                     raise httpx.HTTPStatusError(
                         f"response.text: {response.text}",
                         request=e.request,
