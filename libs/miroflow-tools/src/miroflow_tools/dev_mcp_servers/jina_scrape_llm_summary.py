@@ -529,12 +529,11 @@ async def extract_info_with_llm(
                     raise e
 
             except httpx.HTTPStatusError as e:
-                # HTTP status error, retry with service_tier disabled
+                # HTTP status error, retry with service_tier set to default
                 if attempt < len(connect_retry_delays):
                     logger.info(
                         f"Jina Scrape and Extract Info: HTTP error for LLM API: {e}, response.text: {response.text}, retrying with service_tier disabled (attempt {attempt})"
                     )
-                    # Disable service_tier flex setting for retry
                     if "service_tier" in payload:
                         del payload["service_tier"]
                     continue
