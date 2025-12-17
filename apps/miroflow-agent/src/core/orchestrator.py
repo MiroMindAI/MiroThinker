@@ -268,7 +268,7 @@ class Orchestrator:
         elif tool_name == "scrape_website":
             return arguments.get("url")
         elif tool_name == "scrape_and_extract_info":
-            return arguments.get("url", '') + "_" + arguments.get("info_to_extract", '')
+            return arguments.get("url", "") + "_" + arguments.get("info_to_extract", "")
         return None
 
     async def _handle_llm_call(
@@ -617,7 +617,6 @@ class Orchestrator:
             # Generate summary_prompt to check token limits
             temp_summary_prompt = generate_agent_summarize_prompt(
                 task_description,
-                task_failed=True,  # Temporarily set to True to simulate task failure
                 agent_type=sub_agent_name,
             )
 
@@ -668,7 +667,6 @@ class Orchestrator:
         # Generate sub agent summary prompt
         summary_prompt = generate_agent_summarize_prompt(
             task_description,
-            task_failed=(turn_count >= max_turns),
             agent_type=sub_agent_name,
         )
 
@@ -796,7 +794,6 @@ class Orchestrator:
         # Main loop: LLM <-> Tools
         max_turns = self.cfg.agent.main_agent.max_turns
         turn_count = 0
-        error_msg = ""
 
         self.current_agent_id = await self._stream_start_agent("main")
         await self._stream_start_llm("main")
@@ -1049,7 +1046,6 @@ class Orchestrator:
             # Assess current context length, determine if we need to trigger summary
             temp_summary_prompt = generate_agent_summarize_prompt(
                 task_description,
-                task_failed=True,  # Temporarily set to True to simulate task failure
                 agent_type="main",
             )
 
@@ -1096,7 +1092,6 @@ class Orchestrator:
         # Generate summary prompt (generate only once)
         summary_prompt = generate_agent_summarize_prompt(
             task_description,
-            task_failed=(error_msg != "") or (turn_count >= max_turns),
             agent_type="main",
         )
 

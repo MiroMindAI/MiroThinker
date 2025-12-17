@@ -130,7 +130,7 @@ Do not infer, speculate, summarize broadly, or attempt to fill in missing parts 
     return system_prompt.strip()
 
 
-def generate_agent_summarize_prompt(task_description, task_failed=False, agent_type=""):
+def generate_agent_summarize_prompt(task_description, agent_type=""):
     if agent_type == "main":
         summarize_prompt = (
             "Summarize the above conversation, and output the FINAL ANSWER to the original question.\n\n"
