@@ -504,6 +504,7 @@ class Orchestrator:
             # Execute tool calls
             tool_calls_data = []
             all_tool_results_content_with_id = []
+            should_rollback_turn = False
 
             for call in tool_calls:
                 server_name = call["server_name"]
@@ -528,7 +529,8 @@ class Orchestrator:
                         if count > 0:
                             message_history.pop()
                             turn_count = turn_count - 1
-                            continue
+                            should_rollback_turn = True
+                            break  # Exit inner for loop, then continue outer while loop
                         else:
                             tool_result = await self.sub_agent_tool_managers[
                                 sub_agent_name
@@ -602,6 +604,10 @@ class Orchestrator:
                 )
 
                 all_tool_results_content_with_id.append((call_id, tool_result_for_llm))
+
+            # Check if we need to rollback and retry the turn
+            if should_rollback_turn:
+                continue  # Continue outer while loop
 
             # Record tool calls to current sub-agent turn
             message_history = self.llm_client.update_message_history(
@@ -873,6 +879,7 @@ class Orchestrator:
             # Execute tool calls (execute in order)
             tool_calls_data = []
             all_tool_results_content_with_id = []
+            should_rollback_turn = False
 
             self.task_log.log_step(
                 "info",
@@ -903,7 +910,8 @@ class Orchestrator:
                             if count > 0:
                                 message_history.pop()
                                 turn_count = turn_count - 1
-                                continue
+                                should_rollback_turn = True
+                                break  # Exit inner for loop, then continue outer while loop
                             else:
                                 sub_agent_result = await self.run_sub_agent(
                                     server_name,
@@ -938,7 +946,8 @@ class Orchestrator:
                             if count > 0:
                                 message_history.pop()
                                 turn_count = turn_count - 1
-                                continue
+                                should_rollback_turn = True
+                                break  # Exit inner for loop, then continue outer while loop
                             else:
                                 tool_result = await self.main_agent_tool_manager.execute_tool_call(
                                     server_name=server_name,
@@ -1018,6 +1027,10 @@ class Orchestrator:
                 )
 
                 all_tool_results_content_with_id.append((call_id, tool_result_for_llm))
+
+            # Check if we need to rollback and retry the turn
+            if should_rollback_turn:
+                continue  # Continue outer while loop
 
             # Update 'last_call_tokens'
             self.llm_client.last_call_tokens = main_agent_last_call_tokens
