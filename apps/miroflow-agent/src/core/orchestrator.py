@@ -278,7 +278,6 @@ class Orchestrator:
         tool_definitions,
         step_id: int,
         purpose: str = "",
-        keep_tool_result: int = -1,
         agent_type: str = "main",
     ) -> Tuple[Optional[str], bool, Optional[Any], List[Dict[str, Any]]]:
         """Unified LLM call and logging processing
@@ -695,7 +694,6 @@ class Orchestrator:
             tool_definitions,
             turn_count + 1,
             f"{sub_agent_name} | Final summary",
-            keep_tool_result=keep_tool_result,
             agent_type=sub_agent_name,
         )
 
@@ -741,7 +739,6 @@ class Orchestrator:
     ):
         """Execute the main end-to-end task"""
         workflow_id = await self._stream_start_workflow(task_description)
-        keep_tool_result = int(self.cfg.agent.keep_tool_result)
 
         self.task_log.log_step("info", "Main Agent", f"Start task with id: {task_id}")
         self.task_log.log_step(
@@ -820,7 +817,6 @@ class Orchestrator:
                 tool_definitions,
                 turn_count,
                 f"Main agent | Turn: {turn_count}",
-                keep_tool_result=keep_tool_result,
                 agent_type="main",
             )
 
@@ -912,12 +908,14 @@ class Orchestrator:
                                 continue
                             else:
                                 sub_agent_result = await self.run_sub_agent(
-                                    server_name, arguments["subtask"], keep_tool_result
+                                    server_name,
+                                    arguments["subtask"],
                                 )
                             self.used_queries[cache_name][query_str] += 1
                         else:
                             sub_agent_result = await self.run_sub_agent(
-                                server_name, arguments["subtask"], keep_tool_result
+                                server_name,
+                                arguments["subtask"],
                             )
                         tool_result = {
                             "server_name": server_name,
@@ -1113,7 +1111,6 @@ class Orchestrator:
             tool_definitions,
             turn_count + 1,
             "Main agent | Final Summary",
-            keep_tool_result=keep_tool_result,
             agent_type="main",
         )
 
