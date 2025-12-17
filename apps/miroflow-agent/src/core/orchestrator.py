@@ -79,7 +79,6 @@ class Orchestrator:
         self._list_sub_agent_tools = None
         if sub_agent_tool_managers:
             self._list_sub_agent_tools = _list_tools(sub_agent_tool_managers)
-        self.max_repeat_queries = 5
 
         # Pass task_log to llm_client
         if self.llm_client and task_log:
@@ -413,7 +412,6 @@ class Orchestrator:
         else:
             max_turns = 0
         turn_count = 0
-        should_hard_stop = False
 
         while turn_count < max_turns:
             turn_count += 1
@@ -531,13 +529,9 @@ class Orchestrator:
                         self.used_queries.setdefault(cache_name, defaultdict(int))
                         count = self.used_queries[cache_name][query_str]
                         if count > 0:
-                            tool_result = {
-                                "server_name": server_name,
-                                "tool_name": tool_name,
-                                "result": f"The query '{query_str}' has already been used in previous {tool_name}. Please try a different query or keyword.",
-                            }
-                            if count >= self.max_repeat_queries:
-                                should_hard_stop = True
+                            message_history.pop()
+                            turn_count = turn_count - 1
+                            continue
                         else:
                             tool_result = await self.sub_agent_tool_managers[
                                 sub_agent_name
@@ -637,10 +631,6 @@ class Orchestrator:
                     f"{sub_agent_name} | Turn: {turn_count} | Context Limit Reached",
                     "Context limit reached, triggering summary",
                 )
-                break
-
-            # If a repeat occurs, terminate early to speed up task completion
-            if should_hard_stop:
                 break
 
         # Continue processing
@@ -806,7 +796,6 @@ class Orchestrator:
         max_turns = self.cfg.agent.main_agent.max_turns
         turn_count = 0
         error_msg = ""
-        should_hard_stop = False
 
         self.current_agent_id = await self._stream_start_agent("main")
         await self._stream_start_llm("main")
@@ -918,9 +907,9 @@ class Orchestrator:
                             self.used_queries.setdefault(cache_name, defaultdict(int))
                             count = self.used_queries[cache_name][query_str]
                             if count > 0:
-                                sub_agent_result = f"The query '{query_str}' has already been used in previous {tool_name}. Please try a different query or keyword."
-                                if count >= self.max_repeat_queries:
-                                    should_hard_stop = True
+                                message_history.pop()
+                                turn_count = turn_count - 1
+                                continue
                             else:
                                 sub_agent_result = await self.run_sub_agent(
                                     server_name, arguments["subtask"], keep_tool_result
@@ -951,13 +940,9 @@ class Orchestrator:
                             self.used_queries.setdefault(cache_name, defaultdict(int))
                             count = self.used_queries[cache_name][query_str]
                             if count > 0:
-                                tool_result = {
-                                    "server_name": server_name,
-                                    "tool_name": tool_name,
-                                    "result": f"The query '{query_str}' has already been used in previous {tool_name}. Please try a different query or keyword.",
-                                }
-                                if count >= self.max_repeat_queries:
-                                    should_hard_stop = True
+                                message_history.pop()
+                                turn_count = turn_count - 1
+                                continue
                             else:
                                 tool_result = await self.main_agent_tool_manager.execute_tool_call(
                                     server_name=server_name,
@@ -1072,13 +1057,6 @@ class Orchestrator:
                     "Context limit reached, triggering summary",
                 )
                 break
-
-            if should_hard_stop:
-                self.task_log.log_step(
-                    "warning",
-                    f"Main Agent | Turn: {turn_count} | Repeat Tool Call Detected",
-                    "Multiple repeated tool invocations have been detected",
-                )
 
         await self._stream_end_llm("main")
         await self._stream_end_agent("main", self.current_agent_id)
