@@ -553,6 +553,14 @@ class Orchestrator:
                         if tool_result.get("result")
                         else tool_result.get("error")
                     )
+
+                    # Check for "Unknown tool:" error and rollback
+                    if str(result).startswith("Unknown tool:"):
+                        message_history.pop()
+                        turn_count = turn_count - 1
+                        should_rollback_turn = True
+                        break  # Exit inner for loop, then continue outer while loop
+
                     await self._stream_tool_call(
                         tool_name, {"result": result}, tool_call_id=tool_call_id
                     )
@@ -975,6 +983,14 @@ class Orchestrator:
                             if tool_result.get("result")
                             else tool_result.get("error")
                         )
+
+                        # Check for "Unknown tool:" error and rollback
+                        if str(result).startswith("Unknown tool:"):
+                            message_history.pop()
+                            turn_count = turn_count - 1
+                            should_rollback_turn = True
+                            break  # Exit inner for loop, then continue outer while loop
+
                         await self._stream_tool_call(
                             tool_name, {"result": result}, tool_call_id=tool_call_id
                         )
