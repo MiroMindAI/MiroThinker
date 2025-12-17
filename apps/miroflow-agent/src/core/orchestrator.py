@@ -477,7 +477,7 @@ class Orchestrator:
                         message_history = message_history[:-1]
                     self.task_log.log_step(
                         "info",
-                        f"Main Agent | Turn: {turn_count} | LLM Call",
+                        f"{sub_agent_name} | Turn: {turn_count} | LLM Call",
                         "The format of the tool call is incorrect. Rollback one round.",
                     )
                     continue
@@ -489,7 +489,7 @@ class Orchestrator:
                         message_history = message_history[:-1]
                     self.task_log.log_step(
                         "info",
-                        f"Main Agent | Turn: {turn_count} | LLM Call",
+                        f"{sub_agent_name} | Turn: {turn_count} | LLM Call",
                         "LLM refused to answer the question. Rollback one round.",
                     )
                     continue
