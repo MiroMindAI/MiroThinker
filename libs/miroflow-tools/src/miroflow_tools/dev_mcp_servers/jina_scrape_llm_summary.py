@@ -425,7 +425,7 @@ async def extract_info_with_llm(
         }
         # Add cost-saving parameters for GPT-5 models
         if "gpt-5" in model.lower() or "gpt5" in model.lower():
-            payload["service_tier"] = "flex"
+            # payload["service_tier"] = "flex"
             payload["reasoning_effort"] = "minimal"
     else:
         payload = {
