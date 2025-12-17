@@ -268,7 +268,7 @@ class Orchestrator:
         elif tool_name == "scrape_website":
             return arguments.get("url")
         elif tool_name == "scrape_and_extract_info":
-            return arguments.get("url") + "_" + arguments.get("info_to_extract")
+            return arguments.get("url", '') + "_" + arguments.get("info_to_extract", '')
         return None
 
     async def _handle_llm_call(
