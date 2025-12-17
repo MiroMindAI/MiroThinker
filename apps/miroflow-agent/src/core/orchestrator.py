@@ -520,7 +520,7 @@ class Orchestrator:
 
                 call_start_time = time.time()
                 try:
-                    tool_call_id = await self._stream_tool_call(tool_name, arguments)
+                    # Check for duplicate query before sending stream events
                     query_str = self._get_query_str_from_tool_call(tool_name, arguments)
                     if query_str:
                         cache_name = sub_agent_id + "_" + tool_name
@@ -531,16 +531,18 @@ class Orchestrator:
                             turn_count = turn_count - 1
                             should_rollback_turn = True
                             break  # Exit inner for loop, then continue outer while loop
-                        else:
-                            tool_result = await self.sub_agent_tool_managers[
-                                sub_agent_name
-                            ].execute_tool_call(server_name, tool_name, arguments)
-                        if "error" not in tool_result:
-                            self.used_queries[cache_name][query_str] += 1
-                    else:
-                        tool_result = await self.sub_agent_tool_managers[
-                            sub_agent_name
-                        ].execute_tool_call(server_name, tool_name, arguments)
+
+                    # Send stream event only after duplicate check
+                    tool_call_id = await self._stream_tool_call(tool_name, arguments)
+
+                    # Execute tool call
+                    tool_result = await self.sub_agent_tool_managers[
+                        sub_agent_name
+                    ].execute_tool_call(server_name, tool_name, arguments)
+
+                    # Update query count if successful
+                    if query_str and "error" not in tool_result:
+                        self.used_queries[cache_name][query_str] += 1
 
                     # Only in demo mode: truncate scrape results to 20,000 chars
                     tool_result = self.post_process_tool_call_result(
@@ -895,8 +897,7 @@ class Orchestrator:
                 call_start_time = time.time()
                 try:
                     if server_name.startswith("agent-") and self.cfg.agent.sub_agents:
-                        await self._stream_end_llm("main")
-                        await self._stream_end_agent("main", self.current_agent_id)
+                        # Check for duplicate query before sending stream events
                         query_str = self._get_query_str_from_tool_call(
                             tool_name, arguments
                         )
@@ -909,17 +910,21 @@ class Orchestrator:
                                 turn_count = turn_count - 1
                                 should_rollback_turn = True
                                 break  # Exit inner for loop, then continue outer while loop
-                            else:
-                                sub_agent_result = await self.run_sub_agent(
-                                    server_name,
-                                    arguments["subtask"],
-                                )
+
+                        # Send stream events only after duplicate check
+                        await self._stream_end_llm("main")
+                        await self._stream_end_agent("main", self.current_agent_id)
+
+                        # Execute sub-agent
+                        sub_agent_result = await self.run_sub_agent(
+                            server_name,
+                            arguments["subtask"],
+                        )
+
+                        # Update query count if successful
+                        if query_str:
                             self.used_queries[cache_name][query_str] += 1
-                        else:
-                            sub_agent_result = await self.run_sub_agent(
-                                server_name,
-                                arguments["subtask"],
-                            )
+
                         tool_result = {
                             "server_name": server_name,
                             "tool_name": tool_name,
@@ -930,9 +935,7 @@ class Orchestrator:
                         )
                         await self._stream_start_llm("main", display_name="Summarizing")
                     else:
-                        tool_call_id = await self._stream_tool_call(
-                            tool_name, arguments
-                        )
+                        # Check for duplicate query before sending stream events
                         query_str = self._get_query_str_from_tool_call(
                             tool_name, arguments
                         )
@@ -945,22 +948,24 @@ class Orchestrator:
                                 turn_count = turn_count - 1
                                 should_rollback_turn = True
                                 break  # Exit inner for loop, then continue outer while loop
-                            else:
-                                tool_result = await self.main_agent_tool_manager.execute_tool_call(
-                                    server_name=server_name,
-                                    tool_name=tool_name,
-                                    arguments=arguments,
-                                )
-                            if "error" not in tool_result:
-                                self.used_queries[cache_name][query_str] += 1
-                        else:
-                            tool_result = (
-                                await self.main_agent_tool_manager.execute_tool_call(
-                                    server_name=server_name,
-                                    tool_name=tool_name,
-                                    arguments=arguments,
-                                )
+
+                        # Send stream event only after duplicate check
+                        tool_call_id = await self._stream_tool_call(
+                            tool_name, arguments
+                        )
+
+                        # Execute tool call
+                        tool_result = (
+                            await self.main_agent_tool_manager.execute_tool_call(
+                                server_name=server_name,
+                                tool_name=tool_name,
+                                arguments=arguments,
                             )
+                        )
+
+                        # Update query count if successful
+                        if query_str and "error" not in tool_result:
+                            self.used_queries[cache_name][query_str] += 1
                         # Only in demo mode: truncate scrape results to 20,000 chars
                         tool_result = self.post_process_tool_call_result(
                             tool_name, tool_result
