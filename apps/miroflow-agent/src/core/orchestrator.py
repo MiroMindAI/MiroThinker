@@ -84,6 +84,8 @@ class Orchestrator:
         if self.llm_client and task_log:
             self.llm_client.task_log = task_log
 
+        # Track boxed answers extracted during main loop turns
+        self.intermediate_boxed_answers = []
         # Record used subtask / q / Query
         self.used_queries = {}
 
@@ -836,6 +838,14 @@ class Orchestrator:
                 text_response = extract_llm_response_text(assistant_response_text)
                 if text_response:
                     await self._stream_tool_call("show_text", {"text": text_response})
+
+                # Try to extract boxed content from this turn's response
+                boxed_content = self.output_formatter._extract_boxed_content(
+                    assistant_response_text
+                )
+                if boxed_content:
+                    self.intermediate_boxed_answers.append(boxed_content)
+
                 if should_break:
                     self.task_log.log_step(
                         "info",
@@ -1175,6 +1185,13 @@ class Orchestrator:
                 final_answer_text, self.llm_client
             )
         )
+
+        # If no boxed answer found in final summary, use the last intermediate answer
+        if (
+            final_boxed_answer == "No \\boxed{} content found in the final answer."
+            and self.intermediate_boxed_answers
+        ):
+            final_boxed_answer = self.intermediate_boxed_answers[-1]
 
         await self._stream_tool_call("show_text", {"text": final_boxed_answer})
         await self._stream_end_llm("Final Summary")
