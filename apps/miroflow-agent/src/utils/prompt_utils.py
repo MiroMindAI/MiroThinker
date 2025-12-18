@@ -150,7 +150,10 @@ def generate_agent_summarize_prompt(task_description, agent_type=""):
             "If you are asked for a string, don't use articles or abbreviations (e.g. for cities), unless specified otherwise. Don't output any final sentence punctuation such as '.', '!', or '?'.\n"
             "If you are asked for a comma-separated list, apply the above rules depending on whether the elements are numbers or strings.\n"
             "Do NOT include any punctuation such as '.', '!', or '?' at the end of the answer.\n"
-            "Do NOT include any invisible or non-printable characters in the answer output."
+            "Do NOT include any invisible or non-printable characters in the answer output.\n\n"
+            "You must absolutely not perform any MCP tool call, tool invocation, search, scrape, code execution, or similar actions.\n"
+            "You can only answer the original question based on the information already retrieved and your own internal knowledge.\n"
+            "If you attempt to call any tool, it will be considered a mistake."
         )
     elif agent_type == "agent-browsing":
         summarize_prompt = (
