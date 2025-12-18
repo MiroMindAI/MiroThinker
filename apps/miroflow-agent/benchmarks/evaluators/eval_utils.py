@@ -225,7 +225,7 @@ async def verify_answer_gaia(question: str, target: str, predicted_answer: str) 
     Use GAIA-style judge to verify if the predicted answer is correct.
     """
 
-    def normalize_number_str(number_str: str) -> float:
+    def normalize_number_str(number_str: str) -> float | None:
         # we replace these common units and commas to allow
         # conversion to float
         for char in ["$", "%", ","]:
@@ -234,7 +234,7 @@ async def verify_answer_gaia(question: str, target: str, predicted_answer: str) 
             return float(number_str)
         except ValueError:
             print(f"String {number_str} cannot be normalized to number str.")
-            return float("inf")
+            return None  # Return None instead of inf to handle gracefully
 
     def split_string(
         s: str,
@@ -283,6 +283,9 @@ async def verify_answer_gaia(question: str, target: str, predicted_answer: str) 
         if is_float(ground_truth):
             print(f"Evaluating {model_answer} as a number.")
             normalized_answer = normalize_number_str(model_answer)
+            # If normalization failed, the answer is incorrect
+            if normalized_answer is None:
+                return False
             return normalized_answer == float(ground_truth)
 
         # if gt is a list
@@ -305,7 +308,11 @@ async def verify_answer_gaia(question: str, target: str, predicted_answer: str) 
             for ma_elem, gt_elem in zip(ma_elems, gt_elems):
                 if is_float(gt_elem):
                     normalized_ma_elem = normalize_number_str(ma_elem)
-                    comparisons.append(normalized_ma_elem == float(gt_elem))
+                    # If normalization failed, this element is incorrect
+                    if normalized_ma_elem is None:
+                        comparisons.append(False)
+                    else:
+                        comparisons.append(normalized_ma_elem == float(gt_elem))
                 else:
                     # we do not remove punct since comparisons can include punct
                     comparisons.append(
@@ -374,10 +381,16 @@ async def verify_answer_gaia_validation_text_103(
             if attempt == (max_tries - 1):
                 raise e
 
-    if content == "Correct":
+    # Use case-insensitive matching and strip whitespace/punctuation
+    content_normalized = content.strip().rstrip(".").lower()
+    if content_normalized == "correct":
         return "CORRECT"
-    else:
+    elif content_normalized == "incorrect":
         return "INCORRECT"
+    else:
+        # If we can't parse the response, default to NOT_ATTEMPTED to trigger retry
+        print(f"Warning: Could not parse judge response: {content}")
+        return "NOT_ATTEMPTED"
 
 
 # ================================================
@@ -558,9 +571,9 @@ async def verify_answer_browsecomp(
             elif choice == "B":
                 return "INCORRECT"
 
-        # If no clear A or B is found, default to INCORRECT
-        print(f"Warning: Could not parse judge response: {content}")
-        return "INCORRECT"
+        # If no clear A or B is found, return NOT_ATTEMPTED to trigger retry
+        print(f"Warning: Could not parse BrowseComp judge response: {content}")
+        return "NOT_ATTEMPTED"
 
     except Exception as e:
         print(f"BrowseComp evaluation failed: {e}")
@@ -598,9 +611,9 @@ async def verify_answer_browsecomp_zh(
             elif choice == "B":
                 return "INCORRECT"
 
-        # If no clear A or B is found, default to INCORRECT
-        print(f"Warning: Could not parse judge response: {content}")
-        return "INCORRECT"
+        # If no clear A or B is found, return NOT_ATTEMPTED to trigger retry
+        print(f"Warning: Could not parse BrowseComp-ZH judge response: {content}")
+        return "NOT_ATTEMPTED"
 
     except Exception as e:
         print(f"BrowseComp-ZH evaluation failed: {e}")
@@ -673,16 +686,26 @@ async def verify_answer_xbench_deepsearch(
     extract_match = re.search(r"最终答案:*(.*)", judge_response)
     extract_match = parse_match_result(extract_match)
 
-    correct_match = re.search(r"结论:*.(正确|错误)", judge_response)
+    # Fixed regex: make the dot optional with \s* (zero or more whitespace)
+    correct_match = re.search(r"结论:*\s*(正确|错误)", judge_response)
     correct_match = parse_match_result(correct_match)
 
     explain_match = re.search(r"解释:*(.*)", judge_response)
     explain_match = parse_match_result(explain_match)
 
+    # Print debug info
+    print(f"XBench Judge - Extract: {extract_match}, Correct: {correct_match}")
+
     if correct_match == "正确":
         return "CORRECT"
-    else:
+    elif correct_match == "错误":
         return "INCORRECT"
+    else:
+        # If we can't parse the result, return NOT_ATTEMPTED to trigger retry
+        print(
+            f"Warning: Could not parse XBench judge response, correct_match={correct_match}"
+        )
+        return "NOT_ATTEMPTED"
 
 
 # ================================================
