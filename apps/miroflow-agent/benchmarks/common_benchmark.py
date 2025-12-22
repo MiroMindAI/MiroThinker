@@ -134,9 +134,8 @@ class BenchmarkEvaluator(ABC):
         self.results: List[BenchmarkResult] = []
 
         # Format error tracking and retry configuration
-        self.format_error_retry_limit = cfg.benchmark.execution.get(
-            "format_error_retry_limit", 3
-        )
+        # Read from agent config as it's part of context management
+        self.format_error_retry_limit = cfg.agent.get("format_error_retry_limit", 0)
 
         # Get LLM provider and model from the config object
         self.llm_provider = cfg.llm.provider

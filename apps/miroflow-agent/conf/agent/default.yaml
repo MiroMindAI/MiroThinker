@@ -19,4 +19,6 @@ sub_agents:
       - tool-python
     max_turns: 20
 
-keep_tool_result: -1 
+# Settings for context management
+keep_tool_result: -1
+format_error_retry_limit: 0  # Maximum number of retries for format errors in context management
