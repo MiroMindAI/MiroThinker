@@ -1,0 +1,15 @@
+# conf/benchmark/deepsearchqa.yaml
+defaults:
+  - default
+  - _self_
+
+name: "deepsearchqa"
+
+data:
+  data_dir: "../../data/deepsearchqa"
+
+execution:
+  max_tasks: null  # null means no limit
+  max_concurrent: 5
+  pass_at_k: 1
+  format_error_retry_limit: 0

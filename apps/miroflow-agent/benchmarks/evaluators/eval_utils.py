@@ -2,11 +2,12 @@
 # This source code is licensed under the MIT License.
 
 import asyncio
+import json
 import os
 import re
 import string
 import warnings
-from typing import Literal
+from typing import Any, Dict, Literal, Optional
 
 from dotenv import load_dotenv
 from openai import AsyncOpenAI, OpenAI
@@ -709,6 +710,201 @@ async def verify_answer_xbench_deepsearch(
 
 
 # ================================================
+# verify_answer_deepsearchqa
+#
+# Official prompt from DeepSearchQA benchmark
+# https://www.kaggle.com/code/andrewmingwang/deepsearchqa-starter-code
+# ================================================
+
+JUDGE_PROMPT_DEEPSEARCHQA = """Your task is to evaluate whether a given "AI Response" for a specific "User Prompt" arrived at the correct answer.
+
+**Answer Correctness Task**
+
+*   **Purpose:** Assess whether the AI response provides the correct answer(s) based on the provided "Correct Answer" and "Prompt Type".
+*   **Process:**
+    *   Identify the "Prompt Type": "<prompt_type>".
+    *   Refer to the "Correct Answer": "<answer>".
+    *   Based on the "Prompt Type", determine if the "AI Response" contains the expected answer(s).
+        *   **'Single Answer'**: Check if the response provides the answer that addresses the user's question. It does not have to match the exact wording of the provided answer.
+        *   **'Set Answer'**: Check if the response includes *each* item from the provided ground truth answers. The order might not matter unless specified otherwise. The response might include more answers than the list. Determine the correctness *only* based on the list first and then check if the response includes answers not in the list.
+    *   **Explanation:** Provide a brief explanation justifying your assessment of answer correctness, referencing specific parts of the AI response and the correct answer.
+    *   **Correctness Details:** Provide a dictionary, one key for each expected answer part, and value is a boolean indicating whether each expected answer part was found.
+        *   For 'Set Answer', this will be a list of attributes, one for each item/part in the "Correct Answer". Each key will be a string indicating the expected answer part, and the value will be a boolean indicating whether that part was found in the response.
+    *   **Excessive Answers:** Provide a list of strings, each indicating an excessive answer part. If the response provides answers that are **not** in the "Correct Answer" list, add these answers as excessive answers. Return an empty list when there's no excessive answers in the response.
+
+
+**Output Format:**
+
+Your evaluation *must* be structured as a nested JSON dictionary with the following top-level keys: `"Answer Correctness"`. Please return NULL if any of "Prompt", "AI Response" or "Correct Answer" is empty.
+The value for `"Answer Correctness"` should be a dictionary containing `"Explanation"` (a string), `"Correctness Details"` (a dictionary where each key is the expected correct answer, and the value is a boolean indicating whether the response contains the correct answer), and `"Excessive Answers"` (a list of strings indicating the excessive answers).
+
+Make sure you return a valid JSON string. Pay special attention to quotes, commas and special characters in the JSON string. Make sure to escape all special characters and quotes in the JSON string.
+
+
+**Example (Partial):**
+
+"```json
+{{
+  "Answer Correctness": {{
+    "Explanation": "The response correctly identified Belgium and France but also includes an excessive answer, Italy.",
+    "Correctness Details": {{
+      "Belgium": true,
+      "France": true,
+    }},
+    "Excessive Answers": [ "Italy" ]
+  }}
+}}
+```"
+
+**Now, proceed with the evaluation using the provided User Prompt, AI Response, and Correct Answer.**
+
+User Prompt (Wrapped in <prompt> and </prompt>):
+<prompt>
+{prompt}
+</prompt>
+--------------------
+**  Correct Answer (Wrapped in <answer> and </answer>):
+Prompt Type: {prompt_type}
+<answer>
+{answer}
+</answer>
+--------------------
+AI assistant response (Wrapped in <response> and </response>):
+<response>
+{response}
+</response>
+
+--------------------
+Rating:"""
+
+
+async def verify_answer_deepsearchqa(
+    question: str,
+    target: str,
+    predicted_answer: str,
+    metadata: Optional[Dict[str, Any]] = None,
+) -> tuple[str, str, Optional[Dict[str, Any]]]:
+    """
+    Use DeepSearchQA-specific judge to verify if the predicted answer is correct.
+    Uses the official DeepSearchQA evaluation prompt with JSON output format.
+
+    Args:
+        question: The question being answered
+        target: The correct/target answer
+        predicted_answer: The model's predicted answer
+        metadata: Optional metadata dict with additional context (e.g., problem_category, answer_type)
+
+    Returns:
+        Tuple of (result, judge_type, details_dict):
+        - result: "CORRECT", "INCORRECT", or "NOT_ATTEMPTED"
+        - judge_type: "deepsearchqa_judge"
+        - details_dict: Dict with keys:
+            - correctness_details: Dict[str, bool] mapping answer parts to correctness
+            - excessive_answers: List[str] of extra answers not in ground truth
+            - explanation: str explaining the judgment
+            - num_correct: int number of correct answer parts
+            - num_expected: int total number of expected answer parts
+            - num_excessive: int number of excessive answers
+    """
+
+    if predicted_answer is None:
+        return "INCORRECT", "deepsearchqa_judge", None
+
+    # Determine prompt_type from metadata
+    prompt_type = "Single Answer"  # Default
+    if metadata and "answer_type" in metadata:
+        answer_type = metadata["answer_type"]
+        # Map answer_type to prompt_type
+        if answer_type == "Set Answer":
+            prompt_type = "Set Answer"
+        # Add more mappings if needed
+
+    judge_prompt = JUDGE_PROMPT_DEEPSEARCHQA.format(
+        prompt_type=prompt_type,
+        prompt=question,
+        answer=target,
+        response=predicted_answer,
+    )
+
+    try:
+        response = await evaluation_llm_client.chat.completions.create(
+            model="gpt-4.1-2025-04-14",
+            messages=[{"role": "user", "content": judge_prompt}],
+        )
+        judge_response = response.choices[0].message.content
+    except Exception as e:
+        print(f"DeepSearchQA judge failed: {e}")
+        return "NOT_ATTEMPTED", "deepsearchqa_judge", None
+
+    if judge_response is None:
+        return "NOT_ATTEMPTED", "deepsearchqa_judge", None
+
+    # Parse JSON response
+    try:
+        # Extract JSON from the response (might be wrapped in markdown code blocks)
+        json_match = re.search(r"```json\s*(\{.*?\})\s*```", judge_response, re.DOTALL)
+        if json_match:
+            json_str = json_match.group(1)
+        else:
+            # Try to find JSON without code blocks
+            json_match = re.search(r"\{.*\}", judge_response, re.DOTALL)
+            if json_match:
+                json_str = json_match.group(0)
+            else:
+                print("Warning: Could not find JSON in DeepSearchQA judge response")
+                return "NOT_ATTEMPTED", "deepsearchqa_judge", None
+
+        result = json.loads(json_str)
+        answer_correctness = result.get("Answer Correctness", {})
+
+        explanation = answer_correctness.get("Explanation", "")
+        correctness_details = answer_correctness.get("Correctness Details", {})
+        excessive_answers = answer_correctness.get("Excessive Answers", [])
+
+        # Calculate statistics
+        num_expected = len(correctness_details)
+        num_correct = sum(1 for v in correctness_details.values() if v)
+        num_excessive = len(excessive_answers)
+
+        # Build details dict
+        details = {
+            "correctness_details": correctness_details,
+            "excessive_answers": excessive_answers,
+            "explanation": explanation,
+            "num_correct": num_correct,
+            "num_expected": num_expected,
+            "num_excessive": num_excessive,
+        }
+
+        # Print debug info
+        print(
+            f"DeepSearchQA Judge - Correct: {num_correct}/{num_expected}, Excessive: {num_excessive}"
+        )
+        print(f"DeepSearchQA Judge - Explanation: {explanation}")
+
+        # Determine if answer is correct
+        # Following official logic: all expected parts must be found, and no excessive answers
+        if correctness_details:
+            all_correct = all(correctness_details.values())
+            if all_correct and not excessive_answers:
+                return "CORRECT", "deepsearchqa_judge", details
+            else:
+                # Either missing some expected answers or has excessive answers
+                return "INCORRECT", "deepsearchqa_judge", details
+        else:
+            # No correctness details, can't determine
+            return "NOT_ATTEMPTED", "deepsearchqa_judge", None
+
+    except json.JSONDecodeError as e:
+        print(f"Warning: Failed to parse JSON from DeepSearchQA judge: {e}")
+        print(f"Response: {judge_response[:200]}...")
+        return "NOT_ATTEMPTED", "deepsearchqa_judge", None
+    except Exception as e:
+        print(f"Warning: Error processing DeepSearchQA judge response: {e}")
+        return "NOT_ATTEMPTED", "deepsearchqa_judge", None
+
+
+# ================================================
 # verify_answer_for_datasets
 # ================================================
 
@@ -718,66 +914,87 @@ async def _verify_answer_for_datasets_core(
     question: str,
     target: str,
     predicted_answer: str,
-) -> tuple[str, str]:
+    metadata: Optional[Dict[str, Any]] = None,
+) -> tuple[str, str, Optional[Dict[str, Any]]]:
     """
     Verify the answer for a given dataset.
-    Returns a tuple of (result, judge_type).
+
+    Args:
+        benchmark_name: Name of the benchmark dataset
+        question: The question being answered
+        target: The correct/target answer
+        predicted_answer: The model's predicted answer
+        metadata: Optional metadata dict with additional context
+
+    Returns:
+        A tuple of (result, judge_type, details_dict).
+        details_dict is None for most benchmarks, but contains evaluation details for DeepSearchQA.
     """
 
-    if predicted_answer == target:
-        return "CORRECT", "exact_match"
+    # For benchmarks that need detailed evaluation, don't use exact_match
+    if benchmark_name not in ["deepsearchqa"]:
+        if predicted_answer == target:
+            return "CORRECT", "exact_match", None
 
     # For gaia-validation, use gaia_scorer
     if benchmark_name == "gaia-validation":
         result = await verify_answer_gaia(question, target, predicted_answer)
-        return result, "gaia_scorer"
+        return result, "gaia_scorer", None
 
     # For gaia-validation-text-103, use gaia-validation-text-103-scorer
     elif benchmark_name == "gaia-validation-text-103":
         result = await verify_answer_gaia_validation_text_103(
             question, target, predicted_answer
         )
-        return result, "gaia_validation_text_103_judge"
+        return result, "gaia_validation_text_103_judge", None
 
     # For browsecomp (English) and browsecomp-zh (Chinese), use different judges
     elif benchmark_name == "browsecomp":
         result = await verify_answer_browsecomp(question, target, predicted_answer)
-        return result, "browsecomp_judge"
+        return result, "browsecomp_judge", None
 
     elif benchmark_name == "browsecomp_zh":
         result = await verify_answer_browsecomp_zh(question, target, predicted_answer)
-        return result, "browsecomp_zh_judge"
+        return result, "browsecomp_zh_judge", None
 
     # For hle, hle-text-500, and hle-text-2158, use hle_judge
     elif "hle" in benchmark_name:
         result = await verify_answer_hle(question, target, predicted_answer)
-        return result, "hle_judge"
+        return result, "hle_judge", None
 
     # For webwalkerqa, frames, and seal-0, use gaia_validation_text_103_judge
     elif benchmark_name in ["webwalkerqa", "frames", "seal-0"]:
         result = await verify_answer_gaia_validation_text_103(
             question, target, predicted_answer
         )
-        return result, "gaia_validation_text_103_judge"
+        return result, "gaia_validation_text_103_judge", None
 
     # For simpleqa, use simpleqa_judge
     elif benchmark_name == "simpleqa" or benchmark_name == "collect_trace":
         result = await verify_answer_simpleqa(question, target, predicted_answer)
-        return result, "simpleqa_judge"
+        return result, "simpleqa_judge", None
 
     # For xbench_deepsearch, use xbench_deepsearch_judge
     elif benchmark_name == "xbench_deepsearch":
         result = await verify_answer_xbench_deepsearch(
             question, target, predicted_answer
         )
-        return result, "xbench_deepsearch_judge"
+        return result, "xbench_deepsearch_judge", None
+
+    # For deepsearchqa, use deepsearchqa_judge (with metadata support and detailed evaluation)
+    elif benchmark_name == "deepsearchqa":
+        result, judge_type, details = await verify_answer_deepsearchqa(
+            question, target, predicted_answer, metadata
+        )
+        # Return details for DeepSearchQA-specific metrics calculation
+        return result, judge_type, details
 
     # For other benchmarks, use gaia_validation_text_103_judge
     else:
         result = await verify_answer_gaia_validation_text_103(
             question, target, predicted_answer
         )
-        return result, "gaia_validation_text_103_judge"
+        return result, "gaia_validation_text_103_judge", None
 
 
 async def verify_answer_for_datasets(
@@ -785,18 +1002,32 @@ async def verify_answer_for_datasets(
     question: str,
     target: str,
     predicted_answer: str,
+    metadata: Optional[Dict[str, Any]] = None,
     max_retries: int = 10,
     retry_interval: int = 5,
-) -> tuple[str, str]:
+) -> tuple[str, str, Optional[Dict[str, Any]]]:
     """
     Wrapper with retry logic for NOT_ATTEMPTED results.
+
+    Args:
+        benchmark_name: Name of the benchmark dataset
+        question: The question being answered
+        target: The correct/target answer
+        predicted_answer: The model's predicted answer
+        metadata: Optional metadata dict with additional context
+        max_retries: Maximum number of retry attempts
+        retry_interval: Seconds to wait between retries
+
+    Returns:
+        A tuple of (result, judge_type, details_dict).
+        details_dict contains evaluation details (for DeepSearchQA) or None (for other benchmarks).
     """
     for attempt in range(1, max_retries + 1):
-        result, judge_type = await _verify_answer_for_datasets_core(
-            benchmark_name, question, target, predicted_answer
+        result, judge_type, details = await _verify_answer_for_datasets_core(
+            benchmark_name, question, target, predicted_answer, metadata
         )
         if result != "NOT_ATTEMPTED":
-            return result, judge_type
+            return result, judge_type, details
         if attempt < max_retries:
             print(
                 f"[Retry {attempt}/{max_retries}] Got NOT_ATTEMPTED, retrying in {retry_interval}s..."
@@ -805,4 +1036,4 @@ async def verify_answer_for_datasets(
 
     # still NOT_ATTEMPTED after retries
     print(f"All {max_retries} attempts resulted in NOT_ATTEMPTED.")
-    return "NOT_ATTEMPTED", "retry_wrapper"
+    return "NOT_ATTEMPTED", "retry_wrapper", None

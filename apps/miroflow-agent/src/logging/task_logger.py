@@ -153,6 +153,7 @@ class TaskLog:
     final_boxed_answer: str = ""
     final_judge_result: str = ""
     judge_type: str = ""
+    eval_details: Optional[Dict[str, Any]] = None  # For DeepSearchQA metrics
     error: str = ""
 
     # Main records: main agent conversation turns

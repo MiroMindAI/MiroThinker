@@ -272,6 +272,11 @@ class BenchmarkEvaluator(ABC):
                                     attempt_result["is_correct"] = (
                                         log_data["final_judge_result"] == "CORRECT"
                                     )
+                                    # Load evaluation details if available
+                                    if log_data.get("eval_details"):
+                                        attempt_result["eval_details"] = log_data[
+                                            "eval_details"
+                                        ]
                                 print(
                                     f"    Loaded existing result: {attempt_result['model_boxed_answer']}"
                                 )
@@ -353,15 +358,21 @@ class BenchmarkEvaluator(ABC):
                         (
                             evaluation_result,
                             judge_type,
+                            eval_details,
                         ) = await verify_answer_for_datasets(
                             benchmark_name=self.benchmark_name,
                             question=task.task_question,
                             target=task.ground_truth,
                             predicted_answer=attempt_result["model_boxed_answer"],
+                            metadata=task.metadata,
                         )
                         attempt_result["final_judge_result"] = evaluation_result
                         attempt_result["judge_type"] = judge_type
                         attempt_result["is_correct"] = evaluation_result == "CORRECT"
+
+                        # Store evaluation details (e.g., for DeepSearchQA metrics)
+                        if eval_details:
+                            attempt_result["eval_details"] = eval_details
 
                         # Update the log file with verification result
                         if attempt_result["log_file_path"]:
@@ -370,6 +381,7 @@ class BenchmarkEvaluator(ABC):
                                 attempt_result["log_file_path"],
                                 evaluation_result,
                                 judge_type,
+                                eval_details,  # Pass eval_details to save in log file
                             )
 
                         if attempt_result["is_correct"]:
@@ -669,6 +681,7 @@ class BenchmarkEvaluator(ABC):
         log_file_path: str,
         evaluation_result: str,
         judge_type: str,
+        eval_details: Optional[Dict[str, Any]] = None,
     ):
         """Helper method to update log file with evaluation result"""
         try:
@@ -681,6 +694,10 @@ class BenchmarkEvaluator(ABC):
             log_data["final_boxed_answer"] = model_boxed_answer
             log_data["final_judge_result"] = evaluation_result
             log_data["judge_type"] = judge_type
+
+            # Store evaluation details (e.g., for DeepSearchQA metrics)
+            if eval_details:
+                log_data["eval_details"] = eval_details
 
             # Write to a temporary file and then atomically replace
             temp_log_file = log_file.with_suffix(f"{log_file.suffix}.tmp")
