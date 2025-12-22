@@ -80,20 +80,23 @@ class OpenAIClient(BaseClient):
         :return: OpenAI API response object or None (if error occurs).
         """
 
+        # Create a copy for sending to LLM (to avoid modifying the original)
+        messages_for_llm = [m.copy() for m in messages_history]
+
         # put the system prompt in the first message since OpenAI API does not support system prompt in
         if system_prompt:
             # Check if there's already a system or developer message
-            if messages_history and messages_history[0]["role"] in [
+            if messages_for_llm and messages_for_llm[0]["role"] in [
                 "system",
                 "developer",
             ]:
-                messages_history[0] = {
+                messages_for_llm[0] = {
                     "role": "system",
                     "content": system_prompt,
                 }
 
             else:
-                messages_history.insert(
+                messages_for_llm.insert(
                     0,
                     {
                         "role": "system",
@@ -101,14 +104,15 @@ class OpenAIClient(BaseClient):
                     },
                 )
 
-        messages_history = self._remove_tool_result_from_messages(
-            messages_history, keep_tool_result
+        # Filter tool results to save tokens (only affects messages sent to LLM)
+        messages_for_llm = self._remove_tool_result_from_messages(
+            messages_for_llm, keep_tool_result
         )
 
         params = {
             "model": self.model_name,
             "temperature": self.temperature,
-            "messages": messages_history,
+            "messages": messages_for_llm,
             "tools": [],
             "stream": False,
             "top_p": self.top_p,
@@ -172,6 +176,8 @@ class OpenAIClient(BaseClient):
                     )
                     raise Exception("Severe repeat detected in response, please retry.")
 
+            # Return the original messages_history (not the filtered copy)
+            # This ensures that the complete conversation history is preserved in logs
             return response, messages_history
 
         except asyncio.TimeoutError as e:

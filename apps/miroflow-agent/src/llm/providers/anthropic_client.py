@@ -104,12 +104,14 @@ class AnthropicClient(BaseClient):
             f"Calling LLM ({'async' if self.async_client else 'sync'})",
         )
 
-        messages_copy = self._remove_tool_result_from_messages(
+        # Create a filtered copy for sending to LLM (to save tokens)
+        # But keep the original messages_history for returning (for complete log)
+        messages_for_llm = self._remove_tool_result_from_messages(
             messages_history, keep_tool_result
         )
 
         # Apply cache control
-        processed_messages = self._apply_cache_control(messages_copy)
+        processed_messages = self._apply_cache_control(messages_for_llm)
 
         try:
             if self.async_client:
@@ -158,7 +160,9 @@ class AnthropicClient(BaseClient):
                 "LLM | Call Status",
                 f"LLM call status: {getattr(response, 'stop_reason', 'N/A')}",
             )
-            return response, messages_copy
+            # Return the original messages_history (not the filtered copy)
+            # This ensures that the complete conversation history is preserved in logs
+            return response, messages_history
         except asyncio.CancelledError:
             self.task_log.log_step(
                 "warning",
