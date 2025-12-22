@@ -802,10 +802,6 @@ async def extract_info_with_llm(
             "tokens_used": 0,
         }
 
-    logger.info(
-        f"Jina Scrape and Extract Info: Info to extract: {info_to_extract}, LLM Response data: {response_data}"
-    )
-
     # Extract summary from response
     if "choices" in response_data and len(response_data["choices"]) > 0:
         try:

@@ -158,10 +158,6 @@ async def google_search(
             # Remove all types of quotes
             query_without_quotes = original_query.replace('"', "").strip()
             if query_without_quotes:  # Make sure we still have a valid query
-                logger.info(
-                    f"No results found for query with quotes: '{original_query}'. "
-                    f"Retrying with query without quotes: '{query_without_quotes}'"
-                )
                 organic_results, search_params = await perform_search(
                     query_without_quotes
                 )
