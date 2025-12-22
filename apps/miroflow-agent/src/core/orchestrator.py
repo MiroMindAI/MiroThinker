@@ -362,9 +362,6 @@ class Orchestrator:
         task_description: str,
     ):
         """Run sub agent"""
-        self.task_log.log_step(
-            "info", f"{sub_agent_name} | Start Task", f"Starting {sub_agent_name}"
-        )
         task_description += "\n\nPlease provide the answer and detailed supporting information of the subtask given to you."
         self.task_log.log_step(
             "info",
@@ -390,11 +387,6 @@ class Orchestrator:
             tool_definitions = tool_definitions.get(sub_agent_name, {})
         else:
             tool_definitions = self.sub_agent_tool_definitions[sub_agent_name]
-        self.task_log.log_step(
-            "info",
-            f"{sub_agent_name} | Get Tool Definitions",
-            f"Number of tools: {len(tool_definitions)}",
-        )
 
         if not tool_definitions:
             self.task_log.log_step(
@@ -430,11 +422,6 @@ class Orchestrator:
                 )
                 break
 
-            self.task_log.log_step(
-                "info",
-                f"{sub_agent_name} | Turn: {turn_count}",
-                f"Starting turn {turn_count}.",
-            )
             self.task_log.save()
 
             # Reset 'last_call_tokens'
@@ -471,11 +458,6 @@ class Orchestrator:
                 text_response = extract_llm_response_text(assistant_response_text)
                 if text_response:
                     await self._stream_tool_call("show_text", {"text": text_response})
-                self.task_log.log_step(
-                    "info",
-                    f"{sub_agent_name} | Turn: {turn_count} | LLM Call",
-                    "completed successfully",
-                )
 
             else:
                 # LLM call failed, end current turn
@@ -670,13 +652,6 @@ class Orchestrator:
                 )
                 break
 
-        # Continue processing
-        self.task_log.log_step(
-            "info",
-            f"{sub_agent_name} | Main Loop Completed",
-            f"Main loop completed after {turn_count} turns",
-        )
-
         # Record browsing agent loop end
         if turn_count >= max_turns:
             self.task_log.log_step(
@@ -815,10 +790,6 @@ class Orchestrator:
                 "Warning: No tool definitions found. LLM cannot use any tools.",
             )
 
-        self.task_log.log_step(
-            "info", "Main Agent", f"Number of tools: {len(tool_definitions)}"
-        )
-
         # Generate system prompt
         system_prompt = self.llm_client.generate_agent_system_prompt(
             date=date.today(),
@@ -846,11 +817,6 @@ class Orchestrator:
                 )
                 break
 
-            self.task_log.log_step(
-                "info",
-                f"Main Agent | Turn: {turn_count}",
-                f"Starting turn {turn_count}",
-            )
             self.task_log.save()
 
             # Use unified LLM call processing
@@ -1202,12 +1168,6 @@ class Orchestrator:
 
         # Process response results
         if final_answer_text:
-            self.task_log.log_step(
-                "info",
-                "Main Agent | Final Answer",
-                "Final answer generated successfully",
-            )
-
             # Log the final answer
             self.task_log.log_step(
                 "info",
