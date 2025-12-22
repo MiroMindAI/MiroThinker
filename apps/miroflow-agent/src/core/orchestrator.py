@@ -89,6 +89,10 @@ class Orchestrator:
         # Record used subtask / q / Query
         self.used_queries = {}
 
+        # Retry loop protection limits
+        self.MAX_CONSECUTIVE_ROLLBACKS = 10
+        self.MAX_TOTAL_ATTEMPTS_MULTIPLIER = 3
+
     async def _stream_update(self, event_type: str, data: dict):
         """Send streaming update in new SSE protocol format"""
         if self.stream_queue:
@@ -411,9 +415,21 @@ class Orchestrator:
         else:
             max_turns = 0
         turn_count = 0
+        total_attempts = 0
+        consecutive_rollbacks = 0
+        max_total_attempts = max_turns * self.MAX_TOTAL_ATTEMPTS_MULTIPLIER
 
-        while turn_count < max_turns:
+        while turn_count < max_turns and total_attempts < max_total_attempts:
             turn_count += 1
+            total_attempts += 1
+            if consecutive_rollbacks >= self.MAX_CONSECUTIVE_ROLLBACKS:
+                self.task_log.log_step(
+                    "warning",
+                    f"{sub_agent_name} | Too Many Rollbacks",
+                    f"Reached {consecutive_rollbacks} consecutive rollbacks, breaking loop",
+                )
+                break
+
             self.task_log.log_step(
                 "info",
                 f"{sub_agent_name} | Turn: {turn_count}",
@@ -475,6 +491,7 @@ class Orchestrator:
             if not tool_calls:
                 if any(mcp_tag in assistant_response_text for mcp_tag in mcp_tags):
                     turn_count = turn_count - 1
+                    consecutive_rollbacks += 1
                     if message_history[-1]["role"] == "assistant":
                         message_history = message_history[:-1]
                     self.task_log.log_step(
@@ -487,6 +504,7 @@ class Orchestrator:
                     keyword in assistant_response_text for keyword in refusal_keywords
                 ):
                     turn_count = turn_count - 1
+                    consecutive_rollbacks += 1
                     if message_history[-1]["role"] == "assistant":
                         message_history = message_history[:-1]
                     self.task_log.log_step(
@@ -531,6 +549,7 @@ class Orchestrator:
                         if count > 0:
                             message_history.pop()
                             turn_count = turn_count - 1
+                            consecutive_rollbacks += 1
                             should_rollback_turn = True
                             break  # Exit inner for loop, then continue outer while loop
 
@@ -560,6 +579,7 @@ class Orchestrator:
                     if str(result).startswith("Unknown tool:"):
                         message_history.pop()
                         turn_count = turn_count - 1
+                        consecutive_rollbacks += 1
                         should_rollback_turn = True
                         break  # Exit inner for loop, then continue outer while loop
 
@@ -620,6 +640,9 @@ class Orchestrator:
             # Check if we need to rollback and retry the turn
             if should_rollback_turn:
                 continue  # Continue outer while loop
+
+            # Reset consecutive rollbacks on successful execution
+            consecutive_rollbacks = 0
 
             # Record tool calls to current sub-agent turn
             message_history = self.llm_client.update_message_history(
@@ -806,11 +829,23 @@ class Orchestrator:
         # Main loop: LLM <-> Tools
         max_turns = self.cfg.agent.main_agent.max_turns
         turn_count = 0
+        total_attempts = 0
+        consecutive_rollbacks = 0
+        max_total_attempts = max_turns * self.MAX_TOTAL_ATTEMPTS_MULTIPLIER
 
         self.current_agent_id = await self._stream_start_agent("main")
         await self._stream_start_llm("main")
-        while turn_count < max_turns:
+        while turn_count < max_turns and total_attempts < max_total_attempts:
             turn_count += 1
+            total_attempts += 1
+            if consecutive_rollbacks >= self.MAX_CONSECUTIVE_ROLLBACKS:
+                self.task_log.log_step(
+                    "warning",
+                    "Main Agent | Too Many Rollbacks",
+                    f"Reached {consecutive_rollbacks} consecutive rollbacks, breaking loop",
+                )
+                break
+
             self.task_log.log_step(
                 "info",
                 f"Main Agent | Turn: {turn_count}",
@@ -865,6 +900,7 @@ class Orchestrator:
             if not tool_calls:
                 if any(mcp_tag in assistant_response_text for mcp_tag in mcp_tags):
                     turn_count = turn_count - 1
+                    consecutive_rollbacks += 1
                     if message_history[-1]["role"] == "assistant":
                         message_history = message_history[:-1]
                     self.task_log.log_step(
@@ -877,6 +913,7 @@ class Orchestrator:
                     keyword in assistant_response_text for keyword in refusal_keywords
                 ):
                     turn_count = turn_count - 1
+                    consecutive_rollbacks += 1
                     if message_history[-1]["role"] == "assistant":
                         message_history = message_history[:-1]
                     self.task_log.log_step(
@@ -926,6 +963,7 @@ class Orchestrator:
                             if count > 0:
                                 message_history.pop()
                                 turn_count = turn_count - 1
+                                consecutive_rollbacks += 1
                                 should_rollback_turn = True
                                 break  # Exit inner for loop, then continue outer while loop
 
@@ -964,6 +1002,7 @@ class Orchestrator:
                             if count > 0:
                                 message_history.pop()
                                 turn_count = turn_count - 1
+                                consecutive_rollbacks += 1
                                 should_rollback_turn = True
                                 break  # Exit inner for loop, then continue outer while loop
 
@@ -998,6 +1037,7 @@ class Orchestrator:
                         if str(result).startswith("Unknown tool:"):
                             message_history.pop()
                             turn_count = turn_count - 1
+                            consecutive_rollbacks += 1
                             should_rollback_turn = True
                             break  # Exit inner for loop, then continue outer while loop
 
@@ -1059,6 +1099,9 @@ class Orchestrator:
             # Check if we need to rollback and retry the turn
             if should_rollback_turn:
                 continue  # Continue outer while loop
+
+            # Reset consecutive rollbacks on successful execution
+            consecutive_rollbacks = 0
 
             # Update 'last_call_tokens'
             self.llm_client.last_call_tokens = main_agent_last_call_tokens
