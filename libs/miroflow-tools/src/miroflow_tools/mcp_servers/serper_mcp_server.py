@@ -6,6 +6,7 @@ adapted from
 https://github.com/MiroMindAI/MiroRL/blob/5073693549ffe05a157a1886e87650ef3be6606e/mirorl/tools/serper_search.py#L1
 """
 
+import json
 import os
 from typing import Any, Dict
 
@@ -64,7 +65,7 @@ def google_search(
     tbs: str | None = None,
     page: int | None = None,
     autocorrect: bool | None = None,
-) -> Dict[str, Any]:
+):
     """
     Tool to perform web searches via Serper API and retrieve rich results.
 
@@ -87,19 +88,25 @@ def google_search(
     """
     # Check for API key
     if not SERPER_API_KEY:
-        return {
-            "success": False,
-            "error": "SERPER_API_KEY environment variable not set",
-            "results": [],
-        }
+        return json.dumps(
+            {
+                "success": False,
+                "error": "SERPER_API_KEY environment variable not set",
+                "results": [],
+            },
+            ensure_ascii=False,
+        )
 
     # Validate required parameter
     if not q or not q.strip():
-        return {
-            "success": False,
-            "error": "Search query 'q' is required and cannot be empty",
-            "results": [],
-        }
+        return json.dumps(
+            {
+                "success": False,
+                "error": "Search query 'q' is required and cannot be empty",
+                "results": [],
+            },
+            ensure_ascii=False,
+        )
 
     try:
         # Build payload with all supported parameters
@@ -143,10 +150,13 @@ def google_search(
         response_data["organic"] = organic_results
         response_data = decode_http_urls_in_dict(response_data)
 
-        return response_data
+        return json.dumps(response_data, ensure_ascii=False)
 
     except Exception as e:
-        return {"success": False, "error": f"Unexpected error: {str(e)}", "results": []}
+        return json.dumps(
+            {"success": False, "error": f"Unexpected error: {str(e)}", "results": []},
+            ensure_ascii=False,
+        )
 
 
 if __name__ == "__main__":

@@ -74,7 +74,7 @@ def filter_google_search_result(result_content: str) -> str:
                         del item["snippet"]
 
         # Return filtered JSON
-        return json.dumps(data, ensure_ascii=False, indent=2)
+        return json.dumps(data, ensure_ascii=False, indent=None)
 
     except (json.JSONDecodeError, Exception):
         # If filtering fails, return original content

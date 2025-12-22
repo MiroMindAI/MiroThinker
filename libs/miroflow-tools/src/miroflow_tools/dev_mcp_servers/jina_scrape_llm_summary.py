@@ -48,14 +48,17 @@ async def scrape_and_extract_info(
             - tokens_used (int): Number of tokens used (if available)
     """
     if _is_huggingface_dataset_or_space_url(url):
-        return {
-            "success": False,
-            "url": url,
-            "extracted_info": "",
-            "error": "You are trying to scrape a Hugging Face dataset for answers, please do not use the scrape tool for this purpose.",
-            "scrape_stats": {},
-            "tokens_used": 0,
-        }
+        return json.dumps(
+            {
+                "success": False,
+                "url": url,
+                "extracted_info": "",
+                "error": "You are trying to scrape a Hugging Face dataset for answers, please do not use the scrape tool for this purpose.",
+                "scrape_stats": {},
+                "tokens_used": 0,
+            },
+            ensure_ascii=False,
+        )
 
     # First, scrape the content with Jina
     scrape_result = await scrape_url_with_jina(url, custom_headers)
@@ -71,14 +74,17 @@ async def scrape_and_extract_info(
             logger.error(
                 f"Jina Scrape and Extract Info: Both Jina and Python scraping failed: {scrape_result['error']}"
             )
-            return {
-                "success": False,
-                "url": url,
-                "extracted_info": "",
-                "error": f"Scraping failed (both Jina and Python): {scrape_result['error']}",
-                "scrape_stats": {},
-                "tokens_used": 0,
-            }
+            return json.dumps(
+                {
+                    "success": False,
+                    "url": url,
+                    "extracted_info": "",
+                    "error": f"Scraping failed (both Jina and Python): {scrape_result['error']}",
+                    "scrape_stats": {},
+                    "tokens_used": 0,
+                },
+                ensure_ascii=False,
+            )
         else:
             logger.info(
                 f"Jina Scrape and Extract Info: Python fallback scraping succeeded for URL: {url}"
@@ -94,20 +100,23 @@ async def scrape_and_extract_info(
     )
 
     # Combine results
-    return {
-        "success": extracted_result["success"],
-        "url": url,
-        "extracted_info": extracted_result["extracted_info"],
-        "error": extracted_result["error"],
-        "scrape_stats": {
-            "line_count": scrape_result["line_count"],
-            "char_count": scrape_result["char_count"],
-            "last_char_line": scrape_result["last_char_line"],
-            "all_content_displayed": scrape_result["all_content_displayed"],
+    return json.dumps(
+        {
+            "success": extracted_result["success"],
+            "url": url,
+            "extracted_info": extracted_result["extracted_info"],
+            "error": extracted_result["error"],
+            "scrape_stats": {
+                "line_count": scrape_result["line_count"],
+                "char_count": scrape_result["char_count"],
+                "last_char_line": scrape_result["last_char_line"],
+                "all_content_displayed": scrape_result["all_content_displayed"],
+            },
+            "model_used": extracted_result["model_used"],
+            "tokens_used": extracted_result["tokens_used"],
         },
-        "model_used": extracted_result["model_used"],
-        "tokens_used": extracted_result["tokens_used"],
-    }
+        ensure_ascii=False,
+    )
 
 
 def _is_huggingface_dataset_or_space_url(url):
