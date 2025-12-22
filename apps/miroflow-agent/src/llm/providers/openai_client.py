@@ -326,12 +326,12 @@ class OpenAIClient(BaseClient):
         # Get token usage from the last LLM call
         last_prompt_tokens = self.last_call_tokens.get("prompt_tokens", 0)
         last_completion_tokens = self.last_call_tokens.get("completion_tokens", 0)
-        buffer_factor = 2
+        buffer_factor = 1.5
 
         # Calculate token count for summary prompt
         summary_tokens = self._estimate_tokens(summary_prompt) * buffer_factor
 
-        # Calculate token count for the last user message in message_history (if exists and not sent)
+        # Calculate token count for the last user message in message_history
         last_user_tokens = 0
         if message_history[-1]["role"] == "user":
             content = message_history[-1]["content"]
@@ -376,17 +376,6 @@ class OpenAIClient(BaseClient):
             f"{estimated_total}/{self.max_context_length}",
         )
         return True, message_history
-
-    def handle_max_turns_reached_summary_prompt(
-        self, message_history: List[Dict], summary_prompt: str
-    ) -> str:
-        """Handle max turns reached summary prompt"""
-        if message_history[-1]["role"] == "user":
-            message_history.pop()  # Remove the last user message
-            # TODO: this part is a temporary fix, we need to find a better way to handle this
-            return summary_prompt
-        else:
-            return summary_prompt
 
     def format_token_usage_summary(self) -> tuple[List[str], str]:
         """Format token usage statistics, return summary_lines for format_final_summary and log string"""

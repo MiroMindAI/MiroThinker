@@ -258,20 +258,6 @@ class AnthropicClient(BaseClient):
     def generate_agent_system_prompt(self, date: Any, mcp_servers: List[Dict]) -> str:
         return generate_mcp_system_prompt(date, mcp_servers)
 
-    def handle_max_turns_reached_summary_prompt(
-        self, message_history: List[Dict], summary_prompt: str
-    ) -> str:
-        """Handle max turns reached summary prompt"""
-        if message_history[-1]["role"] == "user":
-            last_user_message = message_history.pop()
-            return (
-                last_user_message["content"][0]["text"]
-                + "\n*************\n"
-                + summary_prompt
-            )
-        else:
-            return summary_prompt
-
     def _estimate_tokens(self, text: str) -> int:
         """Use tiktoken to estimate the number of tokens in text"""
         if not hasattr(self, "encoding"):
@@ -304,12 +290,12 @@ class AnthropicClient(BaseClient):
         # Get token usage from the last LLM call
         last_input_tokens = self.last_call_tokens.get("input_tokens", 0)
         last_output_tokens = self.last_call_tokens.get("output_tokens", 0)
-        buffer_factor = 2
+        buffer_factor = 1.5
 
         # Calculate token count for summary prompt
         summary_tokens = self._estimate_tokens(str(summary_prompt)) * buffer_factor
 
-        # Calculate token count for the last user message in message_history (if exists and not sent)
+        # Calculate token count for the last user message in message_history
         last_user_tokens = 0
         if message_history[-1]["role"] == "user":
             content = message_history[-1]["content"]
