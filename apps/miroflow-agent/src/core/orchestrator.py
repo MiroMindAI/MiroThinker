@@ -935,7 +935,7 @@ class Orchestrator:
                                 self.task_log.log_step(
                                     "warning",
                                     f"Main Agent | Turn: {turn_count} | Rollback",
-                                    f"Duplicate sub-agent query detected - agent: {server_name}, query: '{query_str[:100]}...', previous count: {count}. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_total_attempts}",
+                                    f"Duplicate sub-agent query detected - agent: {server_name}, query: '{query_str}', previous count: {count}. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_total_attempts}",
                                 )
                                 break  # Exit inner for loop, then continue outer while loop
 
