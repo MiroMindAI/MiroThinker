@@ -267,15 +267,21 @@ class Orchestrator:
         Supports search_and_browse, google_search, sougou_search, scrape_website, and scrape_and_extract_info.
         """
         if tool_name == "search_and_browse":
-            return arguments.get("subtask")
+            return tool_name + "_" + arguments.get("subtask")
         elif tool_name == "google_search":
-            return arguments.get("q")
+            return tool_name + "_" + arguments.get("q")
         elif tool_name == "sougou_search":
-            return arguments.get("Query")
+            return tool_name + "_" + arguments.get("Query")
         elif tool_name == "scrape_website":
-            return arguments.get("url")
+            return tool_name + "_" + arguments.get("url")
         elif tool_name == "scrape_and_extract_info":
-            return arguments.get("url", "") + "_" + arguments.get("info_to_extract", "")
+            return (
+                tool_name
+                + "_"
+                + arguments.get("url", "")
+                + "_"
+                + arguments.get("info_to_extract", "")
+            )
         return None
 
     async def _handle_llm_call(
@@ -473,32 +479,59 @@ class Orchestrator:
             # Use tool calls parsed from LLM response
             if not tool_calls:
                 if any(mcp_tag in assistant_response_text for mcp_tag in mcp_tags):
-                    turn_count -= 1
-                    consecutive_rollbacks += 1
-                    if message_history[-1]["role"] == "assistant":
-                        message_history.pop()
-                    self.task_log.log_step(
-                        "warning",
-                        f"{sub_agent_name} | Turn: {turn_count} | Rollback",
-                        f"Tool call format incorrect - found MCP tags in response. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_total_attempts}",
-                    )
-                    continue
+                    # If we haven't reached rollback limit, rollback and retry
+                    if consecutive_rollbacks < self.MAX_CONSECUTIVE_ROLLBACKS - 1:
+                        turn_count -= 1
+                        consecutive_rollbacks += 1
+                        if message_history[-1]["role"] == "assistant":
+                            message_history.pop()
+                        self.task_log.log_step(
+                            "warning",
+                            f"{sub_agent_name} | Turn: {turn_count} | Rollback",
+                            f"Tool call format incorrect - found MCP tags in response. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_total_attempts}",
+                        )
+                        continue
+                    else:
+                        # Reached rollback limit, allow the loop to end naturally
+                        self.task_log.log_step(
+                            "warning",
+                            f"{sub_agent_name} | Turn: {turn_count} | End After Max Rollbacks",
+                            f"Ending sub-agent loop after {consecutive_rollbacks} consecutive MCP format errors",
+                        )
+                        break
                 elif any(
                     keyword in assistant_response_text for keyword in refusal_keywords
                 ):
-                    turn_count -= 1
-                    consecutive_rollbacks += 1
-                    matched_keywords = [
-                        kw for kw in refusal_keywords if kw in assistant_response_text
-                    ]
-                    if message_history[-1]["role"] == "assistant":
-                        message_history.pop()
-                    self.task_log.log_step(
-                        "warning",
-                        f"{sub_agent_name} | Turn: {turn_count} | Rollback",
-                        f"LLM refused to answer - found refusal keywords: {matched_keywords}. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_total_attempts}",
-                    )
-                    continue
+                    # If we haven't reached rollback limit, rollback and retry
+                    if consecutive_rollbacks < self.MAX_CONSECUTIVE_ROLLBACKS - 1:
+                        turn_count -= 1
+                        consecutive_rollbacks += 1
+                        matched_keywords = [
+                            kw
+                            for kw in refusal_keywords
+                            if kw in assistant_response_text
+                        ]
+                        if message_history[-1]["role"] == "assistant":
+                            message_history.pop()
+                        self.task_log.log_step(
+                            "warning",
+                            f"{sub_agent_name} | Turn: {turn_count} | Rollback",
+                            f"LLM refused to answer - found refusal keywords: {matched_keywords}. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_total_attempts}",
+                        )
+                        continue
+                    else:
+                        # Reached rollback limit, allow the loop to end naturally
+                        matched_keywords = [
+                            kw
+                            for kw in refusal_keywords
+                            if kw in assistant_response_text
+                        ]
+                        self.task_log.log_step(
+                            "warning",
+                            f"{sub_agent_name} | Turn: {turn_count} | End After Max Rollbacks",
+                            f"Ending sub-agent loop after {consecutive_rollbacks} consecutive refusals with keywords: {matched_keywords}",
+                        )
+                        break
                 else:
                     self.task_log.log_step(
                         "info",
@@ -533,10 +566,28 @@ class Orchestrator:
                         self.used_queries.setdefault(cache_name, defaultdict(int))
                         count = self.used_queries[cache_name][query_str]
                         if count > 0:
-                            message_history.pop()
-                            turn_count -= 1
-                            should_rollback_turn = True
-                            break  # Exit inner for loop, then continue outer while loop
+                            # If we haven't reached rollback limit, rollback and retry
+                            if (
+                                consecutive_rollbacks
+                                < self.MAX_CONSECUTIVE_ROLLBACKS - 1
+                            ):
+                                message_history.pop()
+                                turn_count -= 1
+                                consecutive_rollbacks += 1
+                                should_rollback_turn = True
+                                self.task_log.log_step(
+                                    "warning",
+                                    f"{sub_agent_name} | Turn: {turn_count} | Rollback",
+                                    f"Duplicate query detected - tool: {tool_name}, query: '{query_str}', previous count: {count}. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_total_attempts}",
+                                )
+                                break  # Exit inner for loop, then continue outer while loop
+                            else:
+                                # Reached rollback limit, allow execution but add feedback
+                                self.task_log.log_step(
+                                    "warning",
+                                    f"{sub_agent_name} | Turn: {turn_count} | Allow Duplicate",
+                                    f"Allowing duplicate query after {consecutive_rollbacks} rollbacks - tool: {tool_name}, query: '{query_str}', previous count: {count}",
+                                )
 
                     # Send stream event only after duplicate check
                     tool_call_id = await self._stream_tool_call(tool_name, arguments)
@@ -562,16 +613,25 @@ class Orchestrator:
 
                     # Check for "Unknown tool:" error and rollback
                     if str(result).startswith("Unknown tool:"):
-                        message_history.pop()
-                        turn_count -= 1
-                        consecutive_rollbacks += 1
-                        should_rollback_turn = True
-                        self.task_log.log_step(
-                            "warning",
-                            f"{sub_agent_name} | Turn: {turn_count} | Rollback",
-                            f"Unknown tool error - tool: {tool_name}, error: '{str(result)[:200]}'. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_total_attempts}",
-                        )
-                        break  # Exit inner for loop, then continue outer while loop
+                        # If we haven't reached rollback limit, rollback and retry
+                        if consecutive_rollbacks < self.MAX_CONSECUTIVE_ROLLBACKS - 1:
+                            message_history.pop()
+                            turn_count -= 1
+                            consecutive_rollbacks += 1
+                            should_rollback_turn = True
+                            self.task_log.log_step(
+                                "warning",
+                                f"{sub_agent_name} | Turn: {turn_count} | Rollback",
+                                f"Unknown tool error - tool: {tool_name}, error: '{str(result)[:200]}'. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_total_attempts}",
+                            )
+                            break  # Exit inner for loop, then continue outer while loop
+                        else:
+                            # Reached rollback limit, allow error to be sent to LLM as feedback
+                            self.task_log.log_step(
+                                "warning",
+                                f"{sub_agent_name} | Turn: {turn_count} | Allow Error Feedback",
+                                f"Allowing unknown tool error to be sent to LLM after {consecutive_rollbacks} rollbacks - tool: {tool_name}, error: '{str(result)[:200]}'",
+                            )
 
                     await self._stream_tool_call(
                         tool_name, {"result": result}, tool_call_id=tool_call_id
@@ -870,32 +930,59 @@ class Orchestrator:
 
             if not tool_calls:
                 if any(mcp_tag in assistant_response_text for mcp_tag in mcp_tags):
-                    turn_count -= 1
-                    consecutive_rollbacks += 1
-                    if message_history[-1]["role"] == "assistant":
-                        message_history.pop()
-                    self.task_log.log_step(
-                        "warning",
-                        f"Main Agent | Turn: {turn_count} | Rollback",
-                        f"Tool call format incorrect - found MCP tags in response. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_total_attempts}",
-                    )
-                    continue
+                    # If we haven't reached rollback limit, rollback and retry
+                    if consecutive_rollbacks < self.MAX_CONSECUTIVE_ROLLBACKS - 1:
+                        turn_count -= 1
+                        consecutive_rollbacks += 1
+                        if message_history[-1]["role"] == "assistant":
+                            message_history.pop()
+                        self.task_log.log_step(
+                            "warning",
+                            f"Main Agent | Turn: {turn_count} | Rollback",
+                            f"Tool call format incorrect - found MCP tags in response. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_total_attempts}",
+                        )
+                        continue
+                    else:
+                        # Reached rollback limit, allow the loop to end naturally
+                        self.task_log.log_step(
+                            "warning",
+                            f"Main Agent | Turn: {turn_count} | End After Max Rollbacks",
+                            f"Ending main agent loop after {consecutive_rollbacks} consecutive MCP format errors",
+                        )
+                        break
                 elif any(
                     keyword in assistant_response_text for keyword in refusal_keywords
                 ):
-                    turn_count -= 1
-                    consecutive_rollbacks += 1
-                    matched_keywords = [
-                        kw for kw in refusal_keywords if kw in assistant_response_text
-                    ]
-                    if message_history[-1]["role"] == "assistant":
-                        message_history.pop()
-                    self.task_log.log_step(
-                        "warning",
-                        f"Main Agent | Turn: {turn_count} | Rollback",
-                        f"LLM refused to answer - found refusal keywords: {matched_keywords}. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_total_attempts}",
-                    )
-                    continue
+                    # If we haven't reached rollback limit, rollback and retry
+                    if consecutive_rollbacks < self.MAX_CONSECUTIVE_ROLLBACKS - 1:
+                        turn_count -= 1
+                        consecutive_rollbacks += 1
+                        matched_keywords = [
+                            kw
+                            for kw in refusal_keywords
+                            if kw in assistant_response_text
+                        ]
+                        if message_history[-1]["role"] == "assistant":
+                            message_history.pop()
+                        self.task_log.log_step(
+                            "warning",
+                            f"Main Agent | Turn: {turn_count} | Rollback",
+                            f"LLM refused to answer - found refusal keywords: {matched_keywords}. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_total_attempts}",
+                        )
+                        continue
+                    else:
+                        # Reached rollback limit, allow the loop to end naturally
+                        matched_keywords = [
+                            kw
+                            for kw in refusal_keywords
+                            if kw in assistant_response_text
+                        ]
+                        self.task_log.log_step(
+                            "warning",
+                            f"Main Agent | Turn: {turn_count} | End After Max Rollbacks",
+                            f"Ending main agent loop after {consecutive_rollbacks} consecutive refusals with keywords: {matched_keywords}",
+                        )
+                        break
                 else:
                     self.task_log.log_step(
                         "info",
@@ -928,16 +1015,28 @@ class Orchestrator:
                             self.used_queries.setdefault(cache_name, defaultdict(int))
                             count = self.used_queries[cache_name][query_str]
                             if count > 0:
-                                message_history.pop()
-                                turn_count -= 1
-                                consecutive_rollbacks += 1
-                                should_rollback_turn = True
-                                self.task_log.log_step(
-                                    "warning",
-                                    f"Main Agent | Turn: {turn_count} | Rollback",
-                                    f"Duplicate sub-agent query detected - agent: {server_name}, query: '{query_str}', previous count: {count}. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_total_attempts}",
-                                )
-                                break  # Exit inner for loop, then continue outer while loop
+                                # If we haven't reached rollback limit, rollback and retry
+                                if (
+                                    consecutive_rollbacks
+                                    < self.MAX_CONSECUTIVE_ROLLBACKS - 1
+                                ):
+                                    message_history.pop()
+                                    turn_count -= 1
+                                    consecutive_rollbacks += 1
+                                    should_rollback_turn = True
+                                    self.task_log.log_step(
+                                        "warning",
+                                        f"Main Agent | Turn: {turn_count} | Rollback",
+                                        f"Duplicate sub-agent query detected - agent: {server_name}, query: '{query_str}', previous count: {count}. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_total_attempts}",
+                                    )
+                                    break  # Exit inner for loop, then continue outer while loop
+                                else:
+                                    # Reached rollback limit, allow execution but add feedback
+                                    self.task_log.log_step(
+                                        "warning",
+                                        f"Main Agent | Turn: {turn_count} | Allow Duplicate",
+                                        f"Allowing duplicate sub-agent query after {consecutive_rollbacks} rollbacks - agent: {server_name}, query: '{query_str}', previous count: {count}",
+                                    )
 
                         # Send stream events only after duplicate check
                         await self._stream_end_llm("main")
@@ -972,16 +1071,28 @@ class Orchestrator:
                             self.used_queries.setdefault(cache_name, defaultdict(int))
                             count = self.used_queries[cache_name][query_str]
                             if count > 0:
-                                message_history.pop()
-                                turn_count -= 1
-                                consecutive_rollbacks += 1
-                                should_rollback_turn = True
-                                self.task_log.log_step(
-                                    "warning",
-                                    f"Main Agent | Turn: {turn_count} | Rollback",
-                                    f"Duplicate tool query detected - tool: {tool_name}, query: '{query_str}', previous count: {count}. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_total_attempts}",
-                                )
-                                break  # Exit inner for loop, then continue outer while loop
+                                # If we haven't reached rollback limit, rollback and retry
+                                if (
+                                    consecutive_rollbacks
+                                    < self.MAX_CONSECUTIVE_ROLLBACKS - 1
+                                ):
+                                    message_history.pop()
+                                    turn_count -= 1
+                                    consecutive_rollbacks += 1
+                                    should_rollback_turn = True
+                                    self.task_log.log_step(
+                                        "warning",
+                                        f"Main Agent | Turn: {turn_count} | Rollback",
+                                        f"Duplicate tool query detected - tool: {tool_name}, query: '{query_str}', previous count: {count}. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_total_attempts}",
+                                    )
+                                    break  # Exit inner for loop, then continue outer while loop
+                                else:
+                                    # Reached rollback limit, allow execution but add feedback
+                                    self.task_log.log_step(
+                                        "warning",
+                                        f"Main Agent | Turn: {turn_count} | Allow Duplicate",
+                                        f"Allowing duplicate query after {consecutive_rollbacks} rollbacks - tool: {tool_name}, query: '{query_str}', previous count: {count}",
+                                    )
 
                         # Send stream event only after duplicate check
                         tool_call_id = await self._stream_tool_call(
@@ -1012,16 +1123,28 @@ class Orchestrator:
 
                         # Check for "Unknown tool:" error and rollback
                         if str(result).startswith("Unknown tool:"):
-                            message_history.pop()
-                            turn_count -= 1
-                            consecutive_rollbacks += 1
-                            should_rollback_turn = True
-                            self.task_log.log_step(
-                                "warning",
-                                f"Main Agent | Turn: {turn_count} | Rollback",
-                                f"Unknown tool error - tool: {tool_name}, error: '{str(result)[:200]}'. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_total_attempts}",
-                            )
-                            break  # Exit inner for loop, then continue outer while loop
+                            # If we haven't reached rollback limit, rollback and retry
+                            if (
+                                consecutive_rollbacks
+                                < self.MAX_CONSECUTIVE_ROLLBACKS - 1
+                            ):
+                                message_history.pop()
+                                turn_count -= 1
+                                consecutive_rollbacks += 1
+                                should_rollback_turn = True
+                                self.task_log.log_step(
+                                    "warning",
+                                    f"Main Agent | Turn: {turn_count} | Rollback",
+                                    f"Unknown tool error - tool: {tool_name}, error: '{str(result)[:200]}'. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_total_attempts}",
+                                )
+                                break  # Exit inner for loop, then continue outer while loop
+                            else:
+                                # Reached rollback limit, allow error to be sent to LLM as feedback
+                                self.task_log.log_step(
+                                    "warning",
+                                    f"Main Agent | Turn: {turn_count} | Allow Error Feedback",
+                                    f"Allowing unknown tool error to be sent to LLM after {consecutive_rollbacks} rollbacks - tool: {tool_name}, error: '{str(result)[:200]}'",
+                                )
 
                         await self._stream_tool_call(
                             tool_name, {"result": result}, tool_call_id=tool_call_id

@@ -123,7 +123,7 @@ def decode_http_urls_in_dict(data):
     - Other types remain unchanged
     """
     if isinstance(data, str):
-        if "%" in data and 'http' in data:
+        if "%" in data and "http" in data:
             return safe_unquote(data)
         else:
             return data
