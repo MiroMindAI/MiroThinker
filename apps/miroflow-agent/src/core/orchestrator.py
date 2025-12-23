@@ -91,7 +91,6 @@ class Orchestrator:
 
         # Retry loop protection limits
         self.MAX_CONSECUTIVE_ROLLBACKS = 10
-        self.MAX_TOTAL_ATTEMPTS_MULTIPLIER = 3
         self.MAX_FINAL_ANSWER_RETRIES = 3
 
     async def _stream_update(self, event_type: str, data: dict):
@@ -437,16 +436,15 @@ class Orchestrator:
         turn_count = 0
         total_attempts = 0
         consecutive_rollbacks = 0
-        max_total_attempts = max_turns * self.MAX_TOTAL_ATTEMPTS_MULTIPLIER
 
-        while turn_count < max_turns and total_attempts < max_total_attempts:
+        while turn_count < max_turns and total_attempts < max_turns:
             turn_count += 1
             total_attempts += 1
             if consecutive_rollbacks >= self.MAX_CONSECUTIVE_ROLLBACKS:
                 self.task_log.log_step(
                     "error",
                     f"{sub_agent_name} | Too Many Rollbacks",
-                    f"Reached {consecutive_rollbacks} consecutive rollbacks (limit: {self.MAX_CONSECUTIVE_ROLLBACKS}), breaking loop. Total attempts: {total_attempts}/{max_total_attempts}",
+                    f"Reached {consecutive_rollbacks} consecutive rollbacks (limit: {self.MAX_CONSECUTIVE_ROLLBACKS}), breaking loop. Total attempts: {total_attempts}/{max_turns}",
                 )
                 break
 
@@ -509,7 +507,7 @@ class Orchestrator:
                         self.task_log.log_step(
                             "warning",
                             f"{sub_agent_name} | Turn: {turn_count} | Rollback",
-                            f"Tool call format incorrect - found MCP tags in response. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_total_attempts}",
+                            f"Tool call format incorrect - found MCP tags in response. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_turns}",
                         )
                         continue
                     else:
@@ -537,7 +535,7 @@ class Orchestrator:
                         self.task_log.log_step(
                             "warning",
                             f"{sub_agent_name} | Turn: {turn_count} | Rollback",
-                            f"LLM refused to answer - found refusal keywords: {matched_keywords}. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_total_attempts}",
+                            f"LLM refused to answer - found refusal keywords: {matched_keywords}. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_turns}",
                         )
                         continue
                     else:
@@ -602,7 +600,7 @@ class Orchestrator:
                                 self.task_log.log_step(
                                     "warning",
                                     f"{sub_agent_name} | Turn: {turn_count} | Rollback",
-                                    f"Duplicate query detected - tool: {tool_name}, query: '{query_str}', previous count: {count}. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_total_attempts}",
+                                    f"Duplicate query detected - tool: {tool_name}, query: '{query_str}', previous count: {count}. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_turns}",
                                 )
                                 break  # Exit inner for loop, then continue outer while loop
                             else:
@@ -646,7 +644,7 @@ class Orchestrator:
                             self.task_log.log_step(
                                 "warning",
                                 f"{sub_agent_name} | Turn: {turn_count} | Rollback",
-                                f"Unknown tool error - tool: {tool_name}, error: '{str(result)[:200]}'. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_total_attempts}",
+                                f"Unknown tool error - tool: {tool_name}, error: '{str(result)[:200]}'. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_turns}",
                             )
                             break  # Exit inner for loop, then continue outer while loop
                         else:
@@ -891,18 +889,17 @@ class Orchestrator:
         turn_count = 0
         total_attempts = 0
         consecutive_rollbacks = 0
-        max_total_attempts = max_turns * self.MAX_TOTAL_ATTEMPTS_MULTIPLIER
 
         self.current_agent_id = await self._stream_start_agent("main")
         await self._stream_start_llm("main")
-        while turn_count < max_turns and total_attempts < max_total_attempts:
+        while turn_count < max_turns and total_attempts < max_turns:
             turn_count += 1
             total_attempts += 1
             if consecutive_rollbacks >= self.MAX_CONSECUTIVE_ROLLBACKS:
                 self.task_log.log_step(
                     "error",
                     "Main Agent | Too Many Rollbacks",
-                    f"Reached {consecutive_rollbacks} consecutive rollbacks (limit: {self.MAX_CONSECUTIVE_ROLLBACKS}), breaking loop. Total attempts: {total_attempts}/{max_total_attempts}",
+                    f"Reached {consecutive_rollbacks} consecutive rollbacks (limit: {self.MAX_CONSECUTIVE_ROLLBACKS}), breaking loop. Total attempts: {total_attempts}/{max_turns}",
                 )
                 break
 
@@ -963,7 +960,7 @@ class Orchestrator:
                         self.task_log.log_step(
                             "warning",
                             f"Main Agent | Turn: {turn_count} | Rollback",
-                            f"Tool call format incorrect - found MCP tags in response. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_total_attempts}",
+                            f"Tool call format incorrect - found MCP tags in response. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_turns}",
                         )
                         continue
                     else:
@@ -991,7 +988,7 @@ class Orchestrator:
                         self.task_log.log_step(
                             "warning",
                             f"Main Agent | Turn: {turn_count} | Rollback",
-                            f"LLM refused to answer - found refusal keywords: {matched_keywords}. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_total_attempts}",
+                            f"LLM refused to answer - found refusal keywords: {matched_keywords}. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_turns}",
                         )
                         continue
                     else:
@@ -1054,7 +1051,7 @@ class Orchestrator:
                                     self.task_log.log_step(
                                         "warning",
                                         f"Main Agent | Turn: {turn_count} | Rollback",
-                                        f"Duplicate sub-agent query detected - agent: {server_name}, query: '{query_str}', previous count: {count}. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_total_attempts}",
+                                        f"Duplicate sub-agent query detected - agent: {server_name}, query: '{query_str}', previous count: {count}. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_turns}",
                                     )
                                     break  # Exit inner for loop, then continue outer while loop
                                 else:
@@ -1110,7 +1107,7 @@ class Orchestrator:
                                     self.task_log.log_step(
                                         "warning",
                                         f"Main Agent | Turn: {turn_count} | Rollback",
-                                        f"Duplicate tool query detected - tool: {tool_name}, query: '{query_str}', previous count: {count}. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_total_attempts}",
+                                        f"Duplicate tool query detected - tool: {tool_name}, query: '{query_str}', previous count: {count}. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_turns}",
                                     )
                                     break  # Exit inner for loop, then continue outer while loop
                                 else:
@@ -1162,7 +1159,7 @@ class Orchestrator:
                                 self.task_log.log_step(
                                     "warning",
                                     f"Main Agent | Turn: {turn_count} | Rollback",
-                                    f"Unknown tool error - tool: {tool_name}, error: '{str(result)[:200]}'. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_total_attempts}",
+                                    f"Unknown tool error - tool: {tool_name}, error: '{str(result)[:200]}'. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_turns}",
                                 )
                                 break  # Exit inner for loop, then continue outer while loop
                             else:
