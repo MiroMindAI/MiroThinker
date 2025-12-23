@@ -259,6 +259,27 @@ class Orchestrator:
                 )
         return tool_call_result
 
+    def _fix_tool_call_arguments(self, tool_name: str, arguments: dict) -> dict:
+        """
+        Fix common parameter name mistakes made by LLM.
+        """
+        # Create a copy to avoid modifying the original
+        fixed_args = arguments.copy()
+        # Fix scrape_and_extract_info parameter names
+        if tool_name == "scrape_and_extract_info":
+            # Map common mistakes to the correct parameter name
+            mistake_names = [
+                "description",
+                "introduction",
+            ]
+            if "info_to_extract" not in fixed_args:
+                for mistake_name in mistake_names:
+                    if mistake_name in fixed_args:
+                        fixed_args["info_to_extract"] = fixed_args.pop(mistake_name)
+                        break
+
+        return fixed_args
+
     def _get_query_str_from_tool_call(
         self, tool_name: str, arguments: dict
     ) -> Optional[str]:
@@ -550,6 +571,9 @@ class Orchestrator:
                 tool_name = call["tool_name"]
                 arguments = call["arguments"]
                 call_id = call["id"]
+
+                # Fix common parameter name mistakes
+                arguments = self._fix_tool_call_arguments(tool_name, arguments)
 
                 self.task_log.log_step(
                     "info",
@@ -1002,6 +1026,9 @@ class Orchestrator:
                 tool_name = call["tool_name"]
                 arguments = call["arguments"]
                 call_id = call["id"]
+
+                # Fix common parameter name mistakes
+                arguments = self._fix_tool_call_arguments(tool_name, arguments)
 
                 call_start_time = time.time()
                 try:
