@@ -155,8 +155,8 @@ class OpenAIClient(BaseClient):
                 if finish_reason == "length":
                     # If this is not the last retry, increase max_tokens and retry
                     if attempt < max_retries - 1:
-                        # Increase max_tokens by 30%
-                        current_max_tokens = int(current_max_tokens + 1024)
+                        # Increase max_tokens by 10%
+                        current_max_tokens = int(current_max_tokens * 1.1)
                         self.task_log.log_step(
                             "warning",
                             "LLM | Length Limit Reached",
