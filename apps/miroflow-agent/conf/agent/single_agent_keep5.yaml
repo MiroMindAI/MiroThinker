@@ -16,4 +16,4 @@ sub_agents:
 
 # Settings for context management
 keep_tool_result: 5
-format_error_retry_limit: 0  # Maximum number of retries for format errors in context management
+format_error_retry_limit: 3  # Maximum number of retries for format errors in context management
