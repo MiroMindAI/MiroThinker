@@ -267,13 +267,13 @@ class Orchestrator:
         Supports search_and_browse, google_search, sougou_search, scrape_website, and scrape_and_extract_info.
         """
         if tool_name == "search_and_browse":
-            return tool_name + "_" + arguments.get("subtask")
+            return tool_name + "_" + arguments.get("subtask", "")
         elif tool_name == "google_search":
-            return tool_name + "_" + arguments.get("q")
+            return tool_name + "_" + arguments.get("q", "")
         elif tool_name == "sougou_search":
-            return tool_name + "_" + arguments.get("Query")
+            return tool_name + "_" + arguments.get("Query", "")
         elif tool_name == "scrape_website":
-            return tool_name + "_" + arguments.get("url")
+            return tool_name + "_" + arguments.get("url", "")
         elif tool_name == "scrape_and_extract_info":
             return (
                 tool_name

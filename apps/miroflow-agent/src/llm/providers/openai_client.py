@@ -8,7 +8,6 @@ from typing import Any, Dict, List, Tuple, Union
 
 import tiktoken
 from openai import AsyncOpenAI, DefaultAsyncHttpxClient, DefaultHttpxClient, OpenAI
-from tenacity import retry, stop_after_attempt, wait_fixed
 
 from ...utils.prompt_utils import generate_mcp_system_prompt
 from ..base_client import BaseClient
@@ -65,7 +64,6 @@ class OpenAIClient(BaseClient):
                 f"Output: {self.token_usage['total_output_tokens']}",
             )
 
-    @retry(wait=wait_fixed(30), stop=stop_after_attempt(10))
     async def _create_message(
         self,
         system_prompt: str,
@@ -109,106 +107,157 @@ class OpenAIClient(BaseClient):
             messages_for_llm, keep_tool_result
         )
 
-        params = {
-            "model": self.model_name,
-            "temperature": self.temperature,
-            "messages": messages_for_llm,
-            "tools": [],
-            "stream": False,
-            "top_p": self.top_p,
-            "extra_body": {},
-        }
-        # Check if the model is GPT-5, and adjust the parameter accordingly
-        if "gpt-5" in self.model_name:
-            # Use 'max_completion_tokens' for GPT-5
-            params["max_completion_tokens"] = self.max_tokens
-        else:
-            # Use 'max_tokens' for GPT-4 and other models
-            params["max_tokens"] = self.max_tokens
+        # Retry loop with dynamic max_tokens adjustment
+        max_retries = 10
+        base_wait_time = 30
+        current_max_tokens = self.max_tokens
 
-        # Add repetition_penalty if it's not the default value
-        if self.repetition_penalty != 1.0:
-            params["extra_body"]["repetition_penalty"] = self.repetition_penalty
-
-        if "deepseek-v3-1" in self.model_name:
-            params["extra_body"]["thinking"] = {"type": "enabled"}
-
-        try:
-            if self.async_client:
-                response = await self.client.chat.completions.create(**params)
+        for attempt in range(max_retries):
+            params = {
+                "model": self.model_name,
+                "temperature": self.temperature,
+                "messages": messages_for_llm,
+                "tools": [],
+                "stream": False,
+                "top_p": self.top_p,
+                "extra_body": {},
+            }
+            # Check if the model is GPT-5, and adjust the parameter accordingly
+            if "gpt-5" in self.model_name:
+                # Use 'max_completion_tokens' for GPT-5
+                params["max_completion_tokens"] = current_max_tokens
             else:
-                response = self.client.chat.completions.create(**params)
-            # Update token count
-            self._update_token_usage(getattr(response, "usage", None))
-            self.task_log.log_step(
-                "info",
-                "LLM | Response Status",
-                f"{getattr(response.choices[0], 'finish_reason', 'N/A')}",
-            )
+                # Use 'max_tokens' for GPT-4 and other models
+                params["max_tokens"] = current_max_tokens
 
-            # Check if response was truncated due to length limit
-            finish_reason = getattr(response.choices[0], "finish_reason", None)
-            if finish_reason == "length":
+            # Add repetition_penalty if it's not the default value
+            if self.repetition_penalty != 1.0:
+                params["extra_body"]["repetition_penalty"] = self.repetition_penalty
+
+            if "deepseek-v3-1" in self.model_name:
+                params["extra_body"]["thinking"] = {"type": "enabled"}
+
+            try:
+                if self.async_client:
+                    response = await self.client.chat.completions.create(**params)
+                else:
+                    response = self.client.chat.completions.create(**params)
+                # Update token count
+                self._update_token_usage(getattr(response, "usage", None))
                 self.task_log.log_step(
-                    "warning",
-                    "LLM | Length Limit Reached",
-                    "Response was truncated due to length limit, retrying...",
+                    "info",
+                    "LLM | Response Status",
+                    f"{getattr(response.choices[0], 'finish_reason', 'N/A')}",
                 )
-                raise Exception("Response truncated due to length limit, please retry.")
 
-            # Check if the last 100 characters of the response appear more than 5 times in the response content.
-            # If so, treat it as a severe repeat and trigger a retry.
-            if hasattr(response.choices[0], "message") and hasattr(
-                response.choices[0].message, "content"
-            ):
-                resp_content = response.choices[0].message.content or ""
-            else:
-                resp_content = getattr(response.choices[0], "text", "")
+                # Check if response was truncated due to length limit
+                finish_reason = getattr(response.choices[0], "finish_reason", None)
+                if finish_reason == "length":
+                    # If this is not the last retry, increase max_tokens and retry
+                    if attempt < max_retries - 1:
+                        # Increase max_tokens by 30%
+                        current_max_tokens = int(current_max_tokens + 1024)
+                        self.task_log.log_step(
+                            "warning",
+                            "LLM | Length Limit Reached",
+                            f"Response was truncated due to length limit (attempt {attempt + 1}/{max_retries}). Increasing max_tokens to {current_max_tokens} and retrying...",
+                        )
+                        await asyncio.sleep(base_wait_time)
+                        continue
+                    else:
+                        # Last retry, return the truncated response instead of raising exception
+                        self.task_log.log_step(
+                            "warning",
+                            "LLM | Length Limit Reached - Returning Truncated Response",
+                            f"Response was truncated after {max_retries} attempts. Returning truncated response to allow ReAct loop to continue.",
+                        )
+                        # Return the truncated response and let the orchestrator handle it
+                        return response, messages_history
 
-            if resp_content and len(resp_content) >= 50:
-                tail_50 = resp_content[-50:]
-                repeat_count = resp_content.count(tail_50)
-                if repeat_count > 5:
+                # Check if the last 50 characters of the response appear more than 5 times in the response content.
+                # If so, treat it as a severe repeat and trigger a retry.
+                if hasattr(response.choices[0], "message") and hasattr(
+                    response.choices[0].message, "content"
+                ):
+                    resp_content = response.choices[0].message.content or ""
+                else:
+                    resp_content = getattr(response.choices[0], "text", "")
+
+                if resp_content and len(resp_content) >= 50:
+                    tail_50 = resp_content[-50:]
+                    repeat_count = resp_content.count(tail_50)
+                    if repeat_count > 5:
+                        # If this is not the last retry, retry
+                        if attempt < max_retries - 1:
+                            self.task_log.log_step(
+                                "warning",
+                                "LLM | Repeat Detected",
+                                f"Severe repeat: the last 50 chars appeared over 5 times (attempt {attempt + 1}/{max_retries}), retrying...",
+                            )
+                            await asyncio.sleep(base_wait_time)
+                            continue
+                        else:
+                            # Last retry, return anyway
+                            self.task_log.log_step(
+                                "warning",
+                                "LLM | Repeat Detected - Returning Anyway",
+                                f"Severe repeat detected after {max_retries} attempts. Returning response anyway.",
+                            )
+
+                # Success - return the original messages_history (not the filtered copy)
+                # This ensures that the complete conversation history is preserved in logs
+                return response, messages_history
+
+            except asyncio.TimeoutError as e:
+                if attempt < max_retries - 1:
                     self.task_log.log_step(
                         "warning",
-                        "LLM | Repeat Detected",
-                        "Severe repeat: the last 50 chars appeared over 5 times, retrying...",
+                        "LLM | Timeout Error",
+                        f"Timeout error (attempt {attempt + 1}/{max_retries}): {str(e)}, retrying...",
                     )
-                    raise Exception("Severe repeat detected in response, please retry.")
-
-            # Return the original messages_history (not the filtered copy)
-            # This ensures that the complete conversation history is preserved in logs
-            return response, messages_history
-
-        except asyncio.TimeoutError as e:
-            self.task_log.log_step(
-                "error",
-                "LLM | Timeout Error",
-                f"Timeout error: {str(e)}",
-            )
-            raise e
-        except asyncio.CancelledError as e:
-            self.task_log.log_step(
-                "error",
-                "LLM | Request Cancelled",
-                f"Request was cancelled: {str(e)}",
-            )
-            raise e
-        except Exception as e:
-            if "Error code: 400" in str(e) and "longer than the model" in str(e):
+                    await asyncio.sleep(base_wait_time)
+                    continue
+                else:
+                    self.task_log.log_step(
+                        "error",
+                        "LLM | Timeout Error",
+                        f"Timeout error after {max_retries} attempts: {str(e)}",
+                    )
+                    raise e
+            except asyncio.CancelledError as e:
                 self.task_log.log_step(
                     "error",
-                    "LLM | Context Length Error",
-                    f"Error: {str(e)}",
+                    "LLM | Request Cancelled",
+                    f"Request was cancelled: {str(e)}",
                 )
                 raise e
-            else:
-                self.task_log.log_step(
-                    "error",
-                    "LLM | API Error",
-                    f"Error: {str(e)}",
-                )
-                raise e
+            except Exception as e:
+                if "Error code: 400" in str(e) and "longer than the model" in str(e):
+                    self.task_log.log_step(
+                        "error",
+                        "LLM | Context Length Error",
+                        f"Error: {str(e)}",
+                    )
+                    raise e
+                else:
+                    if attempt < max_retries - 1:
+                        self.task_log.log_step(
+                            "warning",
+                            "LLM | API Error",
+                            f"Error (attempt {attempt + 1}/{max_retries}): {str(e)}, retrying...",
+                        )
+                        await asyncio.sleep(base_wait_time)
+                        continue
+                    else:
+                        self.task_log.log_step(
+                            "error",
+                            "LLM | API Error",
+                            f"Error after {max_retries} attempts: {str(e)}",
+                        )
+                        raise e
+
+        # Should never reach here, but just in case
+        raise Exception("Unexpected error: retry loop completed without returning")
 
     def process_llm_response(
         self, llm_response: Any, message_history: List[Dict], agent_type: str = "main"
