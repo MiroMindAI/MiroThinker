@@ -27,7 +27,7 @@ mcp = FastMCP("jina_scrape_llm_summary")
 @mcp.tool()
 async def scrape_and_extract_info(
     url: str, info_to_extract: str, custom_headers: Dict[str, str] = None
-) -> Dict[str, Any]:
+):
     """
     Scrape content from a URL, including web pages, PDFs, code files, and other supported resources, and extract meaningful information using an LLM.
     If you need to extract information from a PDF, please use this tool.
