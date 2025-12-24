@@ -90,7 +90,7 @@ class Orchestrator:
         self.used_queries = {}
 
         # Retry loop protection limits
-        self.MAX_CONSECUTIVE_ROLLBACKS = 10
+        self.MAX_CONSECUTIVE_ROLLBACKS = 5
         self.MAX_FINAL_ANSWER_RETRIES = 3
 
     async def _stream_update(self, event_type: str, data: dict):
