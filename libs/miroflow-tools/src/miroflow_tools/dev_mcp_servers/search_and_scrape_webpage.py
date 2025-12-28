@@ -1,6 +1,7 @@
 # Copyright (c) 2025 MiroMind
 # This source code is licensed under the MIT License.
 
+import json
 import logging
 import os
 from typing import Any, Dict
@@ -68,7 +69,7 @@ async def google_search(
     tbs: str = None,
     page: int = None,
     autocorrect: bool = None,
-) -> Dict[str, Any]:
+):
     """
     Tool to perform web searches via Serper API and retrieve rich results.
 
@@ -90,19 +91,25 @@ async def google_search(
     """
     # Check for API key
     if not SERPER_API_KEY:
-        return {
-            "success": False,
-            "error": "SERPER_API_KEY environment variable not set",
-            "results": [],
-        }
+        return json.dumps(
+            {
+                "success": False,
+                "error": "SERPER_API_KEY environment variable not set",
+                "results": [],
+            },
+            ensure_ascii=False,
+        )
 
     # Validate required parameter
     if not q or not q.strip():
-        return {
-            "success": False,
-            "error": "Search query 'q' is required and cannot be empty",
-            "results": [],
-        }
+        return json.dumps(
+            {
+                "success": False,
+                "error": "Search query 'q' is required and cannot be empty",
+                "results": [],
+            },
+            ensure_ascii=False,
+        )
 
     try:
         # Helper function to perform a single search
@@ -158,10 +165,6 @@ async def google_search(
             # Remove all types of quotes
             query_without_quotes = original_query.replace('"', "").strip()
             if query_without_quotes:  # Make sure we still have a valid query
-                logger.info(
-                    f"No results found for query with quotes: '{original_query}'. "
-                    f"Retrying with query without quotes: '{query_without_quotes}'"
-                )
                 organic_results, search_params = await perform_search(
                     query_without_quotes
                 )
@@ -173,14 +176,17 @@ async def google_search(
         }
         response_data = decode_http_urls_in_dict(response_data)
 
-        return response_data
+        return json.dumps(response_data, ensure_ascii=False)
 
     except Exception as e:
-        return {
-            "success": False,
-            "error": f"Unexpected error: {str(e)}",
-            "results": [],
-        }
+        return json.dumps(
+            {
+                "success": False,
+                "error": f"Unexpected error: {str(e)}",
+                "results": [],
+            },
+            ensure_ascii=False,
+        )
 
 
 if __name__ == "__main__":

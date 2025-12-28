@@ -3,34 +3,115 @@ from urllib.parse import unquote
 
 from markdown_it import MarkdownIt
 
-# Reserved character encodings to be protected -> temporary placeholders
-PROTECT = {
-    "%2F": "__SLASH__",
-    "%2f": "__SLASH__",
-    "%3F": "__QMARK__",
-    "%3f": "__QMARK__",
-    "%23": "__HASH__",
-    "%26": "__AMP__",
-    "%3D": "__EQUAL__",
-    "%20": "__SPACE__",
-    "%2B": "__PLUS__",
-    "%25": "__PERCENT__",
-}
+# RFC 3986 reserved characters percent-encoding (decoding these would alter URL semantics/structure)
+# gen-delims: : / ? # [ ] @
+# sub-delims: ! $ & ' ( ) * + , ; =
+RESERVED_PERCENT_ENCODINGS = frozenset(
+    {
+        "%2f",
+        "%2F",  # /  path separator
+        "%3f",
+        "%3F",  # ?  query string start
+        "%23",  # #  fragment start
+        "%26",  # &  query parameter separator
+        "%3d",
+        "%3D",  # =  key-value separator
+        "%40",  # @
+        "%3a",
+        "%3A",  # :
+        "%5b",
+        "%5B",  # [
+        "%5d",
+        "%5D",  # ]
+        "%21",  # !
+        "%24",  # $
+        "%27",  # '
+        "%28",  # (
+        "%29",  # )
+        "%2a",
+        "%2A",  # *
+        "%2b",
+        "%2B",  # +
+        "%2c",
+        "%2C",  # ,
+        "%3b",
+        "%3B",  # ;
+        "%25",  # %  percent sign itself (prevents double-encoding issues)
+        "%20",  # space (keep encoded to avoid URL semantic changes)
+    }
+)
 
-# Reverse mapping: placeholder -> original %xx (use uppercase for uniform output)
-RESTORE = {v: k.upper() for k, v in PROTECT.items()}
 
+def safe_unquote(url: str) -> str:
+    """
+    Safely decode URL-encoded strings, only decoding characters that won't alter URL semantics.
 
-def safe_unquote(s: str, encoding="utf-8", errors="ignore") -> str:
-    # 1. Replace with placeholders
-    for k, v in PROTECT.items():
-        s = s.replace(k, v)
-    # 2. Decode (only affects unprotected parts, e.g., Chinese characters)
-    s = unquote(s, encoding=encoding, errors=errors)
-    # 3. Replace placeholders back to original %xx
-    for v, k in RESTORE.items():
-        s = s.replace(v, k)
-    return s
+    Preserve the following encodings (because decoding would change URL structure/semantics):
+    - %2F (/) - path separator, decoding would alter path hierarchy
+    - %3F (?) - query string start marker
+    - %23 (#) - fragment start marker (not sent to server)
+    - %26 (&) - query parameter separator
+    - %3D (=) - key-value separator
+    - %25 (%) - percent sign itself (prevents double-encoding issues, e.g. %252F -> %2F -> /)
+    - %20 ( ) - space (keep encoded to avoid URL semantic changes)
+    - and other RFC 3986 reserved characters
+
+    Only decode unreserved characters and UTF-8 encoded international characters (e.g. Chinese).
+    """
+    if not url:
+        return url
+
+    result = []
+    i = 0
+    n = len(url)
+
+    while i < n:
+        # Check if this is a percent-encoded sequence %XX
+        if url[i] == "%" and i + 2 < n:
+            hex_chars = url[i + 1 : i + 3]
+            # Validate it's a valid hexadecimal
+            if all(c in "0123456789ABCDEFabcdef" for c in hex_chars):
+                percent_encoded = url[i : i + 3]
+
+                # Check if this is a reserved character encoding that should be preserved
+                if percent_encoded in RESERVED_PERCENT_ENCODINGS:
+                    # Keep the encoding, don't decode
+                    result.append(percent_encoded)
+                    i += 3
+                    continue
+
+                # Try to decode (may be a UTF-8 multi-byte sequence)
+                # Collect consecutive percent-encoded sequences
+                encoded_sequence = percent_encoded
+                j = i + 3
+                while j + 2 < n and url[j] == "%":
+                    next_hex = url[j + 1 : j + 3]
+                    if all(c in "0123456789ABCDEFabcdef" for c in next_hex):
+                        next_encoded = url[j : j + 3]
+                        # Stop collecting if we encounter a reserved character
+                        if next_encoded in RESERVED_PERCENT_ENCODINGS:
+                            break
+                        encoded_sequence += next_encoded
+                        j += 3
+                    else:
+                        break
+
+                # Decode the collected sequence
+                try:
+                    decoded = unquote(encoded_sequence)
+                    result.append(decoded)
+                    i = j
+                    continue
+                except Exception:
+                    # Decoding failed, keep the original encoding
+                    result.append(percent_encoded)
+                    i += 3
+                    continue
+
+        result.append(url[i])
+        i += 1
+
+    return "".join(result)
 
 
 def decode_http_urls_in_dict(data):
@@ -42,7 +123,7 @@ def decode_http_urls_in_dict(data):
     - Other types remain unchanged
     """
     if isinstance(data, str):
-        if "%" in data:
+        if "%" in data and "http" in data:
             return safe_unquote(data)
         else:
             return data
