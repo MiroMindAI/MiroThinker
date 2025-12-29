@@ -12,6 +12,7 @@ main_agent:
     - tool-python
   tool_blacklist:
     - [ "search_and_scrape_webpage", "sougou_search" ]
+    - [ "tool-python", "download_file_from_sandbox_to_local" ]
   max_turns: 600  # Maximum number of turns for main agent execution
 
 sub_agents:
