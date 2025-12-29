@@ -5,7 +5,7 @@ LLM_MODEL=${LLM_MODEL:-"MiroThinker-Models"}
 BASE_URL=${BASE_URL:-"https://your-api.com/v1"}
 
 # Configuration parameters
-NUM_RUNS=${NUM_RUNS:-8}
+NUM_RUNS=${NUM_RUNS:-3}
 BENCHMARK_NAME="deepsearchqa"
 LLM_PROVIDER=${LLM_PROVIDER:-"qwen"}
 AGENT_SET=${AGENT_SET:-"single_agent_keep5"}
