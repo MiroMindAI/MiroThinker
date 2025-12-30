@@ -378,13 +378,13 @@ class OpenAIClient(BaseClient):
         buffer_factor = 1.5
 
         # Calculate token count for summary prompt
-        summary_tokens = self._estimate_tokens(summary_prompt) * buffer_factor
+        summary_tokens = int(self._estimate_tokens(summary_prompt) * buffer_factor)
 
         # Calculate token count for the last user message in message_history
         last_user_tokens = 0
         if message_history[-1]["role"] == "user":
             content = message_history[-1]["content"]
-            last_user_tokens = self._estimate_tokens(content) * buffer_factor
+            last_user_tokens = int(self._estimate_tokens(content) * buffer_factor)
 
         # Calculate total token count: last prompt + completion + last user message + summary + reserved response space
         estimated_total = (
