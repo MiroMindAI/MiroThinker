@@ -325,6 +325,30 @@ def create_mcp_server_parameters(cfg: DictConfig, agent_cfg: DictConfig):
             }
         )
 
+    if (
+        agent_cfg.get("tools", None) is not None
+        and "task_planner" in agent_cfg["tools"]
+    ):
+        # Generate a random UUID for each MCP server instance to ensure isolation
+        # Each time create_mcp_server_parameters is called, a new UUID is generated
+        # This automatically isolates todo lists for concurrent tasks
+        import uuid
+
+        todo_task_id = str(uuid.uuid4())
+        configs.append(
+            {
+                "name": "task_planner",
+                "params": StdioServerParameters(
+                    command=sys.executable,
+                    args=[
+                        "-m",
+                        "miroflow_tools.dev_mcp_servers.task_planner",
+                    ],
+                    env={"TASK_ID": todo_task_id},
+                ),
+            }
+        )
+
     blacklist = set()
     for black_list_item in agent_cfg.get("tool_blacklist", []):
         blacklist.add((black_list_item[0], black_list_item[1]))
