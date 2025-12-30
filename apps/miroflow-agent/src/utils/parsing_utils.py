@@ -77,51 +77,23 @@ def safe_json_loads(arguments_str: str) -> dict:
     """
     Safely parse a JSON string with multiple fallbacks:
     1. Try standard json.loads()
-    2. If it fails, apply simple rule-based fixes (quotes, booleans, None)
-    3. If it still fails, try to fix backslash escape issues
-    4. If it still fails, try json_repair
-    5. If all attempts fail, return an error object
+    2. If it fails, try json_repair
+    3. If all attempts fail, return an error object
     """
     # Step 1: Try standard JSON parsing
     try:
         return json.loads(arguments_str)
     except json.JSONDecodeError:
-        logger.warning(f"Unable to parse JSON: {arguments_str}")
+        pass
 
-    # Step 2: Apply simple string replacements
-    try:
-        fixed = (
-            arguments_str.replace("'", '"')
-            .replace("None", "null")
-            .replace("True", "true")
-            .replace("False", "false")
-        )
-        return json.loads(fixed)
-    except json.JSONDecodeError:
-        logger.debug("Simple string replacements didn't fix the JSON")
-
-    # Step 3: Try to fix backslash escape issues
-    try:
-        fixed_escapes = _fix_backslash_escapes(arguments_str)
-        # Also apply simple fixes in case both are needed
-        fixed_escapes = (
-            fixed_escapes.replace("'", '"')
-            .replace("None", "null")
-            .replace("True", "true")
-            .replace("False", "false")
-        )
-        return json.loads(fixed_escapes)
-    except (json.JSONDecodeError, Exception) as e:
-        logger.debug(f"Backslash escape fixing didn't work: {e}")
-
-    # Step 4: Try json_repair to fix common issues
+    # Step 2: Try json_repair to fix common issues
     try:
         repaired = repair_json(arguments_str, ensure_ascii=False)
         return json.loads(repaired)
-    except Exception as e:
-        logger.info(f"json_repair also failed: {e}")
+    except Exception:
+        logger.warning(f"Unable to parse JSON: {arguments_str}")
 
-    # Step 5: Give up and return error information
+    # Step 3: Give up and return error information
     return {
         "error": "Failed to parse arguments",
         "raw": arguments_str,
