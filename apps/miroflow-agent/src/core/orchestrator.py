@@ -91,7 +91,7 @@ class Orchestrator:
 
         # Retry loop protection limits
         self.MAX_CONSECUTIVE_ROLLBACKS = 5
-        self.MAX_FINAL_ANSWER_RETRIES = 3
+        self.MAX_FINAL_ANSWER_RETRIES = 3 if cfg.agent.keep_tool_result == -1 else 1
 
     async def _stream_update(self, event_type: str, data: dict):
         """Send streaming update in new SSE protocol format"""

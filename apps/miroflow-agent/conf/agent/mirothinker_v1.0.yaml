@@ -1,4 +1,4 @@
-# conf/agent/single_agent_with_sougou.yaml
+# conf/agent/mirothinker_v1.0.yaml
 # The name of tools and sub-agents defined in: apps/miroflow-agent/src/config/settings.py
 # Each sub-agent prompt is written in: apps/miroflow-agent/src/utils/prompt_utils.py
 defaults:
@@ -11,6 +11,7 @@ main_agent:
     - jina_scrape_llm_summary
     - tool-python
   tool_blacklist:
+    - [ "search_and_scrape_webpage", "sougou_search" ]
     - [ "tool-python", "download_file_from_sandbox_to_local" ]
   max_turns: 600  # Maximum number of turns for main agent execution
 
