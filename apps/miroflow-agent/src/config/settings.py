@@ -131,8 +131,8 @@ def create_mcp_server_parameters(cfg: DictConfig, agent_cfg: DictConfig):
                     command=sys.executable,
                     args=["-m", "miroflow_tools.mcp_servers.vision_mcp_server"],
                     env={
-                        "ANTHROPIC_API_KEY": ANTHROPIC_API_KEY,
-                        "ANTHROPIC_BASE_URL": ANTHROPIC_BASE_URL,
+                        "OPENAI_API_KEY": OPENAI_API_KEY,
+                        "OPENAI_BASE_URL": OPENAI_BASE_URL,
                     },
                 ),
             }

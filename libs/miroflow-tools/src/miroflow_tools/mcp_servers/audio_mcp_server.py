@@ -68,6 +68,7 @@ def _get_audio_duration(audio_path: str) -> float:
     Get audio duration in seconds.
 
     Tries to use wave (for .wav), then falls back to mutagen (for mp3, etc).
+    Returns 0.0 if duration cannot be determined.
     """
     # Try using wave for .wav files
     try:
@@ -91,8 +92,11 @@ def _get_audio_duration(audio_path: str) -> float:
             duration = float(audio.info.length)
             if duration > 0:
                 return duration
-    except Exception as e:
-        return f"[ERROR]: Failed to get audio duration: {e}"
+    except Exception:
+        pass  # Failed to get duration
+
+    # Return 0.0 if all methods failed
+    return 0.0
 
 
 def _encode_audio_file(audio_path: str) -> tuple[str, str]:
@@ -133,9 +137,11 @@ async def audio_transcription(audio_path_or_url: str) -> str:
     retry = 0
     transcription = None
 
+    # Create client once outside the retry loop
+    client = OpenAI(api_key=OPENAI_API_KEY, base_url=OPENAI_BASE_URL)
+
     while retry < max_retries:
         try:
-            client = OpenAI(api_key=OPENAI_API_KEY, base_url=OPENAI_BASE_URL)
             if os.path.exists(audio_path_or_url):  # Check if the file exists locally
                 with open(audio_path_or_url, "rb") as audio_file:
                     transcription = client.audio.transcriptions.create(
@@ -170,7 +176,7 @@ async def audio_transcription(audio_path_or_url: str) -> str:
                 try:
                     with open(temp_audio_path, "rb") as audio_file:
                         transcription = client.audio.transcriptions.create(
-                            model="gpt-4o-mini-transcribe", file=audio_file
+                            model="gpt-4o-transcribe", file=audio_file
                         )
                 finally:
                     # Clean up the temp file
@@ -204,84 +210,106 @@ async def audio_question_answering(audio_path_or_url: str, question: str) -> str
     Returns:
         The answer to the question, and the duration of the audio file.
     """
-    try:
-        client = OpenAI(api_key=OPENAI_API_KEY)
+    max_retries = 3
+    retry = 0
 
-        text_prompt = f"""Answer the following question based on the given \
-        audio information:\n\n{question}"""
+    # Create client once outside the retry loop
+    client = OpenAI(api_key=OPENAI_API_KEY, base_url=OPENAI_BASE_URL)
 
-        if os.path.exists(audio_path_or_url):  # Check if the file exists locally
-            encoded_string, file_format = _encode_audio_file(audio_path_or_url)
-            duration = _get_audio_duration(audio_path_or_url)
-        elif "home/user" in audio_path_or_url:
-            return "The audio_question_answering tool cannot access to sandbox file, please use the local path provided by original instruction"
-        else:
-            # download the audio file from the URL
-            response = requests.get(
-                audio_path_or_url,
-                headers={
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-                },
-            )
-            response.raise_for_status()  # Raise an exception for bad status codes
+    # Initialize variables to avoid scope issues
+    encoded_string = None
+    file_format = None
+    duration = 0.0
 
-            # Basic content validation - check if response has content
-            if not response.content:
-                return "[ERROR]: Audio question answering failed: Downloaded file is empty.\nNote: Files from sandbox are not available. You should use local path given in the instruction. \nURLs must include the proper scheme (e.g., 'https://') and be publicly accessible. The file should be in a common audio format such as MP3.\nNote: YouTube video URL is not supported."
+    while retry < max_retries:
+        try:
+            text_prompt = f"""Answer the following question based on the given \
+            audio information:\n\n{question}"""
 
-            # Check content type if available
-            content_type = response.headers.get("content-type", "").lower()
+            if os.path.exists(audio_path_or_url):  # Check if the file exists locally
+                encoded_string, file_format = _encode_audio_file(audio_path_or_url)
+                duration = _get_audio_duration(audio_path_or_url)
+            elif "home/user" in audio_path_or_url:
+                return "[ERROR]: The audio_question_answering tool cannot access to sandbox file, please use the local path provided by original instruction"
+            else:
+                # download the audio file from the URL
+                response = requests.get(
+                    audio_path_or_url,
+                    headers={
+                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+                    },
+                )
+                response.raise_for_status()  # Raise an exception for bad status codes
 
-            # Get proper extension for the temporary file
-            file_extension = _get_audio_extension(audio_path_or_url, content_type)
+                # Basic content validation - check if response has content
+                if not response.content:
+                    return "[ERROR]: Audio question answering failed: Downloaded file is empty.\nNote: Files from sandbox are not available. You should use local path given in the instruction. \nURLs must include the proper scheme (e.g., 'https://') and be publicly accessible. The file should be in a common audio format such as MP3.\nNote: YouTube video URL is not supported."
 
-            # Use proper temporary file handling with correct extension
-            with tempfile.NamedTemporaryFile(
-                delete=False, suffix=file_extension
-            ) as temp_file:
-                temp_file.write(response.content)
-                temp_audio_path = temp_file.name
+                # Check content type if available
+                content_type = response.headers.get("content-type", "").lower()
 
-            try:
-                encoded_string, file_format = _encode_audio_file(temp_audio_path)
-                duration = _get_audio_duration(temp_audio_path)
-            finally:
-                # Clean up the temp file
-                if os.path.exists(temp_audio_path):
-                    os.remove(temp_audio_path)
+                # Get proper extension for the temporary file
+                file_extension = _get_audio_extension(audio_path_or_url, content_type)
 
-        if encoded_string is None or file_format is None:
-            return "[ERROR]: Audio question answering failed: Failed to encode audio file.\nNote: Files from sandbox are not available. You should use local path given in the instruction. \nURLs must include the proper scheme (e.g., 'https://') and be publicly accessible. The file should be in a common audio format such as MP3.\nNote: YouTube video URL is not supported."
+                # Use proper temporary file handling with correct extension
+                with tempfile.NamedTemporaryFile(
+                    delete=False, suffix=file_extension
+                ) as temp_file:
+                    temp_file.write(response.content)
+                    temp_audio_path = temp_file.name
 
-        response = client.chat.completions.create(
-            model="gpt-4o-audio-preview",
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are a helpful assistant specializing in audio analysis.",
-                },
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "text", "text": text_prompt},
-                        {
-                            "type": "input_audio",
-                            "input_audio": {
-                                "data": encoded_string,
-                                "format": file_format,
+                try:
+                    encoded_string, file_format = _encode_audio_file(temp_audio_path)
+                    duration = _get_audio_duration(temp_audio_path)
+                finally:
+                    # Clean up the temp file
+                    if os.path.exists(temp_audio_path):
+                        os.remove(temp_audio_path)
+
+            if encoded_string is None or file_format is None:
+                return "[ERROR]: Audio question answering failed: Failed to encode audio file.\nNote: Files from sandbox are not available. You should use local path given in the instruction. \nURLs must include the proper scheme (e.g., 'https://') and be publicly accessible. The file should be in a common audio format such as MP3.\nNote: YouTube video URL is not supported."
+
+            response = client.chat.completions.create(
+                model="gpt-4o-audio-preview",
+                messages=[
+                    {
+                        "role": "system",
+                        "content": "You are a helpful assistant specializing in audio analysis.",
+                    },
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": text_prompt},
+                            {
+                                "type": "input_audio",
+                                "input_audio": {
+                                    "data": encoded_string,
+                                    "format": file_format,
+                                },
                             },
-                        },
-                    ],
-                },
-            ],
-        )
-    except Exception as e:
-        return f"[ERROR]: Audio question answering failed when calling OpenAI API: {e}\nNote: Files from sandbox are not available. You should use local path given in the instruction. The file should be in a common audio format such as MP3, WAV, or M4A.\nNote: YouTube video URL is not supported."
+                        ],
+                    },
+                ],
+            )
 
-    response = response.choices[0].message.content
-    response += f"\n\nAudio duration: {duration} seconds"
+            # If we reach here, the API call was successful
+            break
 
-    return response
+        except requests.RequestException as e:
+            retry += 1
+            if retry >= max_retries:
+                return f"[ERROR]: Audio question answering failed: Failed to download audio file - {e}.\nNote: Files from sandbox are not available. You should use local path given in the instruction. \nURLs must include the proper scheme (e.g., 'https://') and be publicly accessible. The file should be in a common audio format such as MP3, WAV, or M4A.\nNote: YouTube video URL is not supported."
+            await asyncio.sleep(5 * (2**retry))
+        except Exception as e:
+            retry += 1
+            if retry >= max_retries:
+                return f"[ERROR]: Audio question answering failed when calling OpenAI API: {e}\nNote: Files from sandbox are not available. You should use local path given in the instruction. The file should be in a common audio format such as MP3, WAV, or M4A.\nNote: YouTube video URL is not supported."
+            await asyncio.sleep(5 * (2**retry))
+
+    response_text = response.choices[0].message.content
+    response_text += f"\n\nAudio duration: {duration} seconds"
+
+    return response_text
 
 
 if __name__ == "__main__":

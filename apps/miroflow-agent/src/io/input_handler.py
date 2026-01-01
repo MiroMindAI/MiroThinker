@@ -1,6 +1,7 @@
 # Copyright (c) 2025 MiroMind
 # This source code is licensed under the MIT License.
 
+import base64
 import html
 import json
 import os
@@ -21,19 +22,401 @@ import pptx
 import pydub
 import speech_recognition as sr
 from bs4 import BeautifulSoup
+from dotenv import load_dotenv
 from markitdown import MarkItDown
+from openai import OpenAI
 from openpyxl.utils import get_column_letter
 from youtube_transcript_api._api import YouTubeTranscriptApi
 from youtube_transcript_api.formatters import SRTFormatter
+
+# Ensure .env file is loaded
+load_dotenv()
+
+
+def _generate_image_caption(image_path: str) -> str:
+    """
+    Generate a caption for an image using OpenAI's GPT-4o vision model.
+
+    Args:
+        image_path: Path to the image file
+
+    Returns:
+        Caption string, or error message if failed
+    """
+    try:
+        OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+        OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1")
+
+        if not OPENAI_API_KEY:
+            return "[Caption unavailable: OPENAI_API_KEY not set]"
+
+        client = OpenAI(api_key=OPENAI_API_KEY, base_url=OPENAI_BASE_URL)
+
+        # Read and encode image
+        with open(image_path, "rb") as image_file:
+            image_data = base64.b64encode(image_file.read()).decode("utf-8")
+
+        # Guess MIME type
+        _, ext = os.path.splitext(image_path)
+        ext = ext.lower()
+        mime_type = {
+            ".jpg": "image/jpeg",
+            ".jpeg": "image/jpeg",
+            ".png": "image/png",
+            ".gif": "image/gif",
+            ".webp": "image/webp",
+        }.get(ext, "image/jpeg")
+
+        # Call OpenAI API
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "Please provide a detailed description of this image. Include key objects, people, text, colors, and any other relevant details.",
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:{mime_type};base64,{image_data}"
+                            },
+                        },
+                    ],
+                }
+            ],
+            max_tokens=2048,
+            temperature=0,
+        )
+
+        return response.choices[0].message.content
+
+    except Exception as e:
+        return f"[Caption generation failed: {str(e)}]"
+
+
+def _generate_audio_caption(audio_path: str) -> str:
+    """
+    Generate a caption for an audio file using OpenAI's audio transcription.
+
+    Args:
+        audio_path: Path to the audio file
+
+    Returns:
+        Caption string (transcription), or error message if failed
+    """
+    try:
+        OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+        OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1")
+
+        if not OPENAI_API_KEY:
+            return "[Caption unavailable: OPENAI_API_KEY not set]"
+
+        client = OpenAI(api_key=OPENAI_API_KEY, base_url=OPENAI_BASE_URL)
+
+        # Transcribe audio
+        with open(audio_path, "rb") as audio_file:
+            transcription = client.audio.transcriptions.create(
+                model="gpt-4o-transcribe", file=audio_file
+            )
+
+        return transcription.text
+
+    except Exception as e:
+        return f"[Caption generation failed: {str(e)}]"
+
+
+def _generate_video_caption(video_path: str) -> str:
+    """
+    Generate a caption for a video using OpenAI's GPT-4o vision model.
+
+    Args:
+        video_path: Path to the video file
+
+    Returns:
+        Caption string, or error message if failed
+    """
+    try:
+        OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+        OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1")
+
+        if not OPENAI_API_KEY:
+            return "[Caption unavailable: OPENAI_API_KEY not set]"
+
+        client = OpenAI(api_key=OPENAI_API_KEY, base_url=OPENAI_BASE_URL)
+
+        # Read and encode video
+        with open(video_path, "rb") as video_file:
+            video_data = base64.b64encode(video_file.read()).decode("utf-8")
+
+        # Guess MIME type
+        _, ext = os.path.splitext(video_path)
+        ext = ext.lower()
+        mime_type = {
+            ".mp4": "video/mp4",
+            ".mov": "video/quicktime",
+            ".avi": "video/x-msvideo",
+            ".mkv": "video/x-matroska",
+            ".webm": "video/webm",
+        }.get(ext, "video/mp4")
+
+        # Call OpenAI API
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "Please provide a detailed description of this video. Include key events, people, objects, actions, audio information, and any text visible in the video.",
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:{mime_type};base64,{video_data}"
+                            },
+                        },
+                    ],
+                }
+            ],
+            max_tokens=2048,
+            temperature=0,
+        )
+
+        return response.choices[0].message.content
+
+    except Exception as e:
+        return f"[Caption generation failed: {str(e)}]"
+
+
+def _extract_task_relevant_info_from_image(
+    image_path: str, task_description: str
+) -> str:
+    """
+    Extract task-relevant information directly from an image based on the task description.
+
+    Args:
+        image_path: Path to the image file
+        task_description: The user's task description
+
+    Returns:
+        Extracted relevant information, or empty string if extraction fails
+    """
+    try:
+        OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+        OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1")
+
+        if not OPENAI_API_KEY:
+            return ""
+
+        client = OpenAI(api_key=OPENAI_API_KEY, base_url=OPENAI_BASE_URL)
+
+        # Read and encode image
+        with open(image_path, "rb") as image_file:
+            image_data = base64.b64encode(image_file.read()).decode("utf-8")
+
+        # Guess MIME type
+        _, ext = os.path.splitext(image_path)
+        ext = ext.lower()
+        mime_type = {
+            ".jpg": "image/jpeg",
+            ".jpeg": "image/jpeg",
+            ".png": "image/png",
+            ".gif": "image/gif",
+            ".webp": "image/webp",
+        }.get(ext, "image/jpeg")
+
+        # Call OpenAI API with task-specific prompt
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": f"""Based on the following task, analyze this image and extract only the information that is directly relevant to completing the task.
+
+Task: {task_description}
+
+Please provide a concise summary of the relevant information from the image that would help in completing this task. Focus only on what's pertinent to the task. If nothing is particularly relevant, state "No specific task-relevant details identified in the image." Keep the response brief and focused.""",
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:{mime_type};base64,{image_data}"
+                            },
+                        },
+                    ],
+                }
+            ],
+            max_tokens=1024,
+            temperature=0,
+        )
+
+        return response.choices[0].message.content.strip()
+
+    except Exception as e:
+        print(f"Warning: Failed to extract task-relevant info from image: {str(e)}")
+        return ""
+
+
+def _extract_task_relevant_info_from_audio(
+    audio_path: str, task_description: str
+) -> str:
+    """
+    Extract task-relevant information directly from an audio file based on the task description.
+
+    Args:
+        audio_path: Path to the audio file
+        task_description: The user's task description
+
+    Returns:
+        Extracted relevant information, or empty string if extraction fails
+    """
+    try:
+        OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+        OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1")
+
+        if not OPENAI_API_KEY:
+            return ""
+
+        client = OpenAI(api_key=OPENAI_API_KEY, base_url=OPENAI_BASE_URL)
+
+        # Read and encode audio file
+        with open(audio_path, "rb") as audio_file:
+            audio_data = base64.b64encode(audio_file.read()).decode("utf-8")
+
+        # Detect audio format
+        _, ext = os.path.splitext(audio_path)
+        ext = ext.lower()
+        audio_format = {
+            ".mp3": "mp3",
+            ".wav": "wav",
+            ".m4a": "m4a",
+        }.get(ext, "mp3")
+
+        # Use gpt-4o-audio-preview for direct audio question answering
+        text_prompt = f"""Based on the following task, analyze this audio and extract only the information that is directly relevant to completing the task.
+
+Task: {task_description}
+
+Please provide a concise summary of the relevant information from the audio that would help in completing this task. Focus only on what's pertinent to the task. If nothing is particularly relevant, state "No specific task-relevant details identified in the audio." Keep the response brief and focused."""
+
+        response = client.chat.completions.create(
+            model="gpt-4o-audio-preview",
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are a helpful assistant specializing in audio analysis.",
+                },
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": text_prompt},
+                        {
+                            "type": "input_audio",
+                            "input_audio": {
+                                "data": audio_data,
+                                "format": audio_format,
+                            },
+                        },
+                    ],
+                },
+            ],
+            max_tokens=1024,
+            temperature=0,
+        )
+
+        return response.choices[0].message.content.strip()
+
+    except Exception as e:
+        print(f"Warning: Failed to extract task-relevant info from audio: {str(e)}")
+        return ""
+
+
+def _extract_task_relevant_info_from_video(
+    video_path: str, task_description: str
+) -> str:
+    """
+    Extract task-relevant information directly from a video based on the task description.
+
+    Args:
+        video_path: Path to the video file
+        task_description: The user's task description
+
+    Returns:
+        Extracted relevant information, or empty string if extraction fails
+    """
+    try:
+        OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
+        OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1")
+
+        if not OPENAI_API_KEY:
+            return ""
+
+        client = OpenAI(api_key=OPENAI_API_KEY, base_url=OPENAI_BASE_URL)
+
+        # Read and encode video
+        with open(video_path, "rb") as video_file:
+            video_data = base64.b64encode(video_file.read()).decode("utf-8")
+
+        # Guess MIME type
+        _, ext = os.path.splitext(video_path)
+        ext = ext.lower()
+        mime_type = {
+            ".mp4": "video/mp4",
+            ".mov": "video/quicktime",
+            ".avi": "video/x-msvideo",
+            ".mkv": "video/x-matroska",
+            ".webm": "video/webm",
+        }.get(ext, "video/mp4")
+
+        # Call OpenAI API with task-specific prompt
+        response = client.chat.completions.create(
+            model="gpt-4o",
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": f"""Based on the following task, analyze this video and extract only the information that is directly relevant to completing the task.
+
+Task: {task_description}
+
+Please provide a concise summary of the relevant information from the video that would help in completing this task. Focus only on what's pertinent to the task. If nothing is particularly relevant, state "No specific task-relevant details identified in the video." Keep the response brief and focused.""",
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:{mime_type};base64,{video_data}"
+                            },
+                        },
+                    ],
+                }
+            ],
+            max_tokens=1024,
+            temperature=0,
+        )
+
+        return response.choices[0].message.content.strip()
+
+    except Exception as e:
+        print(f"Warning: Failed to extract task-relevant info from video: {str(e)}")
+        return ""
 
 
 def process_input(task_description, task_file_name):
     """
     Process user input, especially files.
-    Returns formatted initial user message content list and updated task description.
+    Returns formatted initial user message content and updated task description.
     """
-    initial_user_content = ""
     updated_task_description = task_description
+    file_content_section = ""  # Collect file content to append at the end
 
     if task_file_name:
         try:
@@ -41,113 +424,213 @@ def process_input(task_description, task_file_name):
             parsing_result = None
 
             if file_extension in ["jpg", "jpeg", "png", "gif", "webp"]:
-                updated_task_description += f"\nNote: An Image file '{task_file_name}' is associated with this task. You may use available tools to read its content if necessary.\n\n"
+                # Generate unconditional image caption
+                caption = _generate_image_caption(task_file_name)
 
-            elif file_extension == "txt":
-                with open(task_file_name, "r") as f:
-                    initial_user_content += f.read()
-                updated_task_description += f"\nNote: An Excel file '{task_file_name}' is associated with this task. You may use available tools to read its content if necessary.\n\n"
+                # Extract task-relevant information directly from the image
+                relevant_info = _extract_task_relevant_info_from_image(
+                    task_file_name, task_description
+                )
+
+                # Format as Markdown
+                file_content_section += f"\n\nNote: An image file '{task_file_name}' is associated with this task. The content has been extracted as a detailed caption below. You may use available tools to process its content if necessary. If you need to further process this file in the sandbox, please upload it to the sandbox first.\n\n"
+                file_content_section += f"## Image Content\nFile: {task_file_name}\n\n"
+                file_content_section += f"> {caption}\n\n"
+
+                if relevant_info:
+                    file_content_section += "Task-Relevant Information:\n\n"
+                    file_content_section += f"{relevant_info}\n\n"
+
+            elif file_extension == "py":
+                # Python files - read directly
+                with open(task_file_name, "r", encoding="utf-8") as f:
+                    parsing_result = DocumentConverterResult(
+                        title=None, text_content=f.read()
+                    )
+                file_content_section += f"\n\nNote: A Python file '{task_file_name}' is associated with this task. The content has been extracted as text below. You may use available tools to process its content if necessary. If you need to further process this file in the sandbox, please upload it to the sandbox first.\n\n"
+                file_content_section += f"## Python File\nFile: {task_file_name}\n\n"
+
+            elif file_extension in ["txt", "md", "sh", "yaml", "yml", "toml", "csv"]:
+                # Text-based files - read directly
+                with open(task_file_name, "r", encoding="utf-8") as f:
+                    parsing_result = DocumentConverterResult(
+                        title=None, text_content=f.read()
+                    )
+                file_type_name = {
+                    "txt": "Text",
+                    "md": "Markdown",
+                    "sh": "Shell Script",
+                    "yaml": "YAML",
+                    "yml": "YAML",
+                    "toml": "TOML",
+                    "csv": "CSV",
+                }.get(file_extension, "Text")
+                file_content_section += f"\n\nNote: A {file_type_name.lower()} file '{task_file_name}' is associated with this task. The content has been extracted as text below. You may use available tools to process its content if necessary. If you need to further process this file in the sandbox, please upload it to the sandbox first.\n\n"
+                file_content_section += (
+                    f"## {file_type_name} File\nFile: {task_file_name}\n\n"
+                )
 
             elif file_extension in ["jsonld", "json"]:
-                with open(task_file_name, "r") as f:
-                    initial_user_content += json.dumps(json.load(f), ensure_ascii=False)
-                updated_task_description += f"\nNote: An Json file '{task_file_name}' is associated with this task. You may use available tools to read its content if necessary.\n\n"
+                with open(task_file_name, "r", encoding="utf-8") as f:
+                    parsing_result = DocumentConverterResult(
+                        title=None,
+                        text_content=json.dumps(
+                            json.load(f), ensure_ascii=False, indent=2
+                        ),
+                    )
+                file_content_section += f"\n\nNote: A JSON file '{task_file_name}' is associated with this task. The content has been extracted as JSON format below. You may use available tools to process its content if necessary. If you need to further process this file in the sandbox, please upload it to the sandbox first.\n\n"
+                file_content_section += f"## JSON File\nFile: {task_file_name}\n\n"
 
             elif file_extension in ["xlsx", "xls"]:
                 parsing_result = XlsxConverter(local_path=task_file_name)
-                # Add note for Excel files to inform LLM that tools can be used to read
-                updated_task_description += f"\nNote: An Excel file '{task_file_name}' is associated with this task. You may use available tools to read its content if necessary.\n\n"
+                file_content_section += f"\n\nNote: An Excel file '{task_file_name}' is associated with this task. The content has been extracted as a markdown table below. You may use available tools to process its content if necessary. If you need to further process this file in the sandbox, please upload it to the sandbox first.\n\n"
+                file_content_section += f"## Excel File\nFile: {task_file_name}\n\n"
 
             elif file_extension == "pdf":
                 parsing_result = DocumentConverterResult(
                     title=None,
                     text_content=pdfminer.high_level.extract_text(task_file_name),
                 )
-                updated_task_description += f"\nNote: A PDF file '{task_file_name}' is associated with this task. You may use available tools to read its content if necessary.\n\n"
+                file_content_section += f"\n\nNote: A PDF file '{task_file_name}' is associated with this task. The content has been extracted as text below. You may use available tools to process its content if necessary. If you need to further process this file in the sandbox, please upload it to the sandbox first.\n\n"
+                file_content_section += f"## PDF File\nFile: {task_file_name}\n\n"
 
             elif file_extension in ["docx", "doc"]:
                 parsing_result = DocxConverter(local_path=task_file_name)
-                updated_task_description += f"\nNote: A Document file '{task_file_name}' is associated with this task. You may use available tools to read its content if necessary.\n\n"
+                file_content_section += f"\n\nNote: A Word document '{task_file_name}' is associated with this task. The content has been extracted as markdown below. You may use available tools to process its content if necessary. If you need to further process this file in the sandbox, please upload it to the sandbox first.\n\n"
+                file_content_section += f"## Word Document\nFile: {task_file_name}\n\n"
 
             elif file_extension in ["html", "htm"]:
                 parsing_result = HtmlConverter(local_path=task_file_name)
-                updated_task_description += f"\nNote: An HTML file '{task_file_name}' is associated with this task. You may use available tools to read its content if necessary.\n\n"
+                file_content_section += f"\n\nNote: An HTML file '{task_file_name}' is associated with this task. The content has been extracted as markdown below. You may use available tools to process its content if necessary. If you need to further process this file in the sandbox, please upload it to the sandbox first.\n\n"
+                file_content_section += f"## HTML File\nFile: {task_file_name}\n\n"
 
             elif file_extension in ["pptx", "ppt"]:
                 parsing_result = PptxConverter(local_path=task_file_name)
-                updated_task_description += f"\nNote: A PPT file '{task_file_name}' is associated with this task. You may use available tools to read its content if necessary.\n\n"
+                file_content_section += f"\n\nNote: A PowerPoint presentation '{task_file_name}' is associated with this task. The content has been extracted as markdown below. You may use available tools to process its content if necessary. If you need to further process this file in the sandbox, please upload it to the sandbox first.\n\n"
+                file_content_section += (
+                    f"## PowerPoint Presentation\nFile: {task_file_name}\n\n"
+                )
 
-            elif file_extension in ["wav"]:
-                updated_task_description += f"\nNote: An audio file '{task_file_name}' is associated with this task. You may use available tools to read its content if necessary.\n\n"
+            elif file_extension in ["wav", "mp3", "m4a"]:
+                # Generate unconditional audio transcription
+                caption = _generate_audio_caption(task_file_name)
 
-            elif file_extension in ["mp3", "m4a"]:
-                updated_task_description += f"\nNote: An audio file '{task_file_name}' is associated with this task. You may use available tools to read its content if necessary.\n\n"
+                # Extract task-relevant information directly from the audio
+                relevant_info = _extract_task_relevant_info_from_audio(
+                    task_file_name, task_description
+                )
+
+                # Format as Markdown
+                file_content_section += f"\n\nNote: An audio file '{task_file_name}' is associated with this task. The content has been extracted as a transcription below. You may use available tools to process its content if necessary. If you need to further process this file in the sandbox, please upload it to the sandbox first.\n\n"
+                file_content_section += f"## Audio Content\nFile: {task_file_name}\n\n"
+                file_content_section += f"> {caption}\n\n"
+
+                if relevant_info:
+                    file_content_section += "Task-Relevant Information:\n\n"
+                    file_content_section += f"{relevant_info}\n\n"
+
+            elif file_extension in ["mp4", "mov", "avi", "mkv", "webm"]:
+                # Generate unconditional video caption
+                caption = _generate_video_caption(task_file_name)
+
+                # Extract task-relevant information directly from the video
+                relevant_info = _extract_task_relevant_info_from_video(
+                    task_file_name, task_description
+                )
+
+                # Format as Markdown
+                file_content_section += f"\n\nNote: A video file '{task_file_name}' is associated with this task. The content has been extracted as a detailed caption below. You may use available tools to process its content if necessary. If you need to further process this file in the sandbox, please upload it to the sandbox first.\n\n"
+                file_content_section += f"## Video Content\nFile: {task_file_name}\n\n"
+                file_content_section += f"> {caption}\n\n"
+
+                if relevant_info:
+                    file_content_section += "Task-Relevant Information:\n\n"
+                    file_content_section += f"{relevant_info}\n\n"
 
             elif file_extension in ["zip"]:
                 parsing_result = ZipConverter(local_path=task_file_name)
-                updated_task_description += f"\nNote: Several files zipped in '{task_file_name}' are associated with this task. You may use available tools to read its content if necessary.\n\n"
+                file_content_section += f"\n\nNote: A ZIP archive '{task_file_name}' is associated with this task. The content has been extracted as file list and contents below. You may use available tools to process its content if necessary. If you need to further process this file in the sandbox, please upload it to the sandbox first.\n\n"
+                file_content_section += f"## ZIP Archive\nFile: {task_file_name}\n\n"
+
+            elif file_extension == "pdb":
+                # PDB files (protein database) - only add note
+                file_content_section += f"\n\nNote: A PDB file '{task_file_name}' is associated with this task. You may use available tools to read its content if necessary. If you need to further process this file in the sandbox, please upload it to the sandbox first.\n\n"
 
             else:
-                # For other file types, consider adding general prompts or specific processing
-                updated_task_description += f"\nNote: A file '{task_file_name}' is associated with this task. You may use available tools to read its content if necessary.\n\n"
+                # For other file types, let MarkItDown try to handle it
+                pass  # MarkItDown will be tried below
 
-            #### markitdown process ####
-            try:
-                if file_extension not in [
-                    "jpg",
-                    "jpeg",
-                    "png",
-                    "gif",
-                    "webp",
-                    "wav",
-                    "mp3",
-                    "pdb",
-                ]:
-                    from markitdown import MarkItDown
-
-                    md = MarkItDown(enable_plugins=True)
-                    parsing_result = md.convert(task_file_name)
-                    print(f"Info: Used MarkItDown to process file {task_file_name}")
-            except Exception:
-                pass
+            #### markitdown process - ONLY if no specialized converter handled it ####
+            if parsing_result is None:
+                try:
+                    if file_extension not in [
+                        "jpg",
+                        "jpeg",
+                        "png",
+                        "gif",
+                        "webp",
+                        "wav",
+                        "mp3",
+                        "m4a",
+                        "mp4",
+                        "mov",
+                        "avi",
+                        "mkv",
+                        "webm",
+                        "pdb",
+                    ]:
+                        md = MarkItDown(enable_plugins=True)
+                        parsing_result = md.convert(task_file_name)
+                        print(
+                            f"Info: Used MarkItDown as fallback to process file {task_file_name}"
+                        )
+                        # Add prompt for files processed by MarkItDown
+                        file_content_section += f"\n\nNote: A file '{task_file_name}' is associated with this task. The content has been extracted as markdown below. You may use available tools to process its content if necessary. If you need to further process this file in the sandbox, please upload it to the sandbox first.\n\n"
+                        file_content_section += (
+                            f"## File Content\nFile: {task_file_name}\n\n"
+                        )
+                except Exception as e:
+                    print(
+                        f"Warning: MarkItDown failed to process {task_file_name}: {e}"
+                    )
+                    pass
             ############################
 
-            # add the content and title (if has) into the task description
+            # Collect the content and title (if has) to append later
             if getattr(parsing_result, "title", None):
-                updated_task_description += (
-                    "<file>Title:\n{}\n\nContent:\n{}</file>".format(
-                        parsing_result.title, parsing_result.text_content
-                    )
+                file_content_section += "Title:\n\n{}\n\n".format(parsing_result.title)
+                file_content_section += "Content:\n\n```\n{}\n```\n".format(
+                    parsing_result.text_content
                 )
             elif getattr(parsing_result, "text_content", None):
                 content = parsing_result.text_content
                 max_len = 200_000  # Limit the length of results returned to LLM
                 if len(content) > max_len:
                     content = content[:max_len] + "\n... [File truncated]"
-                updated_task_description += "<file>{}</file>".format(content)
+                file_content_section += "```\n{}\n```\n".format(content)
             else:
-                pass  # for image file
+                pass  # for image, audio, video files that already have their content formatted
 
         except FileNotFoundError:
-            raise (f"Error: File not found {task_file_name}")
-            updated_task_description += (
+            print(f"Error: File not found {task_file_name}")
+            file_content_section += (
                 f"\nWarning: The specified file '{task_file_name}' was not found."
             )
         except Exception as e:
-            raise (f"Error: Error processing file {task_file_name}: {e}")
-            updated_task_description += (
-                f"\nWarning: There was an error processing the file '{task_file_name}'."
-            )
+            print(f"Error: Error processing file {task_file_name}: {e}")
+            import traceback
+
+            traceback.print_exc()
+            file_content_section += f"\nWarning: There was an error processing the file '{task_file_name}': {str(e)}"
 
     # output format requirement
-    use_cn_prompt = os.getenv("USE_CN_PROMPT", "0")
-    if use_cn_prompt == "1":
-        updated_task_description += "\n请通过任务分解和MCP工具调用来解决给定的问题。**你必须严格遵循请求中的格式要求，并将最终答案包裹在 \\boxed{} 中。**"
-    else:
-        updated_task_description += "\nYou should follow the format instruction in the request strictly and wrap the final answer in \\boxed{}."
-    initial_user_content += updated_task_description
+    updated_task_description += "\nYou should follow the format instruction in the request strictly and wrap the final answer in \\boxed{}."
 
-    return initial_user_content, updated_task_description
+    # Append file content at the end
+    updated_task_description += file_content_section
+    updated_task_description = updated_task_description.strip()
+
+    return updated_task_description, updated_task_description
 
 
 class _CustomMarkdownify(markdownify.MarkdownConverter):
@@ -931,11 +1414,147 @@ def Mp3Converter(local_path: str, extension: str, **kwargs):
 
 def ZipConverter(local_path: str, **kwargs):
     """
-    Extracts ZIP files to a permanent local directory and returns a listing of extracted files.
+    Extracts ZIP files to a temporary directory and processes each file according to its extension.
+    Returns a combined result of all processed files.
     """
-    md = MarkItDown(enable_plugins=False)
-    md_content = md.convert(local_path).text_content
+    import zipfile
+
+    temp_dir = tempfile.mkdtemp(prefix="zip_extract_")
+    md_content = f"# Extracted from ZIP: {os.path.basename(local_path)}\n\n"
+
+    try:
+        with zipfile.ZipFile(local_path, "r") as zip_ref:
+            zip_ref.extractall(temp_dir)
+
+        # Get all extracted files
+        extracted_files = []
+        for root, dirs, files in os.walk(temp_dir):
+            for file in files:
+                file_path = os.path.join(root, file)
+                rel_path = os.path.relpath(file_path, temp_dir)
+                extracted_files.append((file_path, rel_path))
+
+        if not extracted_files:
+            md_content += "The ZIP file is empty or contains no files.\n"
+        else:
+            md_content += f"Total files extracted: {len(extracted_files)}\n\n"
+
+            for file_path, rel_path in extracted_files:
+                md_content += f"## File: {rel_path}\n\n"
+
+                # Process each file based on its extension
+                file_extension = (
+                    file_path.rsplit(".", maxsplit=1)[-1].lower()
+                    if "." in file_path
+                    else ""
+                )
+                file_result = None
+
+                try:
+                    # Use the same processing logic as process_input
+                    if file_extension == "py":
+                        with open(file_path, "r", encoding="utf-8") as f:
+                            file_result = DocumentConverterResult(
+                                title=None, text_content=f.read()
+                            )
+
+                    elif file_extension in [
+                        "txt",
+                        "md",
+                        "sh",
+                        "yaml",
+                        "yml",
+                        "toml",
+                        "csv",
+                    ]:
+                        with open(file_path, "r", encoding="utf-8") as f:
+                            file_result = DocumentConverterResult(
+                                title=None, text_content=f.read()
+                            )
+
+                    elif file_extension in ["jsonld", "json"]:
+                        with open(file_path, "r", encoding="utf-8") as f:
+                            file_result = DocumentConverterResult(
+                                title=None,
+                                text_content=json.dumps(
+                                    json.load(f), ensure_ascii=False, indent=2
+                                ),
+                            )
+
+                    elif file_extension in ["xlsx", "xls"]:
+                        file_result = XlsxConverter(local_path=file_path)
+
+                    elif file_extension == "pdf":
+                        file_result = DocumentConverterResult(
+                            title=None,
+                            text_content=pdfminer.high_level.extract_text(file_path),
+                        )
+
+                    elif file_extension in ["docx", "doc"]:
+                        file_result = DocxConverter(local_path=file_path)
+
+                    elif file_extension in ["html", "htm"]:
+                        file_result = HtmlConverter(local_path=file_path)
+
+                    elif file_extension in ["pptx", "ppt"]:
+                        file_result = PptxConverter(local_path=file_path)
+
+                    elif file_extension in ["jpg", "jpeg", "png", "gif", "webp"]:
+                        # Generate image caption for files in ZIP
+                        caption = _generate_image_caption(file_path)
+                        md_content += "[Image file]\n\n"
+                        md_content += f"> {caption}\n\n"
+                        continue
+
+                    elif file_extension in ["wav", "mp3", "m4a"]:
+                        # Generate audio caption for files in ZIP
+                        caption = _generate_audio_caption(file_path)
+                        md_content += "[Audio file]\n\n"
+                        md_content += f"> {caption}\n\n"
+                        continue
+
+                    elif file_extension in ["mp4", "mov", "avi", "mkv", "webm"]:
+                        # Generate video caption for files in ZIP
+                        caption = _generate_video_caption(file_path)
+                        md_content += "[Video file]\n\n"
+                        md_content += f"> {caption}\n\n"
+                        continue
+
+                    elif file_extension == "pdb":
+                        md_content += "[PDB file - specialized format]\n\n"
+                        continue
+
+                    else:
+                        # Try MarkItDown as fallback
+                        try:
+                            md_tool = MarkItDown(enable_plugins=True)
+                            file_result = md_tool.convert(file_path)
+                        except Exception:
+                            md_content += (
+                                f"[Unsupported file type: {file_extension}]\n\n"
+                            )
+                            continue
+
+                    # Add the processed content
+                    if file_result and getattr(file_result, "text_content", None):
+                        content = file_result.text_content
+                        # Limit length for each file
+                        max_len = 50_000
+                        if len(content) > max_len:
+                            content = content[:max_len] + "\n... [Content truncated]"
+                        md_content += f"```\n{content}\n```\n\n"
+
+                except Exception as e:
+                    md_content += f"[Error processing file: {str(e)}]\n\n"
+                    print(f"Warning: Error processing {rel_path} from ZIP: {e}")
+
+    finally:
+        # Clean up temporary directory
+        try:
+            shutil.rmtree(temp_dir)
+        except Exception as e:
+            print(f"Warning: Could not remove temporary directory {temp_dir}: {e}")
 
     return DocumentConverterResult(
-        title="Extracted Files", text_content=md_content.strip()
+        title="ZIP Archive Contents", text_content=md_content.strip()
     )
