@@ -43,6 +43,9 @@ async def scrape_and_extract_info(
             - url (str): The original URL
             - extracted_info (str): The extracted information
             - error (str): Error message if the operation failed
+            - scrape_stats (Dict): Statistics about the scraped content
+            - model_used (str): The model used for summarization
+            - tokens_used (int): Number of tokens used (if available)
     """
     if _is_huggingface_dataset_or_space_url(url):
         return json.dumps(
@@ -51,6 +54,8 @@ async def scrape_and_extract_info(
                 "url": url,
                 "extracted_info": "",
                 "error": "You are trying to scrape a Hugging Face dataset for answers, please do not use the scrape tool for this purpose.",
+                "scrape_stats": {},
+                "tokens_used": 0,
             },
             ensure_ascii=False,
         )
@@ -75,6 +80,8 @@ async def scrape_and_extract_info(
                     "url": url,
                     "extracted_info": "",
                     "error": f"Scraping failed (both Jina and Python): {scrape_result['error']}",
+                    "scrape_stats": {},
+                    "tokens_used": 0,
                 },
                 ensure_ascii=False,
             )
@@ -99,6 +106,14 @@ async def scrape_and_extract_info(
             "url": url,
             "extracted_info": extracted_result["extracted_info"],
             "error": extracted_result["error"],
+            "scrape_stats": {
+                "line_count": scrape_result["line_count"],
+                "char_count": scrape_result["char_count"],
+                "last_char_line": scrape_result["last_char_line"],
+                "all_content_displayed": scrape_result["all_content_displayed"],
+            },
+            "model_used": extracted_result["model_used"],
+            "tokens_used": extracted_result["tokens_used"],
         },
         ensure_ascii=False,
     )
@@ -131,8 +146,12 @@ async def scrape_url_with_jina(
         Dict[str, Any]: A dictionary containing:
             - success (bool): Whether the operation was successful
             - filename (str): Absolute path to the temporary file containing the scraped content
-            - content (str): The scraped content (truncated to max_chars if necessary)
+            - content (str): The scraped content of the first 40k characters
             - error (str): Error message if the operation failed
+            - line_count (int): Number of lines in the scraped content
+            - char_count (int): Number of characters in the scraped content
+            - last_char_line (int): Line number where the last displayed character is located
+            - all_content_displayed (bool): Signal indicating if all content was displayed (True if content <= 40k chars)
     """
 
     # Validate input
@@ -142,6 +161,10 @@ async def scrape_url_with_jina(
             "filename": "",
             "content": "",
             "error": "URL cannot be empty",
+            "line_count": 0,
+            "char_count": 0,
+            "last_char_line": 0,
+            "all_content_displayed": False,
         }
 
     # Get API key from environment
@@ -151,6 +174,10 @@ async def scrape_url_with_jina(
             "filename": "",
             "content": "",
             "error": "JINA_API_KEY environment variable is not set",
+            "line_count": 0,
+            "char_count": 0,
+            "last_char_line": 0,
+            "all_content_displayed": False,
         }
 
     # Avoid duplicate Jina URL prefix
@@ -274,6 +301,10 @@ async def scrape_url_with_jina(
             "filename": "",
             "content": "",
             "error": error_msg,
+            "line_count": 0,
+            "char_count": 0,
+            "last_char_line": 0,
+            "all_content_displayed": False,
         }
 
     # Get the scraped content
@@ -285,6 +316,10 @@ async def scrape_url_with_jina(
             "filename": "",
             "content": "",
             "error": "No content returned from Jina.ai API",
+            "line_count": 0,
+            "char_count": 0,
+            "last_char_line": 0,
+            "all_content_displayed": False,
         }
 
     # handle insufficient balance error
@@ -301,15 +336,35 @@ async def scrape_url_with_jina(
             "filename": "",
             "content": "",
             "error": "Insufficient balance",
+            "line_count": 0,
+            "char_count": 0,
+            "last_char_line": 0,
+            "all_content_displayed": False,
         }
+
+    # Get content statistics
+    total_char_count = len(content)
+    total_line_count = content.count("\n") + 1 if content else 0
 
     # Extract first max_chars characters
     displayed_content = content[:max_chars]
+    all_content_displayed = total_char_count <= max_chars
+
+    # Calculate the line number of the last character displayed
+    if displayed_content:
+        # Count newlines up to the last displayed character
+        last_char_line = displayed_content.count("\n") + 1
+    else:
+        last_char_line = 0
 
     return {
         "success": True,
         "content": displayed_content,
         "error": "",
+        "line_count": total_line_count,
+        "char_count": total_char_count,
+        "last_char_line": last_char_line,
+        "all_content_displayed": all_content_displayed,
     }
 
 
@@ -327,8 +382,12 @@ async def scrape_url_with_python(
     Returns:
         Dict[str, Any]: A dictionary containing:
             - success (bool): Whether the operation was successful
-            - content (str): The scraped content (truncated to max_chars if necessary)
+            - content (str): The scraped content
             - error (str): Error message if the operation failed
+            - line_count (int): Number of lines in the scraped content
+            - char_count (int): Number of characters in the scraped content
+            - last_char_line (int): Line number where the last displayed character is located
+            - all_content_displayed (bool): Signal indicating if all content was displayed
     """
     # Validate input
     if not url or not url.strip():
@@ -336,6 +395,10 @@ async def scrape_url_with_python(
             "success": False,
             "content": "",
             "error": "URL cannot be empty",
+            "line_count": 0,
+            "char_count": 0,
+            "last_char_line": 0,
+            "all_content_displayed": False,
         }
 
     try:
@@ -448,6 +511,10 @@ async def scrape_url_with_python(
             "success": False,
             "content": "",
             "error": error_msg,
+            "line_count": 0,
+            "char_count": 0,
+            "last_char_line": 0,
+            "all_content_displayed": False,
         }
 
     # Get the scraped content
@@ -458,15 +525,34 @@ async def scrape_url_with_python(
             "success": False,
             "content": "",
             "error": "No content returned from URL",
+            "line_count": 0,
+            "char_count": 0,
+            "last_char_line": 0,
+            "all_content_displayed": False,
         }
+
+    # Get content statistics
+    total_char_count = len(content)
+    total_line_count = content.count("\n") + 1 if content else 0
 
     # Extract first max_chars characters
     displayed_content = content[:max_chars]
+    all_content_displayed = total_char_count <= max_chars
+
+    # Calculate the line number of the last character displayed
+    if displayed_content:
+        last_char_line = displayed_content.count("\n") + 1
+    else:
+        last_char_line = 0
 
     return {
         "success": True,
         "content": displayed_content,
         "error": "",
+        "line_count": total_line_count,
+        "char_count": total_char_count,
+        "last_char_line": last_char_line,
+        "all_content_displayed": all_content_displayed,
     }
 
 
