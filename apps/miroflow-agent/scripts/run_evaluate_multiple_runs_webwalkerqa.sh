@@ -16,7 +16,7 @@ TEMPERATURE=${TEMPERATURE:-1.0}
 API_KEY=${API_KEY:-"xxx"}
 
 # Set results directory
-RESULTS_DIR="../../logs/${BENCHMARK_NAME}/$(date +%m%d)/${LLM_PROVIDER}_${LLM_MODEL}_${AGENT_SET}"
+RESULTS_DIR="../../logs/${BENCHMARK_NAME}/${LLM_PROVIDER}_${LLM_MODEL}_${AGENT_SET}"
 
 echo "Starting $NUM_RUNS runs of the evaluation..."
 echo "Results will be saved in: $RESULTS_DIR"
