@@ -1,6 +1,6 @@
 # Collect Trace
 
-> TL;DR: Treat an RLVR-format dataset (Question + verifiable answer) as a benchmark. Run the evaluation pipeline; use LLM-as-judge to verify correctness; then harvest the correct interaction traces as training data (for SFT / DPO).
+> TL;DR: Treat an RLVR-format dataset (Question + verifiable answer) as a benchmark. Run the evaluation pipeline; use LLM-as-a-Judge to verify correctness; then harvest the correct interaction traces as training data (for SFT / DPO).
 
 ## 📝 Overview
 
@@ -12,7 +12,7 @@ Workflow:
 
 1. Run the agent in the evaluation pipeline (with tool use / browsing as needed).
 
-1. Verify the model’s answer with an LLM-as-judge against the RLVR reference answer.
+1. Verify the model's answer with an LLM-as-a-Judge against the RLVR reference answer.
 
 1. Only for items judged correct, collect the full multi-turn trace and convert it into SFT / DPO-ready samples.
 
@@ -20,7 +20,7 @@ Workflow:
 
 ### Prerequisites
 
-- Python 3.12+
+- Python 3.10+
 - [uv](https://github.com/astral-sh/uv) package manager
 - OpenAI API key (for LLM-based validation)
 - RLVR dataset (JSONL; contains question and a verifiable answer)
@@ -43,11 +43,11 @@ Workflow:
 
    ```bash
    # Create .env if missing (safe; won't overwrite existing file)
-   [ -f ../../apps/miroflow-agent/.env ] || cp ../../apps/miroflow-agent/.env.example ../../apps/miroflow-agent/.env
-   # (Alternative on macOS/Linux) cp -n ../../apps/miroflow-agent/.env.example ../../apps/miroflow-agent/.env || true
+   [ -f ../miroflow-agent/.env ] || cp ../miroflow-agent/.env.example ../miroflow-agent/.env
+   # (Alternative on macOS/Linux) cp -n ../miroflow-agent/.env.example ../miroflow-agent/.env || true
 
    # Edit .env and fill in your keys
-   # Required: OPENAI_API_KEY (for LLM as judging)
+   # Required: OPENAI_API_KEY (for LLM-as-a-Judge)
    # Optional: other keys for specific tools
    ```
 
@@ -56,7 +56,7 @@ Workflow:
 Run a benchmark evaluation to collect traces:
 
 ```bash
-# Using Claude-3.6 for trace collection
+# Using Claude-3.7 for trace collection
 bash scripts/collect_trace_claude37.sh
 
 # Using GPT-5 for trace collection  

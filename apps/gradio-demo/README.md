@@ -29,7 +29,7 @@ snapshot_download(repo_id="miromind-ai/MiroThinker-8B-DPO-v0.2", local_dir="mode
 
 FP8 is a highly efficient 8-bit floating point format that significantly reduces memory usage while maintaining model quality. This approach provides excellent performance for inference workloads on modern GPUs.
 
-Please install [SGLang](https://github.com/sgl-project/sglang) first. Then initilize fast inference with FP8 precision:
+Please install [SGLang](https://github.com/sgl-project/sglang) first. Then initialize fast inference with FP8 precision:
 
 ```bash
 MODEL_PATH=model/MiroThinker-8B-DPO

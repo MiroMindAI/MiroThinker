@@ -7,7 +7,7 @@
 <div align="center">
 
 [![DEMO](https://img.shields.io/badge/Demo-FFB300?style=for-the-badge&logo=airplayvideo&logoColor=white)](https://dr.miromind.ai/)
-[![MODELS](https://img.shields.io/badge/Models-5EDDD2?style=for-the-badge&logo=huggingface&logoColor=ffffff&labelColor)](https://huggingface.co/collections/miromind-ai/mirothinker-v10)
+[![MODELS](https://img.shields.io/badge/Models-5EDDD2?style=for-the-badge&logo=huggingface&logoColor=ffffff&labelColor)](https://huggingface.co/collections/miromind-ai/mirothinker-v15)
 [![Paper](https://img.shields.io/badge/Paper-B31B1B?style=for-the-badge&logo=arxiv&logoColor=white)](https://arxiv.org/abs/2511.11793)
 [![Blog](https://img.shields.io/badge/Blog-4285F4?style=for-the-badge&logo=google-chrome&logoColor=white)](https://miromind.ai/#blog)
 [![DATA](https://img.shields.io/badge/Data-0040A1?style=for-the-badge&logo=huggingface&logoColor=ffffff&labelColor)](https://huggingface.co/datasets/miromind-ai/MiroVerse-v0.1)
@@ -26,11 +26,11 @@
 
 </div>
 
-> **MiroThinker** is the official implementation of the MiroMind Research Agent Project. It is an open-source research agent designed to advance tool-augmented reasoning and information-seeking capabilities, enabling complex real-world research workflows across diverse challenges.
+> **MiroThinker** is the official implementation of the MiroMind Research Agent Project. It is an open-source search agent designed to advance tool-augmented reasoning and information-seeking capabilities, enabling complex real-world research workflows across diverse challenges.
 
 The project currently comprises four key components:
 
-- 💡 **MiroThinker**: An open-source research agent model that natively supports tool-assisted reasoning, achieving state-of-the-art performance across multiple benchmarks (e.g., HLE, HLE-Text-2158, HLE-Text-500, BrowserComp, BrowserComp-ZH, GAIA, xBench-DeepSearch, FutureX, and Frames). See [Quick Start](#-quick-start).
+- 💡 **MiroThinker**: An open-source search agent model that natively supports tool-assisted reasoning, achieving leading performance across multiple benchmarks (e.g., HLE, HLE-Text-2158, HLE-Text-500, BrowseComp, BrowseComp-ZH, GAIA, XBench-DeepSearch, FutureX, and Frames). See [Quick Start](#-quick-start).
 - 🤖 **MiroFlow**: An open-source research agent framework that offers reproducible state-of-the-art performance across multiple benchmarks. See [MiroFlow](https://github.com/MiroMindAI/MiroFlow) for details.
 - 📚 **MiroVerse**: A premium open-source training dataset with 147k samples supporting research agent training. See [MiroVerse](https://huggingface.co/datasets/miromind-ai/MiroVerse-v0.1) on HuggingFace.
 - 🔧 **MiroTrain / MiroRL**: Training infrastructure that supports stable and efficient training for research agent models. See [MiroTrain](https://github.com/MiroMindAI/MiroTrain) and [MiroRL](https://github.com/MiroMindAI/MiroRL) for details.
@@ -42,23 +42,59 @@ The project currently comprises four key components:
 - ✨ [Key Features](#-key-features)
 - 📈 [Performance on Benchmarks](#-performance-on-benchmarks)
 - 🚀 [Quick Start](#-quick-start)
-- 📊 [Trace Collection](#-trace-collection)
+- 📊 [Benchmark Evaluation](#-benchmark-evaluation)
+- 🔬 [Trace Collection](#-trace-collection)
 - ❓ [FAQ & Troubleshooting](#-faq--troubleshooting)
 - 📄 [License](#-license)
 - 🙏 [Acknowledgments](#-acknowledgments)
 
 ## 📰 News & Updates
 
-- **\[2025-11-13\]** 🎉🎉 [MiroThinker-v1.0](https://huggingface.co/collections/miromind-ai/mirothinker-v10) is now released! Introducing **interactive scaling** as a third dimension of performance improvement, MiroThinker v1.0 supports 256K context window and up to 600 tool calls per task. Available in 8B, 30B, and 72B parameter scales, achieving 37.7%, 47.1%, 55.6%, and 81.9% on HLE-Text, BrowseComp, BrowseComp-ZH, and GAIA-Text-103, respectively. See [Technical Report](https://arxiv.org/abs/2511.11793) for more details.
-- **\[2025-09-11\]** 🎉 MiroThinker-72B-Preview ranked 4th in this week's FutureX benchmark. See [FutureX](https://futurex-ai.github.io/).
-- **\[2025-09-08\]** [MiroThinker-v0.2](https://huggingface.co/collections/miromind-ai/mirothinker-v02) is now released, achieving open-source SOTA performance across multiple benchmarks, including HLE (17.8%), HLE-Text-Only (19.1%), BrowserComp-EN (17.2%), BrowserComp-ZH (29.4%), xBench-DeepSearch (56.0%), and Frames (74.8%).
+- **\[2026-01-05\]** 🎉🎉 We release [MiroThinker-v1.5](https://huggingface.co/collections/miromind-ai/mirothinker-v15), a world-leading open-source search agent. [MiroThinker-v1.5-30B](https://huggingface.co/miromind-ai/MiroThinker-v1.5-30B) surpasses Kimi-K2-Thinking on BrowseComp-ZH at much lower cost, using only 1/30 of the parameters. [MiroThinker-v1.5-235B](https://huggingface.co/miromind-ai/MiroThinker-v1.5-235B) scores 39.2% on HLE-Text, 69.8% on BrowseComp, 71.5% on BrowseComp-ZH, and 80.8% on GAIA-Val-165, setting a new state-of-the-art among search agents.
+- **\[2025-11-13\]** 🎉 [MiroThinker-v1.0](https://huggingface.co/collections/miromind-ai/mirothinker-v10) is now released! Introducing **interactive scaling** as a third dimension of performance improvement, MiroThinker v1.0 supports 256K context window and up to 600 tool calls per task. Available in 8B, 30B, and 72B parameter scales, achieving 37.7%, 47.1%, 55.6%, and 81.9% on HLE-Text, BrowseComp, BrowseComp-ZH, and GAIA-Text-103, respectively. See [Technical Report](https://arxiv.org/abs/2511.11793) for more details.
+- **\[2025-09-11\]** MiroThinker-72B-Preview ranked 4th in this week's FutureX benchmark. See [FutureX](https://futurex-ai.github.io/).
+
+<details>
+  <summary>📜 Click to expand older updates</summary>
+
+- **\[2025-09-08\]** [MiroThinker-v0.2](https://huggingface.co/collections/miromind-ai/mirothinker-v02) is now released, achieving open-source SOTA performance across multiple benchmarks, including HLE (17.8%), HLE-Text-Only (19.1%), BrowseComp-EN (17.2%), BrowseComp-ZH (29.4%), XBench-DeepSearch (56.0%), and Frames (74.8%).
 - **\[2025-09-07\]** We supported more benchmarks, including [BrowseComp-ZH](https://arxiv.org/abs/2504.19314), [XBench-DeepSearch](https://xbench.org/agi/aisearch), and [FutureX](https://futurex-ai.github.io/). We plan to add more benchmarks in the future.
 - **\[2025-08-22\]** Introducing streamlined deployment options for MiroThinker models with optimized resource usage and faster startup times. Experience the interactive demo: [🚀 Try Gradio Demo](apps/gradio-demo)
 - **\[2025-08-08\]** [MiroThinker-v0.1](https://huggingface.co/collections/miromind-ai/mirothinker-v01-689301b6d0563321862d44a1) released. Models, framework, and data are now fully open-sourced!
 
+</details>
+
 ## 📝 Introduction
 
+### MiroThinker-v1.5
+
+MiroThinker v1.5 is the world-leading open-source search agent that advances tool-augmented reasoning through **interactive scaling** — training the model to handle deeper and more frequent agent-environment interactions as a third dimension of performance improvement, beyond model size and context length.
+
+![image](https://huggingface.co/datasets/miromind-ai/MiroFlow-Benchmarks/resolve/main/assets/mirothinker_v1.5_framework.png)
+
+**Key Features**
+
+- 🚀 MiroThinker v1.5 supports a 256K context window, long-horizon reasoning, and deep multi-step analysis.
+- 🔧 Handles up to 400 tool calls per task — a substantial improvement over previous open-source research agents.
+- 📦 Released in 30B and 235B parameter scales, accompanied by a comprehensive suite of tools and workflows to flexibly support diverse research settings and compute budgets.
+
+<div align="center">
+
+|      Model Name       |         Base Model            | Max Context | Max Tool Calls |                              HF Link                               |
+|:---------------------:|:-----------------------------:|:-----------:|:--------------:|:------------------------------------------------------------------:|
+| MiroThinker-v1.5-30B  | Qwen3-30B-A3B-Thinking-2507   |    256K     |      400       | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-v1.5-30B) |
+| MiroThinker-v1.5-235B | Qwen3-235B-A22B-Thinking-2507 |    256K     |      400       | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-v1.5-235B) |
+
+</div>
+
+MiroThinker v1.5 demonstrates strong general-research performance across a broad range of benchmarks, achieving 39.2%, 69.8%, 71.5%, and 80.8% on HLE-Text, BrowseComp, BrowseComp-ZH, and GAIA-Val-165, respectively. These results surpass previous open-source agents and set the new world-leading BrowseComp performance.
+
+![image](https://huggingface.co/datasets/miromind-ai/MiroFlow-Benchmarks/resolve/main/assets/mirothinker_v1.5_browsecomp.png)
+
 ### MiroThinker-v1.0
+
+<details>
+  <summary>📦 Click to expand MiroThinker-v1.0 details</summary>
 
 Unlike previous agents that scale only model size or context length, MiroThinker v1.0 introduces **interactive scaling** at the model level, systematically training the model to handle deeper and more frequent agent–environment interactions as a third dimension of performance improvement. Interactive scaling leverages environment feedback and external information acquisition to correct errors and refine trajectories.
 
@@ -72,9 +108,9 @@ Unlike previous agents that scale only model size or context length, MiroThinker
 
 <div align="center">
 
-|      Model Name      |         Base Model          | Max Length | Max Tool Calls |                              HF Link                               |
-|:--------------------:|:---------------------------:|:----------:|:--------------:|:------------------------------------------------------------------:|
-| MiroThinker-v1.0-8B  |        Qwen3-8B             |    256K    |      600       | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-v1.0-8B)  |
+|      Model Name      |         Base Model          | Max Context | Max Tool Calls |                              HF Link                               |
+|:--------------------:|:---------------------------:|:-----------:|:--------------:|:------------------------------------------------------------------:|
+| MiroThinker-v1.0-8B  |        Qwen3-8B             |    256K     |      600       | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-v1.0-8B)  |
 | MiroThinker-v1.0-30B | Qwen3-30B-A3B-Thinking-2507 |    256K    |      600       | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-v1.0-30B) |
 | MiroThinker-v1.0-72B |    Qwen2.5-72B-Instruct     |    256K    |      600       | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-v1.0-72B) |
 
@@ -85,6 +121,8 @@ MiroThinker v1.0 demonstrates strong general-research performance across a broad
 <div align="center">
   <img src="https://huggingface.co/datasets/miromind-ai/MiroFlow-Benchmarks/resolve/main/assets/MiroThinker_v1.0_Performance_1.png" width="100%" alt="MiroThinker" />
 </div>
+
+</details>
 
 ### MiroThinker-v0.2
 
@@ -101,8 +139,8 @@ Compared to v0.1, MiroThinker v0.2 delivers consistent gains across benchmarks. 
 
 <div align="center">
 
-|        Model Name        |      Base Model       | Max Length |                                HF Link                                 |
-|:------------------------:|:---------------------:|:----------:|:----------------------------------------------------------------------:|
+|        Model Name        |      Base Model       | Max Context |                                HF Link                                 |
+|:------------------------:|:---------------------:|:-----------:|:----------------------------------------------------------------------:|
 | MiroThinker-4B-SFT-v0.2  |       Qwen3-4B        |    64K     | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-4B-SFT-v0.2)  |
 | MiroThinker-4B-DPO-v0.2  |       Qwen3-4B        |    64K     | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-4B-DPO-v0.2)  |
 | MiroThinker-8B-SFT-v0.2  |       Qwen3-8B        |    64K     | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-8B-SFT-v0.2)  |
@@ -130,8 +168,8 @@ We have released the **MiroThinker v0.1** series, including both SFT and DPO var
 
 <div align="center">
 
-| Model Name                | Base Model | Max Length | HF Link                                                               |
-| :-----------------------: |:----------:|:----------:| :--------------------------------------------------------------------:|
+| Model Name                | Base Model | Max Context | HF Link                                                               |
+| :-----------------------: |:----------:|:-----------:| :--------------------------------------------------------------------:|
 | MiroThinker-8B-SFT-v0.1   |  Qwen3-8B  |    40K     | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-8B-SFT-v0.1)  |
 | MiroThinker-8B-DPO-v0.1   |  Qwen3-8B  |    40K     | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-8B-DPO-v0.1)  |
 | MiroThinker-14B-SFT-v0.1  | Qwen3-14B  |    40K     | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-14B-SFT-v0.1) |
@@ -170,16 +208,32 @@ We have released the **MiroThinker v0.1** series, including both SFT and DPO var
 - **FutureX**: A live benchmark designed for predicting unknown future. ([website](https://futurex-ai.github.io/))
 - **SEAL-0**: A benchmark for evaluating LLMs on conflicting-evidence web questions. ([paper](https://arxiv.org/abs/2506.01062))
 - **AIME2025**: American Invitational Mathematics Examination 2025. ([website](https://artificialanalysis.ai/evaluations/aime-2025))
+- **DeepSearchQA**: Google's Deep Search Question Answering benchmark. ([paper](https://arxiv.org/abs/2505.20827))
 
 </details>
 
 ## 📈 Performance on Benchmarks
 
+### MiroThinker-v1.5
+
+> To prevent potential information leakage (e.g., searching benchmark answers from HuggingFace), access to HuggingFace has been explicitly disabled in these tools.
+
+> We further perform canary string testing on the tool outputs of all trajectories and disregard any trajectory found to be contaminated, treating it as an incorrect answer.
+
+<div>
+  <img src="https://huggingface.co/datasets/miromind-ai/MiroFlow-Benchmarks/resolve/main/assets/mirothinker_v1.5_performance.png" width="100%" alt="MiroThinker" />
+</div>
+
 ### MiroThinker-v1.0
+
+<details>
+  <summary>📦 Click to expand MiroThinker-v1.0 details</summary>
 
 <div align="center">
   <img src="https://github.com/user-attachments/assets/108a2105-4e1d-499e-a001-4713a03fd8ac" width="100%" alt="MiroThinker" />
 </div>
+
+</details>
 
 ### MiroThinker-v0.2
 
@@ -242,7 +296,7 @@ We have released the **MiroThinker v0.1** series, including both SFT and DPO var
 
 1. Following the practices of WebThinker, WebAgents, and CognitiveKernel, we report the Best Pass@1, the highest score across three runs, which often reflects stronger performance, though it may exhibit some variability. To provide a more stable measure, we additionally report Pass@1 (Avg@8), which offers greater consistency at the cost of slightly lower scores.
 
-1. For consistency with prior open-source works, we evaluate GAIA-Text-103 using the WebAgents LLM-as-judge template, and report results on GAIA-Val-165 using the official GAIA scorer script.
+1. For consistency with prior open-source works, we evaluate GAIA-Text-103 using the WebAgents LLM-as-a-Judge template, and report results on GAIA-Val-165 using the official GAIA scorer script.
 
 1. By default, we use open-source tools wherever possible, except for the code tool [E2B](https://github.com/e2b-dev/E2B) and the Google search tool [Serper](https://serper.dev/). We use [Whisper](https://huggingface.co/openai/whisper-large-v3-turbo), [Qwen2.5-VL-72B-Instruct](https://huggingface.co/Qwen/Qwen2.5-VL-72B-Instruct), and [Qwen3-235B-A22B-Thinking-2507](https://huggingface.co/Qwen/Qwen3-235B-A22B-Thinking-2507) in our implementation. The framework can be easily extended to other open-source tools of your choice.
 
@@ -280,34 +334,6 @@ We have released the **MiroThinker v0.1** series, including both SFT and DPO var
 
 ## 🚀 Quick Start
 
-### ⚡ 5-Minute Quick Start (TL;DR)
-
-For the fastest setup with minimal configuration:
-
-```bash
-# 1. Clone and setup
-git clone https://github.com/MiroMindAI/MiroThinker
-cd MiroThinker/apps/miroflow-agent
-uv sync
-
-# 2. Configure minimal environment (MiroThinker v1.0)
-cp .env.example .env
-# Edit .env with these required keys:
-# - SERPER_API_KEY (for Google search)
-# - JINA_API_KEY (for web scraping)
-# - E2B_API_KEY (for code execution)
-# - SUMMARY_LLM_BASE_URL, SUMMARY_LLM_MODEL_NAME, SUMMARY_LLM_API_KEY (for LLM summarization)
-# - OPENAI_API_KEY (required for benchmark evaluation, used for LLM-as-a-Judge)
-
-# 3. Serve your model (or use existing API)
-# See "Serve the MiroThinker Model" section below
-
-# 4. Run evaluation
-uv run main.py llm=qwen-3 agent=single_agent_keep5 llm.base_url=https://your_base_url/v1
-```
-
-> **💡 Minimal Configuration**: MiroThinker v1.0 uses only 3 MCP servers: `search_and_scrape_webpage`, `jina_scrape_llm_summary`, and `tool-python`. This is the simplest setup. See [Tool Configuration](#tool-configuration) for details.
-
 ### Prerequisites
 
 - 🐍 **Python 3.10+**
@@ -316,41 +342,25 @@ uv run main.py llm=qwen-3 agent=single_agent_keep5 llm.base_url=https://your_bas
 
 ### Installation
 
-#### 1. **Clone the Repository**
-
 ```bash
+# Clone the repository
 git clone https://github.com/MiroMindAI/MiroThinker
 cd MiroThinker
-```
 
-#### 2. **Download Benchmark Data**
-
-```bash
-wget https://huggingface.co/datasets/miromind-ai/MiroFlow-Benchmarks/resolve/main/data_20251115_password_protected.zip
-unzip data_20251115_password_protected.zip
-# The unzip passcode is: pf4*
-rm data_20251115_password_protected.zip
-```
-
-> **🔐 Password**: The unzip passcode is `pf4*`.
-
-#### 3. **Setup Environment**
-
-```bash
-# Shift working dir
+# Setup environment
 cd apps/miroflow-agent
-# Install environment
 uv sync
-# Create .env file with your API keys
+
+# Configure API keys
 cp .env.example .env
-# Edit .env with your actual API keys based on your chosen configuration
+# Edit .env with your API keys (SERPER_API_KEY, JINA_API_KEY, E2B_API_KEY, etc.)
 ```
 
-> **📝 Environment Variables**: The `.env.example` file contains all available environment variables. Configure the variables according to the tools used in your chosen agent configuration (see [Tool Configuration](#tool-configuration) section).
+> **📝 Environment Variables**: See [Tool Configuration](#tool-configuration) section for required API keys.
 
 ### Tool Configuration
 
-#### Minimal Configuration (Recommended for MiroThinker v1.0)
+#### Minimal Configuration for MiroThinker v1.5 and v1.0
 
 | Server | Description | Tools Provided | Required Environment Variables |
 |:-------|:------------|:---------------|:-------------------------------|
@@ -361,7 +371,7 @@ cp .env.example .env
 **Minimal `.env` configuration example:**
 
 ```bash
-# Required for MiroThinker v1.0 (minimal setup)
+# Required for MiroThinker v1.5 and v1.0 (minimal setup)
 SERPER_API_KEY=your_serper_key
 SERPER_BASE_URL="https://google.serper.dev"
 JINA_API_KEY=your_jina_key
@@ -369,24 +379,31 @@ JINA_BASE_URL="https://r.jina.ai"
 E2B_API_KEY=your_e2b_key
 
 # Required for jina_scrape_llm_summary
-SUMMARY_LLM_BASE_URL=your_llm_base_url
-SUMMARY_LLM_MODEL_NAME=your_llm_model_name
+# Note: Summary LLM can be a small model (e.g., Qwen3-14B or GPT-5-Nano)
+# The choice has minimal impact on performance, use what's most convenient
+SUMMARY_LLM_BASE_URL="https://your_summary_llm_base_url/v1/chat/completions"
+SUMMARY_LLM_MODEL_NAME=your_llm_model_name  # e.g., "Qwen/Qwen3-14B" or "gpt-5-nano"
 SUMMARY_LLM_API_KEY=your_llm_api_key  # Optional, depends on LLM provider
 
 # Required for benchmark evaluation (LLM-as-a-Judge)
 OPENAI_API_KEY=your_openai_key  # Required for running benchmark evaluations
+OPENAI_BASE_URL="https://api.openai.com/v1"  # Optional, defaults to OpenAI's API
 ```
 
-> **💡 Why this is minimal**: These 3 MCP servers cover the core capabilities needed for research tasks: web search, content extraction, and code execution. Each server provides multiple tools. All other servers are optional enhancements.
+> **💡 Why this is minimal**: These 3 MCP servers cover the core capabilities needed for research tasks: web search, content extraction, and code execution. All other servers are optional enhancements.
 >
-> **📊 For Benchmark Evaluation**: If you plan to run benchmark evaluations, you also need `OPENAI_API_KEY` for LLM-as-a-Judge functionality used in evaluation scripts.
+> **🤖 Summary LLM**: The `SUMMARY_LLM` can be a small model like Qwen3-14B or GPT-5-Nano. The choice has minimal impact on overall performance, use whichever is most convenient for your setup.
+>
+> **📊 For Benchmark Evaluation**: If you plan to run benchmark evaluations, you also need `OPENAI_API_KEY` (and optionally `OPENAI_BASE_URL`) for LLM-as-a-Judge functionality used in evaluation scripts.
+>
+> **🖼️ For GAIA Multimodal Tasks**: GAIA-Val-165 includes tasks with image/audio/video files. Since MiroThinker is a text-only LLM, GPT-4o is used to pre-process these files into text descriptions. The same `OPENAI_API_KEY` is used for both this preprocessing and LLM-as-a-Judge.
 >
 > **📖 For more details**: See [MiroFlow Tools README](libs/miroflow-tools/README.md) for complete documentation of all available tools.
 
 <details>
   <summary>🔧 Click to expand additional available tools</summary>
 
-The following optional tools are available but were not used in MiroThinker v1.0 evaluation:
+The following optional tools are available but were not used in MiroThinker v1.5 and v1.0 evaluation:
 
 | Server Name          | Type         | Description                                 |
 |:---------------------|:-------------|:--------------------------------------------|
@@ -408,23 +425,29 @@ See the [MiroFlow Tools README](libs/miroflow-tools/README.md) for complete docu
 
 #### Pre-configured Agent Settings
 
-<details>
-  <summary>⚙️ Click to expand pre-configured agent settings table</summary>
-
 The `apps/miroflow-agent/conf/agent/` directory contains several pre-configured agent settings. Each configuration uses different tools and requires corresponding environment variables in your `.env` file.
 
-> **💡 Recommended**: For MiroThinker v1.0, use `single_agent` or `single_agent_keep5` (minimal configuration with only 3 MCP servers).
+> **💡 Recommended**: For MiroThinker v1.5, use `mirothinker_v1.5_keep5_max200` (with context management, recommended for most tasks) or `mirothinker_v1.5_keep5_max400` (only used for BrowseComp and BrowseComp-ZH). For v1.0, use `mirothinker_v1.0_keep5` (with context management). All use minimal configuration with only 3 MCP servers.
 
-| Configuration File | Description | Max Turns | Context Retention | Required Environment Variables | Recommended For |
-|:-------------------|:------------|:----------|:------------------|:-------------------------------|:----------------|
-| **`single_agent.yaml`** ⭐ | Single-agent configuration used in MiroThinker v1.0 (minimal setup) | 600 | Keep all results | `SERPER_API_KEY`, `SERPER_BASE_URL`, `JINA_API_KEY`, `JINA_BASE_URL`, `E2B_API_KEY`, `SUMMARY_LLM_BASE_URL`, `SUMMARY_LLM_MODEL_NAME`, `SUMMARY_LLM_API_KEY` | **v1.0 (default)** |
-| **`single_agent_keep5.yaml`** ⭐ | Single-agent with recency-based context retention (minimal setup) | 600 | Keep 5 most recent | Same as `single_agent.yaml` | **v1.0 (recommended)** |
-| **`multi_agent.yaml`** | Multi-agent with commercial tools (v0.1/v0.2) | 50 | Keep all results | `E2B_API_KEY`, `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `SERPER_API_KEY`, `SERPER_BASE_URL`, `JINA_API_KEY`, `JINA_BASE_URL` | v0.1/v0.2 |
-| **`multi_agent_os.yaml`** | Multi-agent with open-source tools (v0.1/v0.2) | 50 | Keep all results | `E2B_API_KEY`, `VISION_API_KEY`, `VISION_BASE_URL`, `VISION_MODEL_NAME`, `WHISPER_API_KEY`, `WHISPER_BASE_URL`, `WHISPER_MODEL_NAME`, `REASONING_API_KEY`, `REASONING_BASE_URL`, `REASONING_MODEL_NAME`, `SERPER_API_KEY`, `SERPER_BASE_URL`, `JINA_API_KEY`, `JINA_BASE_URL` | v0.1/v0.2 |
+| Configuration                          | Description | Max Turns | Context Retention | Required Environment Variables                                                                                                                               | Recommended For |
+|:---------------------------------------|:------------|:----------|:------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------|:----------------|
+| **`mirothinker_v1.5_keep5_max200`** ⭐  | Single-agent with context management | 200 | Keep 5 most recent | `SERPER_API_KEY`, `SERPER_BASE_URL`, `JINA_API_KEY`, `JINA_BASE_URL`, `E2B_API_KEY`, `SUMMARY_LLM_BASE_URL`, `SUMMARY_LLM_MODEL_NAME`, `SUMMARY_LLM_API_KEY` | **v1.5 (recommended for most tasks)** |
+| **`mirothinker_v1.5_keep5_max400`** ⭐  | Single-agent with context management | 400 | Keep 5 most recent | Same as above                                                                                                                              | **v1.5 (for BrowseComp & BrowseComp-ZH)** |
+| **`mirothinker_v1.5`**                 | Single-agent for MiroThinker v1.5 | 600 | Keep all results | Same as above | **v1.5** |
+| **`mirothinker_v1.0_keep5`**           | Single-agent with context management | 600 | Keep 5 most recent | Same as above                                                                                                                                   | **v1.0** |
+| **`mirothinker_v1.0`**                 | Single-agent for MiroThinker v1.0 | 600 | Keep all results | Same as above | **v1.0** |
 
-> **💡 Note**: All environment variables are listed in `apps/miroflow-agent/.env.example`. Copy it to `.env` and fill in the values for the tools you plan to use.
+<details>
+  <summary>📦 Click to expand legacy configurations (v0.1/v0.2)</summary>
+
+| Configuration            | Description | Max Turns | Context Retention | Required Environment Variables | Recommended For |
+|:-------------------------|:------------|:----------|:------------------|:-------------------------------|:----------------|
+| **`multi_agent`**        | Multi-agent with commercial tools (v0.1/v0.2) | 50 | Keep all results | `E2B_API_KEY`, `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `SERPER_API_KEY`, `SERPER_BASE_URL`, `JINA_API_KEY`, `JINA_BASE_URL` | v0.1/v0.2 |
+| **`multi_agent_os`**     | Multi-agent with open-source tools (v0.1/v0.2) | 50 | Keep all results | `E2B_API_KEY`, `VISION_API_KEY`, `VISION_BASE_URL`, `VISION_MODEL_NAME`, `WHISPER_API_KEY`, `WHISPER_BASE_URL`, `WHISPER_MODEL_NAME`, `REASONING_API_KEY`, `REASONING_BASE_URL`, `REASONING_MODEL_NAME`, `SERPER_API_KEY`, `SERPER_BASE_URL`, `JINA_API_KEY`, `JINA_BASE_URL` | v0.1/v0.2 |
 
 </details>
+
+> **💡 Note**: All environment variables are listed in `apps/miroflow-agent/.env.example`. Copy it to `.env` and fill in the values for the tools you plan to use.
 
 #### Creating Custom Tool Configurations
 
@@ -492,7 +515,7 @@ uv run main.py llm=qwen-3 agent=my_custom_config llm.base_url=https://your_base_
    # Edit .env with your actual API keys
    ```
 
-   **For MiroThinker v1.0** (`single_agent.yaml` or `single_agent_keep5.yaml`), see the [Minimal Configuration](#minimal-configuration-recommended-for-mirothinker-v10) section above for the complete configuration example.
+   **For MiroThinker v1.5** (`mirothinker_v1.5_keep5_max200.yaml`, `mirothinker_v1.5_keep5_max400.yaml`, or `mirothinker_v1.5.yaml`) and **v1.0** (`mirothinker_v1.0_keep5.yaml` or `mirothinker_v1.0.yaml`), see the [Minimal Configuration](#minimal-configuration-for-mirothinker-v15-and-v10) section above for the complete configuration example.
 
    **For other configurations**, refer to the [Pre-configured Agent Settings](#pre-configured-agent-settings) table above to see which environment variables are required.
 
@@ -502,8 +525,9 @@ uv run main.py llm=qwen-3 agent=my_custom_config llm.base_url=https://your_base_
   <summary>🔑 Click to expand optional API keys</summary>
 
 ```bash
-# API for LLM-as-Judge (for benchmark testing, required for benchmark evaluation)
+# API for LLM-as-a-Judge (for benchmark testing, required for benchmark evaluation)
 OPENAI_API_KEY=your_openai_key
+OPENAI_BASE_URL="https://api.openai.com/v1"  # Optional, defaults to OpenAI's API
 
 # API for Open-Source Audio Transcription Tool (for benchmark testing, optional)
 WHISPER_MODEL_NAME="openai/whisper-large-v3-turbo"
@@ -527,9 +551,9 @@ ANTHROPIC_API_KEY=your_anthropic_key
 TENCENTCLOUD_SECRET_ID=your_tencent_cloud_secret_id
 TENCENTCLOUD_SECRET_KEY=your_tencent_cloud_secret_key
 
-# API for Summary LLM (optional)
-SUMMARY_LLM_BASE_URL=your_summary_llm_base_url
-SUMMARY_LLM_MODEL_NAME=your_summary_llm_model_name
+# API for Summary LLM (can use small models like Qwen3-14B or GPT-5-Nano)
+SUMMARY_LLM_BASE_URL="https://your_summary_llm_base_url/v1/chat/completions"
+SUMMARY_LLM_MODEL_NAME=your_summary_llm_model_name  # e.g., "Qwen/Qwen3-14B" or "gpt-5-nano"
 SUMMARY_LLM_API_KEY=your_summary_llm_api_key
 ```
 
@@ -537,7 +561,7 @@ SUMMARY_LLM_API_KEY=your_summary_llm_api_key
 
 ### Serve the MiroThinker Model
 
-#### Option 1 (Recommended): Serve with SGLang
+#### Option 1 (Recommended): Serve with SGLang or vLLM
 
 Use SGLang to serve MiroThinker models at port 61002:
 
@@ -545,8 +569,11 @@ Use SGLang to serve MiroThinker models at port 61002:
 NUM_GPUS=4
 PORT=61002
 
-# Downloading model from HF
-MODEL_PATH=miromind-ai/MiroThinker-v1.0-30B
+# Downloading model from HF (v1.5 recommended)
+MODEL_PATH=miromind-ai/MiroThinker-v1.5-30B
+
+# Or use v1.0
+# MODEL_PATH=miromind-ai/MiroThinker-v1.0-30B
 
 python3 -m sglang.launch_server \
     --model-path $MODEL_PATH \
@@ -565,20 +592,52 @@ We also provide comprehensive guidance for serving MiroThinker models using CPU-
 
 > **📖 Complete Guide**: See [Deployment Documentation](apps/gradio-demo/) for detailed deployment instructions.
 
-### Basic Usage
+### Run Your First Task
 
-#### 1. **Run a single evaluation**
+After setting up the environment and starting your model server, run `main.py` to test with a default question: *"What is the title of today's arxiv paper in computer science?"*
 
 ```bash
 cd apps/miroflow-agent
-uv run main.py llm=qwen-3 agent=single_agent llm.base_url=https://your_base_url/v1
+
+# Using MiroThinker models (requires your own model server)
+uv run python main.py llm=qwen-3 agent=mirothinker_v1.5_keep5_max200 llm.base_url=http://localhost:61002/v1
+
+# Or using Claude (requires ANTHROPIC_API_KEY in .env)
+uv run python main.py llm=claude-3-7 agent=single_agent_keep5
+
+# Or using GPT-5 (requires OPENAI_API_KEY in .env)
+uv run python main.py llm=gpt-5 agent=single_agent_keep5
 ```
 
-> **💡 Tip**: For MiroThinker v1.0, use `agent=single_agent` or `agent=single_agent_keep5`. Replace `https://your_base_url/v1` with your actual model server URL.
+**To customize your question**, edit `main.py` line 32:
 
-#### 2. **Run comprehensive benchmark evaluation**
+```python
+task_description = "Your custom question here"
+```
 
-> **Note:** For MiroThinker v1.0, use `single_agent` or `single_agent_keep5` configurations. The `multi_agent` and `multi_agent_os` configurations are for v0.1/v0.2.
+The agent will search the web, execute code if needed, and provide an answer with sources.
+
+> **📖 More details**: See [apps/miroflow-agent/README.md](apps/miroflow-agent/README.md) for available configurations and troubleshooting.
+
+______________________________________________________________________
+
+## 📊 Benchmark Evaluation
+
+> For researchers who want to reproduce our benchmark results or evaluate on standard benchmarks.
+
+### Download Benchmark Data
+
+```bash
+cd MiroThinker  # Back to project root
+wget https://huggingface.co/datasets/miromind-ai/MiroFlow-Benchmarks/resolve/main/data_20251115_password_protected.zip
+unzip data_20251115_password_protected.zip
+# Password: pf4*
+rm data_20251115_password_protected.zip
+```
+
+### Run Benchmark Evaluation
+
+> **Note:** For MiroThinker v1.5, use `mirothinker_v1.5_keep5_max200` (with context management), `mirothinker_v1.5_keep5_max400` (with context management), or `mirothinker_v1.5` configurations. For v1.0, use `mirothinker_v1.0_keep5` (with context management) or `mirothinker_v1.0` configurations.
 
 **Available Parameters:**
 
@@ -588,9 +647,9 @@ You can customize the evaluation by setting the following environment variables 
 |:----------|:--------|:------------|
 | `LLM_MODEL` | `"MiroThinker-Models"` | Model name identifier |
 | `BASE_URL` | `"https://your-api.com/v1"` | Base URL of your model server |
-| `NUM_RUNS` | `8` (varies by benchmark) | Number of evaluation runs |
+| `NUM_RUNS` | Varies by benchmark | Number of evaluation runs (3 for most benchmarks, 8 for GAIA/XBench/FutureX/SEAL-0, 32 for AIME2025) |
 | `LLM_PROVIDER` | `"qwen"` | LLM provider (e.g., `qwen`, `openai`, `anthropic`) |
-| `AGENT_SET` | `"single_agent_keep5"` | Agent configuration (e.g., `single_agent`, `single_agent_keep5`, `multi_agent`, `multi_agent_os`) |
+| `AGENT_SET` | `"mirothinker_v1.5_keep5_max200"` | Agent configuration (e.g., `mirothinker_v1.5_keep5_max200`, `mirothinker_v1.5_keep5_max400`, `mirothinker_v1.0_keep5`) |
 | `MAX_CONTEXT_LENGTH` | `262144` | Maximum context length (256K) |
 | `MAX_CONCURRENT` | `10` | Maximum concurrent tasks |
 | `PASS_AT_K` | `1` | Pass@K evaluation metric |
@@ -603,59 +662,80 @@ You can customize the evaluation by setting the following environment variables 
 # Navigate to the miroflow-agent directory first
 cd apps/miroflow-agent
 
-# Basic usage with required parameters
-LLM_MODEL="MiroThinker-v1.0-32B" BASE_URL="https://your-api.com/v1" bash scripts/run_evaluate_multiple_runs_gaia-validation.sh
+# Basic usage with v1.5 (recommended)
+NUM_RUNS=8 LLM_MODEL="MiroThinker-v1.5-30B" BASE_URL="https://your-api.com/v1" bash scripts/run_evaluate_multiple_runs_gaia-validation-text-103.sh
 
-# Customize number of runs and agent configuration
-LLM_MODEL="MiroThinker-v1.0-32B" \
+# Or with v1.0
+# NUM_RUNS=8 LLM_MODEL="MiroThinker-v1.0-30B" BASE_URL="https://your-api.com/v1" bash scripts/run_evaluate_multiple_runs_gaia-validation-text-103.sh
+
+# Customize number of runs and agent configuration (v1.5 with context management)
+LLM_MODEL="MiroThinker-v1.5-30B" \
 BASE_URL="https://your-api.com/v1" \
-NUM_RUNS=3 \
-AGENT_SET="single_agent" \
-bash scripts/run_evaluate_multiple_runs_gaia-validation.sh
+NUM_RUNS=8 \
+AGENT_SET="mirothinker_v1.5_keep5_max200" \
+bash scripts/run_evaluate_multiple_runs_gaia-validation-text-103.sh
+
+# Or with v1.0 configuration (with context management)
+# LLM_MODEL="MiroThinker-v1.0-30B" \
+# BASE_URL="https://your-api.com/v1" \
+# NUM_RUNS=8 \
+# AGENT_SET="mirothinker_v1.0_keep5" \
+# bash scripts/run_evaluate_multiple_runs_gaia-validation-text-103.sh
 ```
 
 <details open>
   <summary>📋 Click to expand all benchmark commands</summary>
 
+> **⚠️ Important for MiroThinker v1.5**: To reproduce our reported results, you must set the correct `AGENT_SET`:
+>
+> - **BrowseComp & BrowseComp-ZH**: Use `AGENT_SET="mirothinker_v1.5_keep5_max400"`
+> - **All other benchmarks**: Use `AGENT_SET="mirothinker_v1.5_keep5_max200"`
+
 ```bash
 # Navigate to the miroflow-agent directory first
 cd apps/miroflow-agent
 
-# GAIA-Text-103
-LLM_MODEL="xxx" BASE_URL="xxx" bash scripts/run_evaluate_multiple_runs_gaia-validation-text-103.sh
-
-# WebWalkerQA
-LLM_MODEL="xxx" BASE_URL="xxx" bash scripts/run_evaluate_multiple_runs_webwalkerqa.sh
-
 # HLE
-LLM_MODEL="xxx" BASE_URL="xxx" bash scripts/run_evaluate_multiple_runs_hle.sh
+NUM_RUNS=3 LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_hle.sh
 
 # HLE-Text-2158
-LLM_MODEL="xxx" BASE_URL="xxx" bash scripts/run_evaluate_multiple_runs_hle-text-2158.sh
+NUM_RUNS=3 LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_hle-text-2158.sh
 
 # HLE-Text-500
-LLM_MODEL="xxx" BASE_URL="xxx" bash scripts/run_evaluate_multiple_runs_hle-text-500.sh
+NUM_RUNS=3 LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_hle-text-500.sh
 
-# FRAMES
-LLM_MODEL="xxx" BASE_URL="xxx" bash scripts/run_evaluate_multiple_runs_frames.sh
+# GAIA-Text-103
+NUM_RUNS=8 LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_gaia-validation-text-103.sh
 
-# BrowseComp-EN
-LLM_MODEL="xxx" BASE_URL="xxx" bash scripts/run_evaluate_multiple_runs_browsecomp.sh
+# GAIA-Validation (GAIA-Val-165)
+NUM_RUNS=8 LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_gaia-validation.sh
 
-# BrowseComp-ZH
-LLM_MODEL="xxx" BASE_URL="xxx" bash scripts/run_evaluate_multiple_runs_browsecomp_zh.sh
+# BrowseComp-EN (⚠️ use max400)
+NUM_RUNS=3 LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max400" bash scripts/run_evaluate_multiple_runs_browsecomp.sh
+
+# BrowseComp-ZH (⚠️ use max400)
+NUM_RUNS=3 LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max400" bash scripts/run_evaluate_multiple_runs_browsecomp_zh.sh
+
+# WebWalkerQA
+NUM_RUNS=3 LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_webwalkerqa.sh
 
 # XBench-DeepSearch
-LLM_MODEL="xxx" BASE_URL="xxx" bash scripts/run_evaluate_multiple_runs_xbench_deepsearch.sh
+NUM_RUNS=8 LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_xbench_deepsearch.sh
 
-# FutureX
-LLM_MODEL="xxx" BASE_URL="xxx" bash scripts/run_evaluate_multiple_runs_futurex.sh
+# FRAMES
+NUM_RUNS=3 LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_frames.sh
 
 # SEAL-0
-LLM_MODEL="xxx" BASE_URL="xxx" bash scripts/run_evaluate_multiple_runs_seal-0.sh
+NUM_RUNS=8 LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_seal-0.sh
+
+# FutureX
+NUM_RUNS=8 LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_futurex.sh
 
 # AIME2025
-LLM_MODEL="xxx" BASE_URL="xxx" bash scripts/run_evaluate_multiple_runs_aime2025.sh
+NUM_RUNS=32 LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_aime2025.sh
+
+# DeepSearchQA
+NUM_RUNS=3 LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_deepsearchqa.sh
 ```
 
 </details>
@@ -668,12 +748,6 @@ LLM_MODEL="xxx" BASE_URL="xxx" bash scripts/run_evaluate_multiple_runs_aime2025.
 ```bash
 # Navigate to the miroflow-agent directory first
 cd apps/miroflow-agent
-
-# For GAIA-Validation
-python benchmarks/check_progress/check_progress_gaia-validation.py /path/to/evaluation/logs
-
-# For GAIA-Text-103
-python benchmarks/check_progress/check_progress_gaia-validation-text-103.py /path/to/evaluation/logs
 
 # For HLE
 python benchmarks/check_progress/check_progress_hle.py /path/to/evaluation/logs
@@ -690,6 +764,12 @@ python benchmarks/check_progress/check_progress_browsecomp.py /path/to/evaluatio
 # For BrowseComp-ZH
 python benchmarks/check_progress/check_progress_browsecomp_zh.py /path/to/evaluation/logs
 
+# For GAIA-Validation
+python benchmarks/check_progress/check_progress_gaia-validation.py /path/to/evaluation/logs
+
+# For GAIA-Text-103
+python benchmarks/check_progress/check_progress_gaia-validation-text-103.py /path/to/evaluation/logs
+
 # For WebWalkerQA
 python benchmarks/check_progress/check_progress_webwalkerqa.py /path/to/evaluation/logs
 
@@ -704,11 +784,14 @@ python benchmarks/check_progress/check_progress_seal-0.py /path/to/evaluation/lo
 
 # For AIME2025
 python benchmarks/check_progress/check_progress_aime2025.py /path/to/evaluation/logs
+
+# For DeepSearchQA
+python benchmarks/check_progress/check_progress_deepsearchqa.py /path/to/evaluation/logs
 ```
 
 </details>
 
-## 📊 Trace Collection
+## 🔬 Trace Collection
 
 <details>
 <summary>📋 Click to expand trace collection commands</summary>
@@ -717,11 +800,11 @@ python benchmarks/check_progress/check_progress_aime2025.py /path/to/evaluation/
 cd apps/collect-trace
 
 # Collect Traces for SFT
-uv run bash scripts/collect_trace_claude37.sh
-uv run bash scripts/collect_trace_gpt5.sh
+bash scripts/collect_trace_claude37.sh
+bash scripts/collect_trace_gpt5.sh
 
 # Collect Traces for DPO
-uv run bash scripts/collect_trace_qwen3.sh
+bash scripts/collect_trace_qwen3.sh
 ```
 
 </details>
@@ -735,17 +818,11 @@ uv run bash scripts/collect_trace_qwen3.sh
 
 #### **Q: Which version should I use?**
 
-**A:** For most users, we recommend **MiroThinker v1.0** with the minimal configuration:
+**A:** We recommend **MiroThinker v1.5** ⭐ with the minimal configuration:
 
-- **v1.0**: Latest version with 256K context, 600 tool calls, best performance. Use `single_agent` or `single_agent_keep5` config.
-- **v0.2**: Good performance with 64K context, 50 tool calls. Use `multi_agent` or `multi_agent_os` config.
-- **v0.1**: Legacy version with 40K context. Use `multi_agent` or `multi_agent_os` config.
-
-| Version | Context | Max Tool Calls | Recommended Config | Use Case |
-|:--------|:--------|:--------------:|:-------------------|:---------|
-| **v1.0** | 256K | 600 | `single_agent_keep5` | Latest, best performance, long-horizon tasks |
-| **v0.2** | 64K | 50 | `multi_agent_os` | Good balance, multi-agent workflows |
-| **v0.1** | 40K | 50 | `multi_agent_os` | Legacy support |
+- **v1.5** ⭐: Latest version with 256K context, world-leading performance. Use config (with context management):
+  - `mirothinker_v1.5_keep5_max200` (up to 200 turns, recommended for most tasks)
+  - `mirothinker_v1.5_keep5_max400` (up to 400 turns, only used for BrowseComp and BrowseComp-ZH)
 
 #### **Q: How do I get API keys?**
 
@@ -754,8 +831,9 @@ uv run bash scripts/collect_trace_qwen3.sh
 - **SERPER_API_KEY**: Get from [Serper.dev](https://serper.dev/) (Google search API)
 - **JINA_API_KEY**: Get from [Jina.ai](https://jina.ai/) (Web scraping)
 - **E2B_API_KEY**: Get from [E2B.dev](https://e2b.dev/) (Code execution sandbox)
-- **SUMMARY_LLM\_**\*: Your LLM API credentials (for content summarization)
+- **SUMMARY_LLM_API_KEY**: Your LLM API credentials (for content summarization). Can be a small model like Qwen3-14B or GPT-5-Nano—the choice has minimal impact on performance.
 - **OPENAI_API_KEY**: Get from [OpenAI](https://platform.openai.com/) (Required for benchmark evaluation, used for LLM-as-a-Judge)
+- **OPENAI_BASE_URL**: Optional, defaults to `https://api.openai.com/v1`. Can be changed to use OpenAI-compatible APIs.
 
 #### **Q: Model server connection errors**
 
@@ -781,9 +859,13 @@ uv run bash scripts/collect_trace_qwen3.sh
 **A:** Solutions:
 
 - **Reduce context length**: Set `MAX_CONTEXT_LENGTH` to a smaller value (e.g., 131072 for 128K)
-- **Use context retention**: Use `single_agent_keep5` instead of `single_agent` to reduce memory usage
+- **Use context management with fewer turns**:
+  - For v1.5: Use `mirothinker_v1.5_keep5_max200` or `mirothinker_v1.5_keep5_max400` (with context management)
+  - For v1.0: Use `mirothinker_v1.0_keep5` (with context management)
 - **Reduce concurrent tasks**: Set `MAX_CONCURRENT` to a smaller number (e.g., 5)
-- **Use smaller model**: Try 8B or 30B models instead of 72B
+- **Use smaller model**:
+  - For v1.5: Try 30B instead of 235B
+  - For v1.0: Try 8B or 30B instead of 72B
 
 #### **Q: Tool execution errors**
 
@@ -804,16 +886,6 @@ python benchmarks/check_progress/check_progress_<benchmark_name>.py /path/to/log
 ```
 
 The scripts show completion status, elapsed time, and estimated remaining time.
-
-#### **Q: Can I use commercial tools instead of open-source ones?**
-
-**A:** Yes! You can replace open-source tools with commercial alternatives:
-
-- Replace `tool-vqa-os` with `tool-vqa` (Claude)
-- Replace `tool-transcribe-os` with `tool-transcribe` (OpenAI)
-- Replace `tool-reasoning-os` with `tool-reasoning` (Claude)
-
-This typically improves performance but requires additional API keys. See [Pre-configured Agent Settings](#pre-configured-agent-settings) for details.
 
 </details>
 
@@ -846,7 +918,7 @@ Join our community and help us build the future of AI agents!
 
 ### References
 
-If you find this project useful in your research, please consider cite:
+If you find this project useful in your research, please consider citing:
 
 ```
 @article{miromind2025mirothinker,

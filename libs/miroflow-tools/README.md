@@ -12,17 +12,22 @@
 
 ## 📦 Installation
 
+This package is a local dependency that is automatically installed when you run `uv sync` in the `apps/miroflow-agent` directory. No separate installation is required.
+
+For standalone usage or development:
+
 ```bash
-pip install miroflow-tools
+cd libs/miroflow-tools
+uv sync
 ```
 
 ## 📋 MCP Servers Overview
 
 Quick reference tables of all available MCP servers and their tools. Click on "Details" to jump to the full documentation.
 
-### 📊 Tools Used in MiroThinker v1.0
+### 📊 Tools Used in MiroThinker v1.0 and v1.5
 
-The following tools were used in the MiroThinker v1.0 evaluation:
+The following tools were used in the MiroThinker v1.0 and v1.5 evaluation:
 
 | Category                   | Server Name                 | Tools                                                                                                                | Key Environment Variables                                                                 | Link                                     |
 |----------------------------|-----------------------------|----------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------|------------------------------------------|
@@ -33,7 +38,7 @@ The following tools were used in the MiroThinker v1.0 evaluation:
 
 ### 🔧 Additional Available Tools
 
-The following tools are implemented but were not used in the MiroThinker v1.0 evaluation:
+The following tools are implemented but were not used in the MiroThinker v1.0/v1.5 evaluation:
 
 | Category                    | Server Name          | Tools                                             | Key Environment Variables                                           | Link                           |
 |-----------------------------|----------------------|---------------------------------------------------|---------------------------------------------------------------------|--------------------------------|
@@ -58,7 +63,7 @@ from miroflow_tools import ToolManager
 from mcp import StdioServerParameters
 
 async def main():
-# Initialize tool manager with server configurations
+    # Initialize tool manager with server configurations
     server_configs = [
         {
             "name": "tool-python",
@@ -639,7 +644,7 @@ if __name__ == "__main__":
 
 ### Server: search_and_scrape_webpage
 
-Google search via Serper API. Used in MiroThinker v1.0 technical report.
+Google search via Serper API. Used in MiroThinker v1.0/v1.5 evaluation.
 
 **Tools**:
 
@@ -697,7 +702,7 @@ if __name__ == "__main__":
 
 ### Server: jina_scrape_llm_summary
 
-Scrape content from URLs and extract meaningful information using an LLM. Used in MiroThinker v1.0 technical report.
+Scrape content from URLs and extract meaningful information using an LLM. Used in MiroThinker v1.0/v1.5 evaluation.
 
 **Tools**:
 
@@ -837,7 +842,7 @@ if __name__ == "__main__":
 
 ### Server: tool-sougou-search
 
-Sougou search (optimized for Chinese) with website scraping capabilities. *Optional: Not used in the MiroThinker v1.0 technical report's model evaluation*
+Sougou search (optimized for Chinese) with website scraping capabilities. *Optional: Not used in the MiroThinker v1.0/v1.5 evaluation*
 
 **Tools**:
 
