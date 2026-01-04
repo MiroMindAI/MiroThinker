@@ -902,16 +902,6 @@ python benchmarks/check_progress/check_progress_<benchmark_name>.py /path/to/log
 
 The scripts show completion status, elapsed time, and estimated remaining time.
 
-#### **Q: Can I use commercial tools instead of open-source ones?**
-
-**A:** Yes! You can replace open-source tools with commercial alternatives:
-
-- Replace `tool-vqa-os` with `tool-vqa` (Claude)
-- Replace `tool-transcribe-os` with `tool-transcribe` (OpenAI)
-- Replace `tool-reasoning-os` with `tool-reasoning` (Claude)
-
-This typically improves performance but requires additional API keys. See [Pre-configured Agent Settings](#pre-configured-agent-settings) for details.
-
 </details>
 
 ### Getting Help
