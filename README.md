@@ -295,7 +295,7 @@ We have released the **MiroThinker v0.1** series, including both SFT and DPO var
 
 1. Following the practices of WebThinker, WebAgents, and CognitiveKernel, we report the Best Pass@1, the highest score across three runs, which often reflects stronger performance, though it may exhibit some variability. To provide a more stable measure, we additionally report Pass@1 (Avg@8), which offers greater consistency at the cost of slightly lower scores.
 
-1. For consistency with prior open-source works, we evaluate GAIA-Text-103 using the WebAgents LLM-as-judge template, and report results on GAIA-Val-165 using the official GAIA scorer script.
+1. For consistency with prior open-source works, we evaluate GAIA-Text-103 using the WebAgents LLM-as-a-Judge template, and report results on GAIA-Val-165 using the official GAIA scorer script.
 
 1. By default, we use open-source tools wherever possible, except for the code tool [E2B](https://github.com/e2b-dev/E2B) and the Google search tool [Serper](https://serper.dev/). We use [Whisper](https://huggingface.co/openai/whisper-large-v3-turbo), [Qwen2.5-VL-72B-Instruct](https://huggingface.co/Qwen/Qwen2.5-VL-72B-Instruct), and [Qwen3-235B-A22B-Thinking-2507](https://huggingface.co/Qwen/Qwen3-235B-A22B-Thinking-2507) in our implementation. The framework can be easily extended to other open-source tools of your choice.
 
@@ -538,7 +538,7 @@ uv run main.py llm=qwen-3 agent=my_custom_config llm.base_url=https://your_base_
   <summary>🔑 Click to expand optional API keys</summary>
 
 ```bash
-# API for LLM-as-Judge (for benchmark testing, required for benchmark evaluation)
+# API for LLM-as-a-Judge (for benchmark testing, required for benchmark evaluation)
 OPENAI_API_KEY=your_openai_key
 OPENAI_BASE_URL="https://api.openai.com/v1"  # Optional, defaults to OpenAI's API
 
