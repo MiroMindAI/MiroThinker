@@ -42,7 +42,8 @@ The project currently comprises four key components:
 - ✨ [Key Features](#-key-features)
 - 📈 [Performance on Benchmarks](#-performance-on-benchmarks)
 - 🚀 [Quick Start](#-quick-start)
-- 📊 [Trace Collection](#-trace-collection)
+- 📊 [Benchmark Evaluation](#-benchmark-evaluation)
+- 🔬 [Trace Collection](#-trace-collection)
 - ❓ [FAQ & Troubleshooting](#-faq--troubleshooting)
 - 📄 [License](#-license)
 - 🙏 [Acknowledgments](#-acknowledgments)
@@ -341,37 +342,21 @@ We have released the **MiroThinker v0.1** series, including both SFT and DPO var
 
 ### Installation
 
-#### 1. **Clone the Repository**
-
 ```bash
+# Clone the repository
 git clone https://github.com/MiroMindAI/MiroThinker
 cd MiroThinker
-```
 
-#### 2. **Download Benchmark Data**
-
-```bash
-wget https://huggingface.co/datasets/miromind-ai/MiroFlow-Benchmarks/resolve/main/data_20251115_password_protected.zip
-unzip data_20251115_password_protected.zip
-# The unzip passcode is: pf4*
-rm data_20251115_password_protected.zip
-```
-
-> **🔐 Password**: The unzip passcode is `pf4*`.
-
-#### 3. **Setup Environment**
-
-```bash
-# Shift working dir
+# Setup environment
 cd apps/miroflow-agent
-# Install environment
 uv sync
-# Create .env file with your API keys
+
+# Configure API keys
 cp .env.example .env
-# Edit .env with your actual API keys based on your chosen configuration
+# Edit .env with your API keys (SERPER_API_KEY, JINA_API_KEY, E2B_API_KEY, etc.)
 ```
 
-> **📝 Environment Variables**: The `.env.example` file contains all available environment variables. Configure the variables according to the tools used in your chosen agent configuration (see [Tool Configuration](#tool-configuration) section).
+> **📝 Environment Variables**: See [Tool Configuration](#tool-configuration) section for required API keys.
 
 ### Tool Configuration
 
@@ -607,32 +592,50 @@ We also provide comprehensive guidance for serving MiroThinker models using CPU-
 
 > **📖 Complete Guide**: See [Deployment Documentation](apps/gradio-demo/) for detailed deployment instructions.
 
-### Basic Usage
+### Run Your First Task
 
-#### 1. **Run a single evaluation**
+After setting up the environment and starting your model server, run `main.py` to test with a default question: *"What is the title of today's arxiv paper in computer science?"*
 
 ```bash
 cd apps/miroflow-agent
 
-# v1.5 with context management, max200: up to 200 turns (recommended for most tasks)
-uv run main.py llm=qwen-3 agent=mirothinker_v1.5_keep5_max200 llm.base_url=https://your_base_url/v1
+# Using MiroThinker models (requires your own model server)
+uv run python main.py llm=qwen-3 agent=mirothinker_v1.5_keep5_max200 llm.base_url=http://localhost:61002/v1
 
-# v1.5 with context management, max400: up to 400 turns (only used for BrowseComp and BrowseComp-ZH)
-uv run main.py llm=qwen-3 agent=mirothinker_v1.5_keep5_max400 llm.base_url=https://your_base_url/v1
+# Or using Claude (requires ANTHROPIC_API_KEY in .env)
+uv run python main.py llm=claude-3-7 agent=single_agent_keep5
 
-# v1.5 without context management
-uv run main.py llm=qwen-3 agent=mirothinker_v1.5 llm.base_url=https://your_base_url/v1
-
-# v1.0 with context management
-uv run main.py llm=qwen-3 agent=mirothinker_v1.0_keep5 llm.base_url=https://your_base_url/v1
-
-# v1.0 without context management
-uv run main.py llm=qwen-3 agent=mirothinker_v1.0 llm.base_url=https://your_base_url/v1
+# Or using GPT-5 (requires OPENAI_API_KEY in .env)
+uv run python main.py llm=gpt-5 agent=single_agent_keep5
 ```
 
-> **💡 Tip**: For MiroThinker v1.5, use `agent=mirothinker_v1.5_keep5_max200` (up to 200 turns, recommended for most tasks) or `agent=mirothinker_v1.5_keep5_max400` (up to 400 turns, only used for BrowseComp and BrowseComp-ZH) with context management, or `agent=mirothinker_v1.5` without context management. For v1.0, use `agent=mirothinker_v1.0_keep5` with context management or `agent=mirothinker_v1.0` without context management. Replace `https://your_base_url/v1` with your actual model server URL.
+**To customize your question**, edit `main.py` line 32:
 
-#### 2. **Run comprehensive benchmark evaluation**
+```python
+task_description = "Your custom question here"
+```
+
+The agent will search the web, execute code if needed, and provide an answer with sources.
+
+> **📖 More details**: See [apps/miroflow-agent/README.md](apps/miroflow-agent/README.md) for available configurations and troubleshooting.
+
+______________________________________________________________________
+
+## 📊 Benchmark Evaluation
+
+> For researchers who want to reproduce our benchmark results or evaluate on standard benchmarks.
+
+### Download Benchmark Data
+
+```bash
+cd MiroThinker  # Back to project root
+wget https://huggingface.co/datasets/miromind-ai/MiroFlow-Benchmarks/resolve/main/data_20251115_password_protected.zip
+unzip data_20251115_password_protected.zip
+# Password: pf4*
+rm data_20251115_password_protected.zip
+```
+
+### Run Benchmark Evaluation
 
 > **Note:** For MiroThinker v1.5, use `mirothinker_v1.5_keep5_max200` (with context management), `mirothinker_v1.5_keep5_max400` (with context management), or `mirothinker_v1.5` configurations. For v1.0, use `mirothinker_v1.0_keep5` (with context management) or `mirothinker_v1.0` configurations.
 
@@ -783,7 +786,7 @@ python benchmarks/check_progress/check_progress_deepsearchqa.py /path/to/evaluat
 
 </details>
 
-## 📊 Trace Collection
+## 🔬 Trace Collection
 
 <details>
 <summary>📋 Click to expand trace collection commands</summary>
