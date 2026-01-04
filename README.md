@@ -366,7 +366,7 @@ uv run main.py llm=qwen-3 agent=mirothinker_v1.0_keep5 llm.base_url=https://your
 uv run main.py llm=qwen-3 agent=mirothinker_v1.0 llm.base_url=https://your_base_url/v1
 ```
 
-> **💡 Minimal Configuration**: MiroThinker v1.5 and v1.0 both use only 3 MCP servers: `search_and_scrape_webpage`, `jina_scrape_llm_summary`, and `tool-python`. This is the simplest setup. Configurations with `keep5` enable context management for more efficient context usage. See [Tool Configuration](#tool-configuration) for details.
+> **💡 Minimal Configuration**: MiroThinker v1.5 and v1.0 use only 3 MCP servers: `search_and_scrape_webpage`, `jina_scrape_llm_summary`, and `tool-python`. Configurations with `keep5` enable context management for efficient context usage. See [Tool Configuration](#tool-configuration) for details.
 
 ### Prerequisites
 
