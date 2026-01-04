@@ -332,47 +332,6 @@ We have released the **MiroThinker v0.1** series, including both SFT and DPO var
 
 ## 🚀 Quick Start
 
-### ⚡ Get Started Fast
-
-For the fastest setup with minimal configuration:
-
-```bash
-# 1. Clone and setup
-git clone https://github.com/MiroMindAI/MiroThinker
-cd MiroThinker/apps/miroflow-agent
-uv sync
-
-# 2. Configure minimal environment (MiroThinker v1.5 / v1.0)
-cp .env.example .env
-# Edit .env with these required keys:
-# - SERPER_API_KEY (for Google search)
-# - JINA_API_KEY (for web scraping)
-# - E2B_API_KEY (for code execution)
-# - SUMMARY_LLM_BASE_URL, SUMMARY_LLM_MODEL_NAME, SUMMARY_LLM_API_KEY (for LLM summarization, can use smaller models like Qwen3-14B or GPT-5-Nano)
-# - OPENAI_API_KEY (required for benchmark evaluation, used for LLM-as-a-Judge)
-
-# 3. Serve your model (or use existing API)
-# See "Serve the MiroThinker Model" section below
-
-# 4. Run evaluation
-# v1.5 with context management, max200: up to 200 turns (recommended for most tasks)
-uv run main.py llm=qwen-3 agent=mirothinker_v1.5_keep5_max200 llm.base_url=https://your_base_url/v1
-
-# v1.5 with context management, max400: up to 400 turns (only used for BrowseComp and BrowseComp-ZH)
-uv run main.py llm=qwen-3 agent=mirothinker_v1.5_keep5_max400 llm.base_url=https://your_base_url/v1
-
-# v1.5 without context management
-uv run main.py llm=qwen-3 agent=mirothinker_v1.5 llm.base_url=https://your_base_url/v1
-
-# v1.0 with context management
-uv run main.py llm=qwen-3 agent=mirothinker_v1.0_keep5 llm.base_url=https://your_base_url/v1
-
-# v1.0 without context management
-uv run main.py llm=qwen-3 agent=mirothinker_v1.0 llm.base_url=https://your_base_url/v1
-```
-
-> **💡 Minimal Configuration**: MiroThinker v1.5 and v1.0 use only 3 MCP servers: `search_and_scrape_webpage`, `jina_scrape_llm_summary`, and `tool-python`. Configurations with `keep5` enable context management for efficient context usage. See [Tool Configuration](#tool-configuration) for details.
-
 ### Prerequisites
 
 - 🐍 **Python 3.10+**
