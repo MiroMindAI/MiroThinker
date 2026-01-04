@@ -20,7 +20,7 @@ Workflow:
 
 ### Prerequisites
 
-- Python 3.12+
+- Python 3.10+
 - [uv](https://github.com/astral-sh/uv) package manager
 - OpenAI API key (for LLM-based validation)
 - RLVR dataset (JSONL; contains question and a verifiable answer)

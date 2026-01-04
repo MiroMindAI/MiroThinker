@@ -411,6 +411,8 @@ OPENAI_BASE_URL="https://api.openai.com/v1"  # Optional, defaults to OpenAI's AP
 >
 > **📊 For Benchmark Evaluation**: If you plan to run benchmark evaluations, you also need `OPENAI_API_KEY` (and optionally `OPENAI_BASE_URL`) for LLM-as-a-Judge functionality used in evaluation scripts.
 >
+> **🖼️ For GAIA Multimodal Tasks**: GAIA-Val-165 includes tasks with image/audio/video files. Since MiroThinker is a text-only LLM, GPT-4o is used to pre-process these files into text descriptions. The same `OPENAI_API_KEY` is used for both this preprocessing and LLM-as-a-Judge.
+>
 > **📖 For more details**: See [MiroFlow Tools README](libs/miroflow-tools/README.md) for complete documentation of all available tools.
 
 <details>
@@ -790,11 +792,11 @@ python benchmarks/check_progress/check_progress_deepsearchqa.py /path/to/evaluat
 cd apps/collect-trace
 
 # Collect Traces for SFT
-uv run bash scripts/collect_trace_claude37.sh
-uv run bash scripts/collect_trace_gpt5.sh
+bash scripts/collect_trace_claude37.sh
+bash scripts/collect_trace_gpt5.sh
 
 # Collect Traces for DPO
-uv run bash scripts/collect_trace_qwen3.sh
+bash scripts/collect_trace_qwen3.sh
 ```
 
 </details>
@@ -821,7 +823,7 @@ uv run bash scripts/collect_trace_qwen3.sh
 - **SERPER_API_KEY**: Get from [Serper.dev](https://serper.dev/) (Google search API)
 - **JINA_API_KEY**: Get from [Jina.ai](https://jina.ai/) (Web scraping)
 - **E2B_API_KEY**: Get from [E2B.dev](https://e2b.dev/) (Code execution sandbox)
-- **SUMMARY_LLM_KEY**: Your LLM API credentials (for content summarization). Can be a small model like Qwen3-14B or GPT-5-Nano—the choice has minimal impact on performance.
+- **SUMMARY_LLM_API_KEY**: Your LLM API credentials (for content summarization). Can be a small model like Qwen3-14B or GPT-5-Nano—the choice has minimal impact on performance.
 - **OPENAI_API_KEY**: Get from [OpenAI](https://platform.openai.com/) (Required for benchmark evaluation, used for LLM-as-a-Judge)
 - **OPENAI_BASE_URL**: Optional, defaults to `https://api.openai.com/v1`. Can be changed to use OpenAI-compatible APIs.
 

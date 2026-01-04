@@ -16,56 +16,96 @@ Before running the agent, ensure you have:
 
 ## Quick Start
 
-The simplest way to run a case is using the default command:
+### Run a Single Task
+
+The simplest way to test the agent is running `main.py` directly. It will execute a default task: *"What is the title of today's arxiv paper in computer science?"*
 
 ```bash
-# Run MiroThinker v1.5 with recommended configuration (context management, up to 200 turns)
-uv run python main.py llm=qwen-3 agent=mirothinker_v1.5_keep5_max200 benchmark=debug llm.base_url=<base_url>
+# Using MiroThinker models (requires your own model server)
+uv run python main.py llm=qwen-3 agent=mirothinker_v1.5_keep5_max200 llm.base_url=http://localhost:61002/v1
 
-# Run MiroThinker v1.5 for BrowseComp benchmarks (context management, up to 400 turns)
-uv run python main.py llm=qwen-3 agent=mirothinker_v1.5_keep5_max400 benchmark=debug llm.base_url=<base_url>
+# Using Claude (requires ANTHROPIC_API_KEY in .env)
+uv run python main.py llm=claude-3-7 agent=single_agent_keep5
 
-# Run MiroThinker v1.0 with context management
-uv run python main.py llm=qwen-3 agent=mirothinker_v1.0_keep5 benchmark=debug llm.base_url=<base_url>
-
-# Run Claude-3.7-Sonnet with single-agent configuration
-uv run python main.py llm=claude-3-7 agent=single_agent_keep5 benchmark=debug
-
-# Run GPT-5 with single-agent configuration
-uv run python main.py llm=gpt-5 agent=single_agent_keep5 benchmark=debug
+# Using GPT-5 (requires OPENAI_API_KEY in .env)
+uv run python main.py llm=gpt-5 agent=single_agent_keep5
 ```
 
-This will execute the default task: "What is the title of today's arxiv paper in computer science?"
+### Customize Your Task
+
+To ask a different question, edit `main.py` line 32:
+
+```python
+task_description = "Your custom question here"
+```
+
+Then run the agent again. It will search the web, execute code, and provide an answer.
+
+### Run Benchmark Evaluation
+
+For systematic evaluation on standard benchmarks, add the `benchmark=` parameter:
+
+```bash
+# Run on debug benchmark (quick test)
+uv run python main.py llm=qwen-3 agent=mirothinker_v1.5_keep5_max200 benchmark=debug llm.base_url=http://localhost:61002/v1
+
+# Run on specific benchmarks
+uv run python main.py llm=qwen-3 agent=mirothinker_v1.5_keep5_max200 benchmark=gaia-validation-text-103 llm.base_url=http://localhost:61002/v1
+```
 
 ## Available Configurations
 
-- **LLM Models**: `claude-3-7`, `gpt-5`, `qwen-3`
-- **Agent Configs (MiroThinker v1.5)**: `mirothinker_v1.5_keep5_max200` ⭐ (recommended), `mirothinker_v1.5_keep5_max400` (for BrowseComp), `mirothinker_v1.5`
-- **Agent Configs (MiroThinker v1.0)**: `mirothinker_v1.0_keep5` (recommended), `mirothinker_v1.0`
-- **Agent Configs (General)**: `single_agent`, `single_agent_keep5` (for closed-source models like Claude, GPT-5)
-- **Agent Configs (Multi-Agent)**: `multi_agent`, `multi_agent_os`
-- **Benchmark Configs**: `debug`, `browsecomp`, `browsecomp_zh`, `hle`, `hle-text-2158`, `gaia-validation-text-103`, `gaia-validation`, `frames`, `xbench_deepsearch`, `futurex`, `seal-0`, `aime2025`, `deepsearchqa`, etc.
+### LLM Models
 
-### Customizing the Task
+| Model | Config Name | Requirements |
+|-------|-------------|--------------|
+| MiroThinker (self-hosted) | `qwen-3` | Model server + `llm.base_url` |
+| Claude 3.7 Sonnet | `claude-3-7` | `ANTHROPIC_API_KEY` in .env |
+| GPT-5 | `gpt-5` | `OPENAI_API_KEY` in .env |
 
-To change the task description, you need to modify the `main.py` file directly:
+### Agent Configurations
 
-```python
-# In main.py, change line 43:
-task_description = "Your custom task here"
-```
+**MiroThinker v1.5:**
 
-### Output
+- `mirothinker_v1.5_keep5_max200` ⭐ (recommended) - context management, up to 200 turns
+- `mirothinker_v1.5_keep5_max400` - context management, up to 400 turns (for BrowseComp)
+- `mirothinker_v1.5` - no context management, up to 600 turns
+
+**MiroThinker v1.0:**
+
+- `mirothinker_v1.0_keep5` (recommended) - context management, up to 600 turns
+- `mirothinker_v1.0` - no context management, up to 600 turns
+
+**General (for closed-source models like Claude, GPT-5):**
+
+- `single_agent_keep5` (recommended) - single agent with context management
+- `single_agent` - single agent without context management
+
+**Multi-Agent (Legacy for v0.1/v0.2):**
+
+- `multi_agent` - multi-agent with commercial tools
+- `multi_agent_os` - multi-agent with open-source tools
+
+### Benchmark Configs
+
+`debug`, `browsecomp`, `browsecomp_zh`, `hle`, `hle-text-2158`, `hle-text-500`, `gaia-validation-text-103`, `gaia-validation`, `frames`, `xbench_deepsearch`, `futurex`, `seal-0`, `aime2025`, `deepsearchqa`, `webwalkerqa`
+
+## Output
 
 The agent will:
 
-1. Execute the task using available tools
+1. Execute the task using available tools (search, code execution, etc.)
 1. Generate a final summary and boxed answer
-1. Save logs to `../../logs/debug/` directory
+1. Save detailed logs to `../../logs/` directory
 1. Display the results in the terminal
 
-### Troubleshooting
+## Troubleshooting
 
-- Make sure your API keys are set correctly
-- Check the logs in the `logs/debug/` directory for detailed execution information
-- Ensure all dependencies are installed with `uv sync`
+| Problem | Solution |
+|---------|----------|
+| API key errors | Check `.env` file has correct keys |
+| Model connection failed | Verify `llm.base_url` is accessible |
+| Tool execution errors | Check E2B/Serper/Jina API keys and quotas |
+| Out of memory | Use `mirothinker_v1.5_keep5_max200` config |
+
+For detailed logs, check the `logs/` directory.

@@ -63,7 +63,7 @@ from miroflow_tools import ToolManager
 from mcp import StdioServerParameters
 
 async def main():
-# Initialize tool manager with server configurations
+    # Initialize tool manager with server configurations
     server_configs = [
         {
             "name": "tool-python",
