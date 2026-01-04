@@ -207,6 +207,7 @@ We have released the **MiroThinker v0.1** series, including both SFT and DPO var
 - **FutureX**: A live benchmark designed for predicting unknown future. ([website](https://futurex-ai.github.io/))
 - **SEAL-0**: A benchmark for evaluating LLMs on conflicting-evidence web questions. ([paper](https://arxiv.org/abs/2506.01062))
 - **AIME2025**: American Invitational Mathematics Examination 2025. ([website](https://artificialanalysis.ai/evaluations/aime-2025))
+- **DeepSearchQA**: Google's Deep Search Question Answering benchmark. ([paper](https://arxiv.org/abs/2505.20827))
 
 </details>
 
@@ -725,6 +726,9 @@ NUM_RUNS=8 LLM_MODEL="xxx" BASE_URL="xxx" bash scripts/run_evaluate_multiple_run
 
 # AIME2025
 NUM_RUNS=32 LLM_MODEL="xxx" BASE_URL="xxx" bash scripts/run_evaluate_multiple_runs_aime2025.sh
+
+# DeepSearchQA
+NUM_RUNS=3 LLM_MODEL="xxx" BASE_URL="xxx" bash scripts/run_evaluate_multiple_runs_deepsearchqa.sh
 ```
 
 </details>
@@ -773,6 +777,9 @@ python benchmarks/check_progress/check_progress_seal-0.py /path/to/evaluation/lo
 
 # For AIME2025
 python benchmarks/check_progress/check_progress_aime2025.py /path/to/evaluation/logs
+
+# For DeepSearchQA
+python benchmarks/check_progress/check_progress_deepsearchqa.py /path/to/evaluation/logs
 ```
 
 </details>
