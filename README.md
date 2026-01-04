@@ -442,13 +442,13 @@ The `apps/miroflow-agent/conf/agent/` directory contains several pre-configured 
 
 > **💡 Recommended**: For MiroThinker v1.5, use `mirothinker_v1.5_keep5_max200` (with context management, recommended for most tasks) or `mirothinker_v1.5_keep5_max400` (only used for BrowseComp and BrowseComp-ZH). For v1.0, use `mirothinker_v1.0_keep5` (with context management). All use minimal configuration with only 3 MCP servers.
 
-| Configuration                           | Description | Max Turns | Context Retention | Required Environment Variables                                                                                                                               | Recommended For |
-|:----------------------------------------|:------------|:----------|:------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------|:----------------|
-| **`mirothinker_v1.5`** ⭐                | Single-agent for MiroThinker v1.5 | 600 | Keep all results | `SERPER_API_KEY`, `SERPER_BASE_URL`, `JINA_API_KEY`, `JINA_BASE_URL`, `E2B_API_KEY`, `SUMMARY_LLM_BASE_URL`, `SUMMARY_LLM_MODEL_NAME`, `SUMMARY_LLM_API_KEY` | **v1.5** |
-| **`mirothinker_v1.5_keep5_max200`** ⭐   | Single-agent with context management | 200 | Keep 5 most recent | Same as `mirothinker_v1.5`                                                                                                                              | **v1.5 (recommended for most tasks)** |
-| **`mirothinker_v1.5_keep5_max400`** ⭐   | Single-agent with context management | 400 | Keep 5 most recent | Same as `mirothinker_v1.5`                                                                                                                              | **v1.5 (for BrowseComp & BrowseComp-ZH)** |
-| **`mirothinker_v1.0`**                  | Single-agent for MiroThinker v1.0 | 600 | Keep all results | `SERPER_API_KEY`, `SERPER_BASE_URL`, `JINA_API_KEY`, `JINA_BASE_URL`, `E2B_API_KEY`, `SUMMARY_LLM_BASE_URL`, `SUMMARY_LLM_MODEL_NAME`, `SUMMARY_LLM_API_KEY` | **v1.0** |
-| **`mirothinker_v1.0_keep5`**            | Single-agent with context management | 600 | Keep 5 most recent | Same as `mirothinker_v1.0`                                                                                                                                   | **v1.0** |
+| Configuration                          | Description | Max Turns | Context Retention | Required Environment Variables                                                                                                                               | Recommended For |
+|:---------------------------------------|:------------|:----------|:------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------|:----------------|
+| **`mirothinker_v1.5_keep5_max200`** ⭐  | Single-agent with context management | 200 | Keep 5 most recent | `SERPER_API_KEY`, `SERPER_BASE_URL`, `JINA_API_KEY`, `JINA_BASE_URL`, `E2B_API_KEY`, `SUMMARY_LLM_BASE_URL`, `SUMMARY_LLM_MODEL_NAME`, `SUMMARY_LLM_API_KEY` | **v1.5 (recommended for most tasks)** |
+| **`mirothinker_v1.5_keep5_max400`** ⭐  | Single-agent with context management | 400 | Keep 5 most recent | Same as above                                                                                                                              | **v1.5 (for BrowseComp & BrowseComp-ZH)** |
+| **`mirothinker_v1.5`**                 | Single-agent for MiroThinker v1.5 | 600 | Keep all results | Same as above | **v1.5** |
+| **`mirothinker_v1.0_keep5`**           | Single-agent with context management | 600 | Keep 5 most recent | Same as above                                                                                                                                   | **v1.0** |
+| **`mirothinker_v1.0`**                 | Single-agent for MiroThinker v1.0 | 600 | Keep all results | Same as above | **v1.0** |
 
 <details>
   <summary>📦 Click to expand legacy configurations (v0.1/v0.2)</summary>
@@ -813,26 +813,6 @@ uv run bash scripts/collect_trace_qwen3.sh
 - **v1.5** ⭐: Latest version with 256K context, world-leading performance. Use config (with context management):
   - `mirothinker_v1.5_keep5_max200` (up to 200 turns, recommended for most tasks)
   - `mirothinker_v1.5_keep5_max400` (up to 400 turns, only used for BrowseComp and BrowseComp-ZH)
-
-| Version | Context | Max Tool Calls | Recommended Config | Use Case |
-|:--------|:--------|:--------------:|:-------------------|:---------|
-| **v1.5** ⭐ | 256K | 200 | `mirothinker_v1.5_keep5_max200` (with context management) | World-leading performance, recommended for most tasks |
-| **v1.5** ⭐ | 256K | 400 | `mirothinker_v1.5_keep5_max400` (with context management) | For BrowseComp and BrowseComp-ZH |
-
-<details>
-  <summary>📦 Click to expand older versions (v1.0/v0.2/v0.1)</summary>
-
-- **v1.0**: 256K context, 600 tool calls. Use `mirothinker_v1.0_keep5` config (with context management).
-- **v0.2**: 64K context, 50 tool calls. Use `multi_agent` or `multi_agent_os` config.
-- **v0.1**: 40K context, 50 tool calls. Use `multi_agent` or `multi_agent_os` config.
-
-| Version | Context | Max Tool Calls | Recommended Config | Use Case |
-|:--------|:--------|:--------------:|:-------------------|:---------|
-| **v1.0** | 256K | 600 | `mirothinker_v1.0_keep5` (with context management) | Supports more tool calls |
-| **v0.2** | 64K | 50 | `multi_agent_os` | Multi-agent workflows |
-| **v0.1** | 40K | 50 | `multi_agent_os` | Legacy support |
-
-</details>
 
 #### **Q: How do I get API keys?**
 
