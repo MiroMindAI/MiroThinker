@@ -24,6 +24,8 @@ uv run python benchmarks/common_benchmark.py \
     llm.api_key="" \
     llm.base_url=https://your-api.com/v1 \
     llm.async_client=true \
+    llm.temperature=1.0 \
+    llm.max_context_length=131072 \
     benchmark.execution.max_tasks=null \
     benchmark.execution.max_concurrent=10 \
     benchmark.execution.pass_at_k=1 \
