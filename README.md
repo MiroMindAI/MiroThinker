@@ -566,8 +566,8 @@ ANTHROPIC_API_KEY=your_anthropic_key
 TENCENTCLOUD_SECRET_ID=your_tencent_cloud_secret_id
 TENCENTCLOUD_SECRET_KEY=your_tencent_cloud_secret_key
 
-# API for Summary LLM (can use smaller models like Qwen3-14B or GPT-5-Nano)
-SUMMARY_LLM_BASE_URL=your_summary_llm_base_url
+# API for Summary LLM (can use small models like Qwen3-14B or GPT-5-Nano)
+SUMMARY_LLM_BASE_URL="https://your_summary_llm_base_url/v1/chat/completions"
 SUMMARY_LLM_MODEL_NAME=your_summary_llm_model_name  # e.g., "Qwen/Qwen3-14B" or "gpt-5-nano"
 SUMMARY_LLM_API_KEY=your_summary_llm_api_key
 ```
