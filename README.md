@@ -402,13 +402,14 @@ SUMMARY_LLM_API_KEY=your_llm_api_key  # Optional, depends on LLM provider
 
 # Required for benchmark evaluation (LLM-as-a-Judge)
 OPENAI_API_KEY=your_openai_key  # Required for running benchmark evaluations
+OPENAI_BASE_URL="https://api.openai.com/v1"  # Optional, defaults to OpenAI's API
 ```
 
 > **💡 Why this is minimal**: These 3 MCP servers cover the core capabilities needed for research tasks: web search, content extraction, and code execution. All other servers are optional enhancements.
 >
 > **🤖 Summary LLM**: The `SUMMARY_LLM` can be a small model like Qwen3-14B or GPT-5-Nano. The choice has minimal impact on overall performance, use whichever is most convenient for your setup.
 >
-> **📊 For Benchmark Evaluation**: If you plan to run benchmark evaluations, you also need `OPENAI_API_KEY` for LLM-as-a-Judge functionality used in evaluation scripts.
+> **📊 For Benchmark Evaluation**: If you plan to run benchmark evaluations, you also need `OPENAI_API_KEY` (and optionally `OPENAI_BASE_URL`) for LLM-as-a-Judge functionality used in evaluation scripts.
 >
 > **📖 For more details**: See [MiroFlow Tools README](libs/miroflow-tools/README.md) for complete documentation of all available tools.
 
@@ -544,6 +545,7 @@ uv run main.py llm=qwen-3 agent=my_custom_config llm.base_url=https://your_base_
 ```bash
 # API for LLM-as-Judge (for benchmark testing, required for benchmark evaluation)
 OPENAI_API_KEY=your_openai_key
+OPENAI_BASE_URL="https://api.openai.com/v1"  # Optional, defaults to OpenAI's API
 
 # API for Open-Source Audio Transcription Tool (for benchmark testing, optional)
 WHISPER_MODEL_NAME="openai/whisper-large-v3-turbo"
@@ -844,8 +846,9 @@ uv run bash scripts/collect_trace_qwen3.sh
 - **SERPER_API_KEY**: Get from [Serper.dev](https://serper.dev/) (Google search API)
 - **JINA_API_KEY**: Get from [Jina.ai](https://jina.ai/) (Web scraping)
 - **E2B_API_KEY**: Get from [E2B.dev](https://e2b.dev/) (Code execution sandbox)
-- **SUMMARY_LLM\_\***: Your LLM API credentials (for content summarization). Can be a small model like Qwen3-14B or GPT-5-Nano—the choice has minimal impact on performance.
+- **SUMMARY_LLM_KEY**: Your LLM API credentials (for content summarization). Can be a small model like Qwen3-14B or GPT-5-Nano—the choice has minimal impact on performance.
 - **OPENAI_API_KEY**: Get from [OpenAI](https://platform.openai.com/) (Required for benchmark evaluation, used for LLM-as-a-Judge)
+- **OPENAI_BASE_URL**: Optional, defaults to `https://api.openai.com/v1`. Can be changed to use OpenAI-compatible APIs.
 
 #### **Q: Model server connection errors**
 
