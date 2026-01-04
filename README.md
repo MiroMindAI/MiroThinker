@@ -107,9 +107,9 @@ Unlike previous agents that scale only model size or context length, MiroThinker
 
 <div align="center">
 
-|      Model Name      |         Base Model          | Max Length | Max Tool Calls |                              HF Link                               |
-|:--------------------:|:---------------------------:|:----------:|:--------------:|:------------------------------------------------------------------:|
-| MiroThinker-v1.0-8B  |        Qwen3-8B             |    256K    |      600       | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-v1.0-8B)  |
+|      Model Name      |         Base Model          | Max Context | Max Tool Calls |                              HF Link                               |
+|:--------------------:|:---------------------------:|:-----------:|:--------------:|:------------------------------------------------------------------:|
+| MiroThinker-v1.0-8B  |        Qwen3-8B             |    256K     |      600       | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-v1.0-8B)  |
 | MiroThinker-v1.0-30B | Qwen3-30B-A3B-Thinking-2507 |    256K    |      600       | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-v1.0-30B) |
 | MiroThinker-v1.0-72B |    Qwen2.5-72B-Instruct     |    256K    |      600       | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-v1.0-72B) |
 
@@ -138,8 +138,8 @@ Compared to v0.1, MiroThinker v0.2 delivers consistent gains across benchmarks. 
 
 <div align="center">
 
-|        Model Name        |      Base Model       | Max Length |                                HF Link                                 |
-|:------------------------:|:---------------------:|:----------:|:----------------------------------------------------------------------:|
+|        Model Name        |      Base Model       | Max Context |                                HF Link                                 |
+|:------------------------:|:---------------------:|:-----------:|:----------------------------------------------------------------------:|
 | MiroThinker-4B-SFT-v0.2  |       Qwen3-4B        |    64K     | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-4B-SFT-v0.2)  |
 | MiroThinker-4B-DPO-v0.2  |       Qwen3-4B        |    64K     | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-4B-DPO-v0.2)  |
 | MiroThinker-8B-SFT-v0.2  |       Qwen3-8B        |    64K     | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-8B-SFT-v0.2)  |
@@ -167,8 +167,8 @@ We have released the **MiroThinker v0.1** series, including both SFT and DPO var
 
 <div align="center">
 
-| Model Name                | Base Model | Max Length | HF Link                                                               |
-| :-----------------------: |:----------:|:----------:| :--------------------------------------------------------------------:|
+| Model Name                | Base Model | Max Context | HF Link                                                               |
+| :-----------------------: |:----------:|:-----------:| :--------------------------------------------------------------------:|
 | MiroThinker-8B-SFT-v0.1   |  Qwen3-8B  |    40K     | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-8B-SFT-v0.1)  |
 | MiroThinker-8B-DPO-v0.1   |  Qwen3-8B  |    40K     | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-8B-DPO-v0.1)  |
 | MiroThinker-14B-SFT-v0.1  | Qwen3-14B  |    40K     | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-14B-SFT-v0.1) |
