@@ -619,8 +619,6 @@ The agent will search the web, execute code if needed, and provide an answer wit
 
 > **📖 More details**: See [apps/miroflow-agent/README.md](apps/miroflow-agent/README.md) for available configurations and troubleshooting.
 
-______________________________________________________________________
-
 ## 📊 Benchmark Evaluation
 
 > For researchers who want to reproduce our benchmark results or evaluate on standard benchmarks.
