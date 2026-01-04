@@ -688,8 +688,8 @@ bash scripts/run_evaluate_multiple_runs_gaia-validation-text-103.sh
 
 > **⚠️ Important for MiroThinker v1.5**: To reproduce our reported results, you must set the correct `AGENT_SET`:
 >
-> - **BrowseComp & BrowseComp-ZH**: Use `AGENT_SET="mirothinker_v1.5_keep5_max400"` (up to 400 turns)
-> - **All other benchmarks**: Use `AGENT_SET="mirothinker_v1.5_keep5_max200"` (up to 200 turns)
+> - **BrowseComp & BrowseComp-ZH**: Use `AGENT_SET="mirothinker_v1.5_keep5_max400"`
+> - **All other benchmarks**: Use `AGENT_SET="mirothinker_v1.5_keep5_max200"`
 
 ```bash
 # Navigate to the miroflow-agent directory first
