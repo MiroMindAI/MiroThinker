@@ -632,7 +632,7 @@ uv run main.py llm=qwen-3 agent=mirothinker_v1.0 llm.base_url=https://your_base_
 
 #### 2. **Run comprehensive benchmark evaluation**
 
-> **Note:** For MiroThinker v1.5, use `mirothinker_v1.5`, `mirothinker_v1.5_keep5_max200` (with context management), or `mirothinker_v1.5_keep5_max400` (with context management) configurations. For v1.0, use `mirothinker_v1.0` or `mirothinker_v1.0_keep5` (with context management) configurations.
+> **Note:** For MiroThinker v1.5, use `mirothinker_v1.5_keep5_max200` (with context management), `mirothinker_v1.5_keep5_max400` (with context management), or `mirothinker_v1.5` configurations. For v1.0, use `mirothinker_v1.0_keep5` (with context management) or `mirothinker_v1.0` configurations.
 
 **Available Parameters:**
 
