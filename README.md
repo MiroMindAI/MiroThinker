@@ -393,9 +393,9 @@ JINA_BASE_URL="https://r.jina.ai"
 E2B_API_KEY=your_e2b_key
 
 # Required for jina_scrape_llm_summary
-# Note: Summary LLM can be a smaller model (e.g., Qwen3-14B or GPT-5-Nano)
+# Note: Summary LLM can be a small model (e.g., Qwen3-14B or GPT-5-Nano)
 # The choice has minimal impact on performance, use what's most convenient
-SUMMARY_LLM_BASE_URL=your_llm_base_url
+SUMMARY_LLM_BASE_URL="https://your_summary_llm_base_url/v1/chat/completions"
 SUMMARY_LLM_MODEL_NAME=your_llm_model_name  # e.g., "Qwen/Qwen3-14B" or "gpt-5-nano"
 SUMMARY_LLM_API_KEY=your_llm_api_key  # Optional, depends on LLM provider
 
@@ -403,9 +403,9 @@ SUMMARY_LLM_API_KEY=your_llm_api_key  # Optional, depends on LLM provider
 OPENAI_API_KEY=your_openai_key  # Required for running benchmark evaluations
 ```
 
-> **💡 Why this is minimal**: These 3 MCP servers cover the core capabilities needed for research tasks: web search, content extraction, and code execution. Each server provides multiple tools. All other servers are optional enhancements.
+> **💡 Why this is minimal**: These 3 MCP servers cover the core capabilities needed for research tasks: web search, content extraction, and code execution. All other servers are optional enhancements.
 >
-> **🤖 Summary LLM**: The `SUMMARY_LLM` can be a smaller model like Qwen3-14B or GPT-5-Nano. The choice has minimal impact on overall performance—use whichever is most convenient for your setup.
+> **🤖 Summary LLM**: The `SUMMARY_LLM` can be a small model like Qwen3-14B or GPT-5-Nano. The choice has minimal impact on overall performance, use whichever is most convenient for your setup.
 >
 > **📊 For Benchmark Evaluation**: If you plan to run benchmark evaluations, you also need `OPENAI_API_KEY` for LLM-as-a-Judge functionality used in evaluation scripts.
 >
@@ -443,21 +443,21 @@ The `apps/miroflow-agent/conf/agent/` directory contains several pre-configured 
 
 > **💡 Recommended**: For MiroThinker v1.5, use `mirothinker_v1.5_keep5_max200` (with context management, recommended for most tasks) or `mirothinker_v1.5_keep5_max400` (only used for BrowseComp and BrowseComp-ZH). For v1.0, use `mirothinker_v1.0_keep5` (with context management). All use minimal configuration with only 3 MCP servers.
 
-| Configuration File | Description | Max Turns | Context Retention | Required Environment Variables | Recommended For |
-|:-------------------|:------------|:----------|:------------------|:-------------------------------|:----------------|
-| **`mirothinker_v1.5.yaml`** ⭐ | Single-agent configuration for MiroThinker v1.5 (minimal setup) | 600 | Keep all results | `SERPER_API_KEY`, `SERPER_BASE_URL`, `JINA_API_KEY`, `JINA_BASE_URL`, `E2B_API_KEY`, `SUMMARY_LLM_BASE_URL`, `SUMMARY_LLM_MODEL_NAME`, `SUMMARY_LLM_API_KEY` | **v1.5** |
-| **`mirothinker_v1.5_keep5_max200.yaml`** ⭐ | Single-agent with context management (minimal setup) | 200 | Keep 5 most recent | Same as `mirothinker_v1.5.yaml` | **v1.5 (recommended for most tasks)** |
-| **`mirothinker_v1.5_keep5_max400.yaml`** ⭐ | Single-agent with context management (minimal setup) | 400 | Keep 5 most recent | Same as `mirothinker_v1.5.yaml` | **v1.5 (for BrowseComp/BrowseComp-ZH)** |
-| **`mirothinker_v1.0.yaml`** | Single-agent configuration for MiroThinker v1.0 (minimal setup) | 600 | Keep all results | `SERPER_API_KEY`, `SERPER_BASE_URL`, `JINA_API_KEY`, `JINA_BASE_URL`, `E2B_API_KEY`, `SUMMARY_LLM_BASE_URL`, `SUMMARY_LLM_MODEL_NAME`, `SUMMARY_LLM_API_KEY` | **v1.0** |
-| **`mirothinker_v1.0_keep5.yaml`** | Single-agent with context management (minimal setup) | 600 | Keep 5 most recent | Same as `mirothinker_v1.0.yaml` | **v1.0 (recommended)** |
+| Configuration                           | Description | Max Turns | Context Retention | Required Environment Variables                                                                                                                               | Recommended For |
+|:----------------------------------------|:------------|:----------|:------------------|:-------------------------------------------------------------------------------------------------------------------------------------------------------------|:----------------|
+| **`mirothinker_v1.5`** ⭐                | Single-agent configuration for MiroThinker v1.5 (minimal setup) | 600 | Keep all results | `SERPER_API_KEY`, `SERPER_BASE_URL`, `JINA_API_KEY`, `JINA_BASE_URL`, `E2B_API_KEY`, `SUMMARY_LLM_BASE_URL`, `SUMMARY_LLM_MODEL_NAME`, `SUMMARY_LLM_API_KEY` | **v1.5** |
+| **`mirothinker_v1.5_keep5_max200`** ⭐   | Single-agent with context management (minimal setup) | 200 | Keep 5 most recent | Same as `mirothinker_v1.5`                                                                                                                              | **v1.5 (recommended for most tasks)** |
+| **`mirothinker_v1.5_keep5_max400`** ⭐   | Single-agent with context management (minimal setup) | 400 | Keep 5 most recent | Same as `mirothinker_v1.5`                                                                                                                              | **v1.5 (for BrowseComp/BrowseComp-ZH)** |
+| **`mirothinker_v1.0`**                  | Single-agent configuration for MiroThinker v1.0 (minimal setup) | 600 | Keep all results | `SERPER_API_KEY`, `SERPER_BASE_URL`, `JINA_API_KEY`, `JINA_BASE_URL`, `E2B_API_KEY`, `SUMMARY_LLM_BASE_URL`, `SUMMARY_LLM_MODEL_NAME`, `SUMMARY_LLM_API_KEY` | **v1.0** |
+| **`mirothinker_v1.0_keep5`**            | Single-agent with context management (minimal setup) | 600 | Keep 5 most recent | Same as `mirothinker_v1.0`                                                                                                                                   | **v1.0 (recommended)** |
 
 <details>
   <summary>📦 Click to expand legacy configurations (v0.1/v0.2)</summary>
 
-| Configuration File | Description | Max Turns | Context Retention | Required Environment Variables | Recommended For |
-|:-------------------|:------------|:----------|:------------------|:-------------------------------|:----------------|
-| **`multi_agent.yaml`** | Multi-agent with commercial tools (v0.1/v0.2) | 50 | Keep all results | `E2B_API_KEY`, `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `SERPER_API_KEY`, `SERPER_BASE_URL`, `JINA_API_KEY`, `JINA_BASE_URL` | v0.1/v0.2 |
-| **`multi_agent_os.yaml`** | Multi-agent with open-source tools (v0.1/v0.2) | 50 | Keep all results | `E2B_API_KEY`, `VISION_API_KEY`, `VISION_BASE_URL`, `VISION_MODEL_NAME`, `WHISPER_API_KEY`, `WHISPER_BASE_URL`, `WHISPER_MODEL_NAME`, `REASONING_API_KEY`, `REASONING_BASE_URL`, `REASONING_MODEL_NAME`, `SERPER_API_KEY`, `SERPER_BASE_URL`, `JINA_API_KEY`, `JINA_BASE_URL` | v0.1/v0.2 |
+| Configuration            | Description | Max Turns | Context Retention | Required Environment Variables | Recommended For |
+|:-------------------------|:------------|:----------|:------------------|:-------------------------------|:----------------|
+| **`multi_agent`**        | Multi-agent with commercial tools (v0.1/v0.2) | 50 | Keep all results | `E2B_API_KEY`, `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`, `OPENAI_API_KEY`, `OPENAI_BASE_URL`, `SERPER_API_KEY`, `SERPER_BASE_URL`, `JINA_API_KEY`, `JINA_BASE_URL` | v0.1/v0.2 |
+| **`multi_agent_os`**     | Multi-agent with open-source tools (v0.1/v0.2) | 50 | Keep all results | `E2B_API_KEY`, `VISION_API_KEY`, `VISION_BASE_URL`, `VISION_MODEL_NAME`, `WHISPER_API_KEY`, `WHISPER_BASE_URL`, `WHISPER_MODEL_NAME`, `REASONING_API_KEY`, `REASONING_BASE_URL`, `REASONING_MODEL_NAME`, `SERPER_API_KEY`, `SERPER_BASE_URL`, `JINA_API_KEY`, `JINA_BASE_URL` | v0.1/v0.2 |
 
 </details>
 
@@ -837,7 +837,7 @@ uv run bash scripts/collect_trace_qwen3.sh
 - **SERPER_API_KEY**: Get from [Serper.dev](https://serper.dev/) (Google search API)
 - **JINA_API_KEY**: Get from [Jina.ai](https://jina.ai/) (Web scraping)
 - **E2B_API_KEY**: Get from [E2B.dev](https://e2b.dev/) (Code execution sandbox)
-- **SUMMARY_LLM_\***: Your LLM API credentials (for content summarization). Can be a smaller model like Qwen3-14B or GPT-5-Nano—the choice has minimal impact on performance.
+- **SUMMARY_LLM\_\***: Your LLM API credentials (for content summarization). Can be a small model like Qwen3-14B or GPT-5-Nano—the choice has minimal impact on performance.
 - **OPENAI_API_KEY**: Get from [OpenAI](https://platform.openai.com/) (Required for benchmark evaluation, used for LLM-as-a-Judge)
 
 #### **Q: Model server connection errors**
