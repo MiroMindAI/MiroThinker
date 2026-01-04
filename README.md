@@ -375,7 +375,7 @@ cp .env.example .env
 
 ### Tool Configuration
 
-#### Minimal Configuration (Recommended for MiroThinker v1.5 and v1.0)
+#### Minimal Configuration for MiroThinker v1.5 and v1.0
 
 | Server | Description | Tools Provided | Required Environment Variables |
 |:-------|:------------|:---------------|:-------------------------------|
@@ -438,9 +438,6 @@ See the [MiroFlow Tools README](libs/miroflow-tools/README.md) for complete docu
 
 #### Pre-configured Agent Settings
 
-<details open>
-  <summary>⚙️ Click to expand pre-configured agent settings table</summary>
-
 The `apps/miroflow-agent/conf/agent/` directory contains several pre-configured agent settings. Each configuration uses different tools and requires corresponding environment variables in your `.env` file.
 
 > **💡 Recommended**: For MiroThinker v1.5, use `mirothinker_v1.5_keep5_max200` (with context management, recommended for most tasks) or `mirothinker_v1.5_keep5_max400` (only used for BrowseComp and BrowseComp-ZH). For v1.0, use `mirothinker_v1.0_keep5` (with context management). All use minimal configuration with only 3 MCP servers.
@@ -464,8 +461,6 @@ The `apps/miroflow-agent/conf/agent/` directory contains several pre-configured 
 </details>
 
 > **💡 Note**: All environment variables are listed in `apps/miroflow-agent/.env.example`. Copy it to `.env` and fill in the values for the tools you plan to use.
-
-</details>
 
 #### Creating Custom Tool Configurations
 
