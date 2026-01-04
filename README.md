@@ -436,7 +436,7 @@ See the [MiroFlow Tools README](libs/miroflow-tools/README.md) for complete docu
 
 #### Pre-configured Agent Settings
 
-<details>
+<details open>
   <summary>⚙️ Click to expand pre-configured agent settings table</summary>
 
 The `apps/miroflow-agent/conf/agent/` directory contains several pre-configured agent settings. Each configuration uses different tools and requires corresponding environment variables in your `.env` file.
@@ -576,7 +576,7 @@ SUMMARY_LLM_API_KEY=your_summary_llm_api_key
 
 ### Serve the MiroThinker Model
 
-#### Option 1 (Recommended): Serve with SGLang
+#### Option 1 (Recommended): Serve with SGLang or vLLM
 
 Use SGLang to serve MiroThinker models at port 61002:
 
@@ -660,10 +660,10 @@ You can customize the evaluation by setting the following environment variables 
 cd apps/miroflow-agent
 
 # Basic usage with v1.5 (recommended)
-NUM_RUNS=8 LLM_MODEL="MiroThinker-v1.5-30B" BASE_URL="https://your-api.com/v1" bash scripts/run_evaluate_multiple_runs_gaia-validation.sh
+NUM_RUNS=8 LLM_MODEL="MiroThinker-v1.5-30B" BASE_URL="https://your-api.com/v1" bash scripts/run_evaluate_multiple_runs_gaia-validation-text-103.sh
 
 # Or with v1.0
-# NUM_RUNS=8 LLM_MODEL="MiroThinker-v1.0-30B" BASE_URL="https://your-api.com/v1" bash scripts/run_evaluate_multiple_runs_gaia-validation.sh
+# NUM_RUNS=8 LLM_MODEL="MiroThinker-v1.0-30B" BASE_URL="https://your-api.com/v1" bash scripts/run_evaluate_multiple_runs_gaia-validation-text-103.sh
 
 # Customize number of runs and agent configuration (v1.5 with context management)
 LLM_MODEL="MiroThinker-v1.5-30B" \
