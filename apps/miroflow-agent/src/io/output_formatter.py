@@ -73,7 +73,8 @@ class OutputFormatter:
                 i = j + 1  # Move past this invalid boxed
 
         # Return the last boxed content found (complete or incomplete)
-        return last_result.strip() if last_result else ""
+        black_list = ["?", "??", "???", "？", "……", "…", "...", "unknown", None]
+        return last_result.strip() if last_result not in black_list else ""
 
     def format_tool_result_for_user(self, tool_call_execution_result):
         """
