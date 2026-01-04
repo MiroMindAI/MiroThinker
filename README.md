@@ -837,7 +837,7 @@ uv run bash scripts/collect_trace_qwen3.sh
 - **SERPER_API_KEY**: Get from [Serper.dev](https://serper.dev/) (Google search API)
 - **JINA_API_KEY**: Get from [Jina.ai](https://jina.ai/) (Web scraping)
 - **E2B_API_KEY**: Get from [E2B.dev](https://e2b.dev/) (Code execution sandbox)
-- **SUMMARY_LLM\_**\*: Your LLM API credentials (for content summarization). Can be a smaller model like Qwen3-14B or GPT-5-Nano—the choice has minimal impact on performance.
+- **SUMMARY_LLM_\***: Your LLM API credentials (for content summarization). Can be a smaller model like Qwen3-14B or GPT-5-Nano—the choice has minimal impact on performance.
 - **OPENAI_API_KEY**: Get from [OpenAI](https://platform.openai.com/) (Required for benchmark evaluation, used for LLM-as-a-Judge)
 
 #### **Q: Model server connection errors**
