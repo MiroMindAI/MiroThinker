@@ -936,10 +936,16 @@ async def _verify_answer_for_datasets_core(
         if predicted_answer == target:
             return "CORRECT", "exact_match", None
 
-    # For gaia-validation, use gaia_scorer
+    # For gaia-validation, use gaia-validation-text-103-scorer
+    # We found that gaia_scorer tends to label many correct answers as incorrect, so we believe
+    # that using an LLM-as-judge approach can more accurately reflect the model’s performance.
     if benchmark_name == "gaia-validation":
-        result = await verify_answer_gaia(question, target, predicted_answer)
-        return result, "gaia_scorer", None
+        # result = await verify_answer_gaia(question, target, predicted_answer)
+        # return result, "gaia_scorer", None
+        result = await verify_answer_gaia_validation_text_103(
+            question, target, predicted_answer
+        )
+        return result, "gaia_validation_text_103_judge", None
 
     # For gaia-validation-text-103, use gaia-validation-text-103-scorer
     elif benchmark_name == "gaia-validation-text-103":
