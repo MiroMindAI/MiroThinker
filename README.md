@@ -668,14 +668,14 @@ LLM_MODEL="MiroThinker-v1.5-30B" \
 BASE_URL="https://your-api.com/v1" \
 NUM_RUNS=8 \
 AGENT_SET="mirothinker_v1.5_keep5_max200" \
-bash scripts/run_evaluate_multiple_runs_gaia-validation.sh
+bash scripts/run_evaluate_multiple_runs_gaia-validation-text-103.sh
 
 # Or with v1.0 configuration (with context management)
 # LLM_MODEL="MiroThinker-v1.0-30B" \
 # BASE_URL="https://your-api.com/v1" \
 # NUM_RUNS=8 \
 # AGENT_SET="mirothinker_v1.0_keep5" \
-# bash scripts/run_evaluate_multiple_runs_gaia-validation.sh
+# bash scripts/run_evaluate_multiple_runs_gaia-validation-text-103.sh
 ```
 
 <details open>

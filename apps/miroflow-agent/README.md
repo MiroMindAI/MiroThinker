@@ -30,7 +30,7 @@ This will execute the default task: "What is the title of today's arxiv paper in
 - **Agent Configs (MiroThinker v1.0)**: `mirothinker_v1.0_keep5` (recommended), `mirothinker_v1.0`
 - **Agent Configs (General)**: `single_agent`, `single_agent_keep5` (for closed-source models like Claude, GPT-5)
 - **Agent Configs (Multi-Agent)**: `multi_agent`, `multi_agent_os`
-- **Benchmark Configs**: `debug`, `browsecomp`, `browsecomp_zh`, `hle`, `hle-text-2158`, `gaia-validation`, `gaia-validation-text-103`, `frames`, `xbench_deepsearch`, `futurex`, `seal-0`, `aime2025`, `deepsearchqa`, etc.
+- **Benchmark Configs**: `debug`, `browsecomp`, `browsecomp_zh`, `hle`, `hle-text-2158`, `gaia-validation-text-103`, `gaia-validation`, `frames`, `xbench_deepsearch`, `futurex`, `seal-0`, `aime2025`, `deepsearchqa`, etc.
 
 ### Customizing the Task
 
