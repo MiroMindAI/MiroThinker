@@ -813,28 +813,28 @@ uv run bash scripts/collect_trace_qwen3.sh
 
 #### **Q: Which version should I use?**
 
-**A:** We recommend **MiroThinker v1.5** (latest) or **v1.0** (stable) with the minimal configuration:
+**A:** We recommend **MiroThinker v1.5** ⭐ with the minimal configuration:
 
 - **v1.5** ⭐: Latest version with 256K context, world-leading performance. Use config (with context management):
   - `mirothinker_v1.5_keep5_max200` (up to 200 turns, recommended for most tasks)
   - `mirothinker_v1.5_keep5_max400` (up to 400 turns, only used for BrowseComp and BrowseComp-ZH)
-- **v1.0**: Stable version with 256K context, 600 tool calls, excellent performance. Use `mirothinker_v1.0_keep5` config (with context management).
 
 | Version | Context | Max Tool Calls | Recommended Config | Use Case |
 |:--------|:--------|:--------------:|:-------------------|:---------|
-| **v1.5** ⭐ | 256K | 200 | `mirothinker_v1.5_keep5_max200` (with context management) | Latest, world-leading performance, recommended for most tasks |
-| **v1.5** ⭐ | 256K | 400 | `mirothinker_v1.5_keep5_max400` (with context management) | Latest, only used for BrowseComp and BrowseComp-ZH |
-| **v1.0** | 256K | 600 | `mirothinker_v1.0_keep5` (with context management) | Stable version, excellent performance, supports more tool calls |
+| **v1.5** ⭐ | 256K | 200 | `mirothinker_v1.5_keep5_max200` (with context management) | World-leading performance, recommended for most tasks |
+| **v1.5** ⭐ | 256K | 400 | `mirothinker_v1.5_keep5_max400` (with context management) | For BrowseComp and BrowseComp-ZH |
 
 <details>
-  <summary>📦 Click to expand legacy versions (v0.1/v0.2)</summary>
+  <summary>📦 Click to expand older versions (v1.0/v0.2/v0.1)</summary>
 
-- **v0.2**: Good performance with 64K context, 50 tool calls. Use `multi_agent` or `multi_agent_os` config.
-- **v0.1**: Legacy version with 40K context. Use `multi_agent` or `multi_agent_os` config.
+- **v1.0**: 256K context, 600 tool calls. Use `mirothinker_v1.0_keep5` config (with context management).
+- **v0.2**: 64K context, 50 tool calls. Use `multi_agent` or `multi_agent_os` config.
+- **v0.1**: 40K context, 50 tool calls. Use `multi_agent` or `multi_agent_os` config.
 
 | Version | Context | Max Tool Calls | Recommended Config | Use Case |
 |:--------|:--------|:--------------:|:-------------------|:---------|
-| **v0.2** | 64K | 50 | `multi_agent_os` | Good balance, multi-agent workflows |
+| **v1.0** | 256K | 600 | `mirothinker_v1.0_keep5` (with context management) | Supports more tool calls |
+| **v0.2** | 64K | 50 | `multi_agent_os` | Multi-agent workflows |
 | **v0.1** | 40K | 50 | `multi_agent_os` | Legacy support |
 
 </details>
