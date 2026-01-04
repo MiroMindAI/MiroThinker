@@ -5,14 +5,20 @@
 The simplest way to run a case is using the default command:
 
 ```bash
+# Run MiroThinker v1.5 with recommended configuration (context management, up to 200 turns)
+uv run python main.py llm=qwen-3 agent=mirothinker_v1.5_keep5_max200 benchmark=debug llm.base_url=<base_url>
+
+# Run MiroThinker v1.5 for BrowseComp benchmarks (context management, up to 400 turns)
+uv run python main.py llm=qwen-3 agent=mirothinker_v1.5_keep5_max400 benchmark=debug llm.base_url=<base_url>
+
+# Run MiroThinker v1.0 with context management
+uv run python main.py llm=qwen-3 agent=mirothinker_v1.0_keep5 benchmark=debug llm.base_url=<base_url>
+
 # Run Claude-3.7-Sonnet with single-agent configuration
 uv run python main.py llm=claude-3-7 agent=single_agent_keep5 benchmark=debug
 
 # Run GPT-5 with single-agent configuration
 uv run python main.py llm=gpt-5 agent=single_agent_keep5 benchmark=debug
-
-# Use a different benchmark configuration
-uv run python main.py llm=qwen-3 agent=single_agent_keep5 benchmark=debug llm.base_url=<base_url>
 ```
 
 This will execute the default task: "What is the title of today's arxiv paper in computer science?"
@@ -20,8 +26,11 @@ This will execute the default task: "What is the title of today's arxiv paper in
 ## Available Configurations
 
 - **LLM Models**: `claude-3-7`, `gpt-5`, `qwen-3`
-- **Agent Configs**: `single_agent`, `single_agent_keep5`, `multi_agent`, `multi_agent_os`
-- **Benchmark Configs**: `debug`, `browsecomp`, `frames`, etc.
+- **Agent Configs (MiroThinker v1.5)**: `mirothinker_v1.5_keep5_max200` ⭐ (recommended), `mirothinker_v1.5_keep5_max400` (for BrowseComp), `mirothinker_v1.5`
+- **Agent Configs (MiroThinker v1.0)**: `mirothinker_v1.0_keep5` (recommended), `mirothinker_v1.0`
+- **Agent Configs (General)**: `single_agent`, `single_agent_keep5` (for closed-source models like Claude, GPT-5)
+- **Agent Configs (Multi-Agent)**: `multi_agent`, `multi_agent_os`
+- **Benchmark Configs**: `debug`, `browsecomp`, `browsecomp_zh`, `hle`, `hle-text-2158`, `gaia-validation`, `gaia-validation-text-103`, `frames`, `xbench_deepsearch`, `futurex`, `seal-0`, `aime2025`, `deepsearchqa`, etc.
 
 ### Customizing the Task
 
