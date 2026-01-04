@@ -528,7 +528,7 @@ uv run main.py llm=qwen-3 agent=my_custom_config llm.base_url=https://your_base_
    # Edit .env with your actual API keys
    ```
 
-   **For MiroThinker v1.5** (`mirothinker_v1.5.yaml`, `mirothinker_v1.5_keep5_max200.yaml`, or `mirothinker_v1.5_keep5_max400.yaml`) and **v1.0** (`mirothinker_v1.0.yaml` or `mirothinker_v1.0_keep5.yaml`), see the [Minimal Configuration](#minimal-configuration-recommended-for-mirothinker-v15-and-v10) section above for the complete configuration example.
+   **For MiroThinker v1.5** (`mirothinker_v1.5_keep5_max200.yaml`, `mirothinker_v1.5_keep5_max400.yaml`, or `mirothinker_v1.5.yaml`) and **v1.0** (`mirothinker_v1.0_keep5.yaml` or `mirothinker_v1.0.yaml`), see the [Minimal Configuration](#minimal-configuration-for-mirothinker-v15-and-v10) section above for the complete configuration example.
 
    **For other configurations**, refer to the [Pre-configured Agent Settings](#pre-configured-agent-settings) table above to see which environment variables are required.
 
