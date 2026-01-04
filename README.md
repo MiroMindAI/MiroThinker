@@ -908,7 +908,7 @@ Join our community and help us build the future of AI agents!
 
 ### References
 
-If you find this project useful in your research, please consider cite:
+If you find this project useful in your research, please consider citing:
 
 ```
 @article{miromind2025mirothinker,
