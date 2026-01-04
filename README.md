@@ -58,7 +58,39 @@ The project currently comprises four key components:
 
 ## 📝 Introduction
 
+### MiroThinker-v1.5
+
+MiroThinker v1.5 is the world-leading search agent designed to advance tool-augmented reasoning and information-seeking capabilities. 
+
+Unlike previous agents that scale only model size or context length, MiroThinker introduces **interactive scaling** at the model level, systematically training the model to handle deeper and more frequent agent–environment interactions as a third dimension of performance improvement. Interactive scaling leverages environment feedback and external information acquisition to correct errors and refine trajectories. 
+
+Empirical results demonstrate the effectiveness of this interactive scaling. Performance across several benchmarks improves predictably as the model engages in increasingly deep and frequent interactions with its environment.
+
+![image](https://huggingface.co/datasets/miromind-ai/MiroFlow-Benchmarks/resolve/main/assets/mirothinker_v1.5_framework.png)
+
+**Key Features**
+
+- MiroThinker v1.5 supports a 256K context window, long-horizon reasoning, and deep multi-step analysis.
+- Handles up to 400 tool calls per task — a substantial improvement over previous open-source research agents.
+- Released in 30B and 235B parameter scales, accompanied by a comprehensive suite of tools and workflows to flexibly support diverse research settings and compute budgets.
+
+<div align="center">
+  
+|      Model Name       |         Base Model            | Max Context | Max Tool Calls |                              HF Link                               |
+|:---------------------:|:-----------------------------:|:-----------:|:--------------:|:------------------------------------------------------------------:|
+| MiroThinker-v1.5-30B  | Qwen3-30B-A3B-Thinking-2507   |    256K     |      400       | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-v1.5-30B) |
+| MiroThinker-v1.5-235B | Qwen3-235B-A22B-Thinking-2507 |    256K     |      400       | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-v1.5-235B) |
+
+</div>
+
+MiroThinker v1.5 demonstrates strong general-research performance across a broad range of benchmarks, achieving 39.2%, 69.8%, 71.5%, and 80.8% on HLE-Text, BrowseComp, BrowseComp-ZH, and GAIA-Val-165, respectively. These results surpass previous open-source agents and set the new world-leading BrowseComp performance.
+
+![image](https://huggingface.co/datasets/miromind-ai/MiroFlow-Benchmarks/resolve/main/assets/mirothinker_v1.5_browsecomp.png)
+
 ### MiroThinker-v1.0
+
+<details>
+  <summary>📦 Click to expand MiroThinker-v1.0 details</summary>
 
 Unlike previous agents that scale only model size or context length, MiroThinker v1.0 introduces **interactive scaling** at the model level, systematically training the model to handle deeper and more frequent agent–environment interactions as a third dimension of performance improvement. Interactive scaling leverages environment feedback and external information acquisition to correct errors and refine trajectories.
 
@@ -85,6 +117,8 @@ MiroThinker v1.0 demonstrates strong general-research performance across a broad
 <div align="center">
   <img src="https://huggingface.co/datasets/miromind-ai/MiroFlow-Benchmarks/resolve/main/assets/MiroThinker_v1.0_Performance_1.png" width="100%" alt="MiroThinker" />
 </div>
+
+</details>
 
 ### MiroThinker-v0.2
 
@@ -175,11 +209,26 @@ We have released the **MiroThinker v0.1** series, including both SFT and DPO var
 
 ## 📈 Performance on Benchmarks
 
+### MiroThinker-v1.5
+
+> To prevent potential information leakage (e.g., searching benchmark answers from HuggingFace), access to HuggingFace has been explicitly disabled in these tools.
+
+> We further perform canary string testing on the tool outputs of all trajectories and disregard any trajectory found to be contaminated, treating it as an incorrect answer.
+
+<div>
+  <img src="https://huggingface.co/datasets/miromind-ai/MiroFlow-Benchmarks/resolve/main/assets/mirothinker_v1.5_performance.png" width="100%" alt="MiroThinker" />
+</div>
+
 ### MiroThinker-v1.0
+
+<details>
+  <summary>📦 Click to expand MiroThinker-v1.0 details</summary>
 
 <div align="center">
   <img src="https://github.com/user-attachments/assets/108a2105-4e1d-499e-a001-4713a03fd8ac" width="100%" alt="MiroThinker" />
 </div>
+
+</details>
 
 ### MiroThinker-v0.2
 
