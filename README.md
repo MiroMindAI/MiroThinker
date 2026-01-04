@@ -353,7 +353,7 @@ cp .env.example .env
 # v1.5 with context management, max200: up to 200 turns (recommended for most tasks)
 uv run main.py llm=qwen-3 agent=mirothinker_v1.5_keep5_max200 llm.base_url=https://your_base_url/v1
 
-# v1.5 with context management, max400: up to 400 turns (only needed for BrowseComp and BrowseComp-ZH)
+# v1.5 with context management, max400: up to 400 turns (only used for BrowseComp and BrowseComp-ZH)
 uv run main.py llm=qwen-3 agent=mirothinker_v1.5_keep5_max400 llm.base_url=https://your_base_url/v1
 
 # v1.5 without context management
@@ -477,7 +477,7 @@ See the [MiroFlow Tools README](libs/miroflow-tools/README.md) for complete docu
 
 The `apps/miroflow-agent/conf/agent/` directory contains several pre-configured agent settings. Each configuration uses different tools and requires corresponding environment variables in your `.env` file.
 
-> **💡 Recommended**: For MiroThinker v1.5, use `mirothinker_v1.5_keep5_max200` (with context management, recommended for most tasks) or `mirothinker_v1.5_keep5_max400` (only needed for BrowseComp and BrowseComp-ZH). For v1.0, use `mirothinker_v1.0_keep5` or `single_agent_keep5` (with context management). All use minimal configuration with only 3 MCP servers.
+> **💡 Recommended**: For MiroThinker v1.5, use `mirothinker_v1.5_keep5_max200` (with context management, recommended for most tasks) or `mirothinker_v1.5_keep5_max400` (only used for BrowseComp and BrowseComp-ZH). For v1.0, use `mirothinker_v1.0_keep5` or `single_agent_keep5` (with context management). All use minimal configuration with only 3 MCP servers.
 
 | Configuration File | Description | Max Turns | Context Retention | Required Environment Variables | Recommended For |
 |:-------------------|:------------|:----------|:------------------|:-------------------------------|:----------------|
@@ -647,7 +647,7 @@ cd apps/miroflow-agent
 # v1.5 with context management, max200: up to 200 turns (recommended for most tasks)
 uv run main.py llm=qwen-3 agent=mirothinker_v1.5_keep5_max200 llm.base_url=https://your_base_url/v1
 
-# v1.5 with context management, max400: up to 400 turns (only needed for BrowseComp and BrowseComp-ZH)
+# v1.5 with context management, max400: up to 400 turns (only used for BrowseComp and BrowseComp-ZH)
 uv run main.py llm=qwen-3 agent=mirothinker_v1.5_keep5_max400 llm.base_url=https://your_base_url/v1
 
 # v1.5 without context management
@@ -660,7 +660,7 @@ uv run main.py llm=qwen-3 agent=mirothinker_v1.0_keep5 llm.base_url=https://your
 uv run main.py llm=qwen-3 agent=mirothinker_v1.0 llm.base_url=https://your_base_url/v1
 ```
 
-> **💡 Tip**: For MiroThinker v1.5, use `agent=mirothinker_v1.5_keep5_max200` (up to 200 turns, recommended for most tasks) or `agent=mirothinker_v1.5_keep5_max400` (up to 400 turns, only needed for BrowseComp and BrowseComp-ZH) with context management, or `agent=mirothinker_v1.5` without context management. For v1.0, use `agent=mirothinker_v1.0_keep5` with context management or `agent=mirothinker_v1.0` without context management. Replace `https://your_base_url/v1` with your actual model server URL.
+> **💡 Tip**: For MiroThinker v1.5, use `agent=mirothinker_v1.5_keep5_max200` (up to 200 turns, recommended for most tasks) or `agent=mirothinker_v1.5_keep5_max400` (up to 400 turns, only used for BrowseComp and BrowseComp-ZH) with context management, or `agent=mirothinker_v1.5` without context management. For v1.0, use `agent=mirothinker_v1.0_keep5` with context management or `agent=mirothinker_v1.0` without context management. Replace `https://your_base_url/v1` with your actual model server URL.
 
 #### 2. **Run comprehensive benchmark evaluation**
 
@@ -838,7 +838,7 @@ uv run bash scripts/collect_trace_qwen3.sh
 
 - **v1.5** ⭐: Latest version with 256K context, world-leading performance. Use config (with context management):
   - `mirothinker_v1.5_keep5_max200` (up to 200 turns, recommended for most tasks)
-  - `mirothinker_v1.5_keep5_max400` (up to 400 turns, only needed for BrowseComp and BrowseComp-ZH)
+  - `mirothinker_v1.5_keep5_max400` (up to 400 turns, only used for BrowseComp and BrowseComp-ZH)
 - **v1.0**: Stable version with 256K context, 600 tool calls, excellent performance. Use `mirothinker_v1.0_keep5` (or alias `single_agent_keep5`) config (with context management).
 - **v0.2**: Good performance with 64K context, 50 tool calls. Use `multi_agent` or `multi_agent_os` config.
 - **v0.1**: Legacy version with 40K context. Use `multi_agent` or `multi_agent_os` config.
@@ -846,7 +846,7 @@ uv run bash scripts/collect_trace_qwen3.sh
 | Version | Context | Max Tool Calls | Recommended Config | Use Case |
 |:--------|:--------|:--------------:|:-------------------|:---------|
 | **v1.5** ⭐ | 256K | 200 | `mirothinker_v1.5_keep5_max200` (with context management) | Latest, world-leading performance, recommended for most tasks |
-| **v1.5** ⭐ | 256K | 400 | `mirothinker_v1.5_keep5_max400` (with context management) | Latest, only needed for BrowseComp and BrowseComp-ZH |
+| **v1.5** ⭐ | 256K | 400 | `mirothinker_v1.5_keep5_max400` (with context management) | Latest, only used for BrowseComp and BrowseComp-ZH |
 | **v1.0** | 256K | 600 | `mirothinker_v1.0_keep5` or `single_agent_keep5` (with context management) | Stable version, excellent performance, supports more tool calls |
 | **v0.2** | 64K | 50 | `multi_agent_os` | Good balance, multi-agent workflows |
 | **v0.1** | 40K | 50 | `multi_agent_os` | Legacy support |
