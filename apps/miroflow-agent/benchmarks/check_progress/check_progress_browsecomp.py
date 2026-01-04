@@ -10,7 +10,7 @@ from common import ProgressChecker
 FILENAME = os.path.basename(__file__)
 BENCHMARK_NAME = "browsecomp"
 BENCHMARK_NAME_STD = "BrowseComp-EN"
-TASKS_PER_RUN = 1265
+TASKS_PER_RUN = 1266
 DATA_PATH = f"../../data/{BENCHMARK_NAME}/standardized_data.jsonl"
 TASK_ID_PATTERN = r"task_([a-f0-9]+)"
 
