@@ -12,8 +12,13 @@
 
 ## 📦 Installation
 
+This package is a local dependency that is automatically installed when you run `uv sync` in the `apps/miroflow-agent` directory. No separate installation is required.
+
+For standalone usage or development:
+
 ```bash
-pip install miroflow-tools
+cd libs/miroflow-tools
+uv sync
 ```
 
 ## 📋 MCP Servers Overview

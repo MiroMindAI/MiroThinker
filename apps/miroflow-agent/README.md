@@ -1,5 +1,19 @@
 # MiroFlow Agent
 
+> For comprehensive documentation, installation guide, and tool configuration, see the [main README](../../README.md).
+
+## Prerequisites
+
+Before running the agent, ensure you have:
+
+1. **Installed dependencies**: Run `uv sync` in this directory
+1. **Configured environment variables**: Copy `.env.example` to `.env` and fill in your API keys
+   ```bash
+   cp .env.example .env
+   # Edit .env with your actual API keys (SERPER_API_KEY, JINA_API_KEY, E2B_API_KEY, etc.)
+   ```
+1. **Started your model server** (for MiroThinker models): See the [Serve the MiroThinker Model](../../README.md#serve-the-mirothinker-model) section
+
 ## Quick Start
 
 The simplest way to run a case is using the default command:

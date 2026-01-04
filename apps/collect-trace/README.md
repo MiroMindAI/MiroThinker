@@ -43,8 +43,8 @@ Workflow:
 
    ```bash
    # Create .env if missing (safe; won't overwrite existing file)
-   [ -f ../../apps/miroflow-agent/.env ] || cp ../../apps/miroflow-agent/.env.example ../../apps/miroflow-agent/.env
-   # (Alternative on macOS/Linux) cp -n ../../apps/miroflow-agent/.env.example ../../apps/miroflow-agent/.env || true
+   [ -f ../miroflow-agent/.env ] || cp ../miroflow-agent/.env.example ../miroflow-agent/.env
+   # (Alternative on macOS/Linux) cp -n ../miroflow-agent/.env.example ../miroflow-agent/.env || true
 
    # Edit .env and fill in your keys
    # Required: OPENAI_API_KEY (for LLM-as-a-Judge)
