@@ -30,7 +30,7 @@
 
 The project currently comprises four key components:
 
-- 💡 **MiroThinker**: An open-source research agent model that natively supports tool-assisted reasoning, achieving state-of-the-art performance across multiple benchmarks (e.g., HLE, HLE-Text-2158, HLE-Text-500, BrowserComp, BrowserComp-ZH, GAIA, xBench-DeepSearch, FutureX, and Frames). See [Quick Start](#-quick-start).
+- 💡 **MiroThinker**: An open-source search agent model that natively supports tool-assisted reasoning, achieving state-of-the-art performance across multiple benchmarks (e.g., HLE, HLE-Text-2158, HLE-Text-500, BrowserComp, BrowserComp-ZH, GAIA, xBench-DeepSearch, FutureX, and Frames). See [Quick Start](#-quick-start).
 - 🤖 **MiroFlow**: An open-source research agent framework that offers reproducible state-of-the-art performance across multiple benchmarks. See [MiroFlow](https://github.com/MiroMindAI/MiroFlow) for details.
 - 📚 **MiroVerse**: A premium open-source training dataset with 147k samples supporting research agent training. See [MiroVerse](https://huggingface.co/datasets/miromind-ai/MiroVerse-v0.1) on HuggingFace.
 - 🔧 **MiroTrain / MiroRL**: Training infrastructure that supports stable and efficient training for research agent models. See [MiroTrain](https://github.com/MiroMindAI/MiroTrain) and [MiroRL](https://github.com/MiroMindAI/MiroRL) for details.
