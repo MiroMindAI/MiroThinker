@@ -686,51 +686,56 @@ bash scripts/run_evaluate_multiple_runs_gaia-validation-text-103.sh
 <details open>
   <summary>📋 Click to expand all benchmark commands</summary>
 
+> **⚠️ Important for MiroThinker v1.5**: To reproduce our reported results, you must set the correct `AGENT_SET`:
+>
+> - **BrowseComp & BrowseComp-ZH**: Use `AGENT_SET="mirothinker_v1.5_keep5_max400"` (up to 400 turns)
+> - **All other benchmarks**: Use `AGENT_SET="mirothinker_v1.5_keep5_max200"` (up to 200 turns)
+
 ```bash
 # Navigate to the miroflow-agent directory first
 cd apps/miroflow-agent
 
 # HLE
-NUM_RUNS=3 LLM_MODEL="xxx" BASE_URL="xxx" bash scripts/run_evaluate_multiple_runs_hle.sh
+NUM_RUNS=3 LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_hle.sh
 
 # HLE-Text-2158
-NUM_RUNS=3 LLM_MODEL="xxx" BASE_URL="xxx" bash scripts/run_evaluate_multiple_runs_hle-text-2158.sh
+NUM_RUNS=3 LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_hle-text-2158.sh
 
 # HLE-Text-500
-NUM_RUNS=3 LLM_MODEL="xxx" BASE_URL="xxx" bash scripts/run_evaluate_multiple_runs_hle-text-500.sh
+NUM_RUNS=3 LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_hle-text-500.sh
 
 # GAIA-Text-103
-NUM_RUNS=8 LLM_MODEL="xxx" BASE_URL="xxx" bash scripts/run_evaluate_multiple_runs_gaia-validation-text-103.sh
+NUM_RUNS=8 LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_gaia-validation-text-103.sh
 
 # GAIA-Validation (GAIA-Val-165)
-NUM_RUNS=8 LLM_MODEL="xxx" BASE_URL="xxx" bash scripts/run_evaluate_multiple_runs_gaia-validation.sh
+NUM_RUNS=8 LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_gaia-validation.sh
 
-# BrowseComp-EN
-NUM_RUNS=3 LLM_MODEL="xxx" BASE_URL="xxx" bash scripts/run_evaluate_multiple_runs_browsecomp.sh
+# BrowseComp-EN (⚠️ use max400)
+NUM_RUNS=3 LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max400" bash scripts/run_evaluate_multiple_runs_browsecomp.sh
 
-# BrowseComp-ZH
-NUM_RUNS=3 LLM_MODEL="xxx" BASE_URL="xxx" bash scripts/run_evaluate_multiple_runs_browsecomp_zh.sh
+# BrowseComp-ZH (⚠️ use max400)
+NUM_RUNS=3 LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max400" bash scripts/run_evaluate_multiple_runs_browsecomp_zh.sh
 
 # WebWalkerQA
-NUM_RUNS=3 LLM_MODEL="xxx" BASE_URL="xxx" bash scripts/run_evaluate_multiple_runs_webwalkerqa.sh
+NUM_RUNS=3 LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_webwalkerqa.sh
 
 # XBench-DeepSearch
-NUM_RUNS=8 LLM_MODEL="xxx" BASE_URL="xxx" bash scripts/run_evaluate_multiple_runs_xbench_deepsearch.sh
+NUM_RUNS=8 LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_xbench_deepsearch.sh
 
 # FRAMES
-NUM_RUNS=3 LLM_MODEL="xxx" BASE_URL="xxx" bash scripts/run_evaluate_multiple_runs_frames.sh
+NUM_RUNS=3 LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_frames.sh
 
 # SEAL-0
-NUM_RUNS=8 LLM_MODEL="xxx" BASE_URL="xxx" bash scripts/run_evaluate_multiple_runs_seal-0.sh
+NUM_RUNS=8 LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_seal-0.sh
 
 # FutureX
-NUM_RUNS=8 LLM_MODEL="xxx" BASE_URL="xxx" bash scripts/run_evaluate_multiple_runs_futurex.sh
+NUM_RUNS=8 LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_futurex.sh
 
 # AIME2025
-NUM_RUNS=32 LLM_MODEL="xxx" BASE_URL="xxx" bash scripts/run_evaluate_multiple_runs_aime2025.sh
+NUM_RUNS=32 LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_aime2025.sh
 
 # DeepSearchQA
-NUM_RUNS=3 LLM_MODEL="xxx" BASE_URL="xxx" bash scripts/run_evaluate_multiple_runs_deepsearchqa.sh
+NUM_RUNS=3 LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_deepsearchqa.sh
 ```
 
 </details>
