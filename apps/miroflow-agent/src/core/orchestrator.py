@@ -228,6 +228,29 @@ class Orchestrator:
 
         return tool_call_id
 
+    def _is_google_search_empty_result(self, tool_name: str, tool_result: dict) -> bool:
+        """
+        Check if google_search result has empty organic results.
+        This indicates a poor search query that should be retried.
+        """
+        if tool_name != "google_search":
+            return False
+
+        result = tool_result.get("result")
+        if not result:
+            return False
+
+        try:
+            if isinstance(result, str):
+                result_dict = json.loads(result)
+            else:
+                result_dict = result
+
+            organic = result_dict.get("organic", [])
+            return len(organic) == 0
+        except (json.JSONDecodeError, TypeError, AttributeError):
+            return False
+
     def get_scrape_result(self, result: str) -> str:
         """
         Process scrape result and truncate if too long to support more conversation turns.
@@ -634,9 +657,13 @@ class Orchestrator:
                         else tool_result.get("error")
                     )
 
-                    # Check for "Unknown tool:" error and rollback
-                    if str(result).startswith("Unknown tool:"):
-                        # If we haven't reached rollback limit, rollback and retry
+                    # Check for errors that should trigger rollback
+                    should_rollback_result = (
+                        str(result).startswith("Unknown tool:")
+                        or str(result).startswith("Error executing tool")
+                        or self._is_google_search_empty_result(tool_name, tool_result)
+                    )
+                    if should_rollback_result:
                         if consecutive_rollbacks < self.MAX_CONSECUTIVE_ROLLBACKS - 1:
                             message_history.pop()
                             turn_count -= 1
@@ -645,15 +672,14 @@ class Orchestrator:
                             self.task_log.log_step(
                                 "warning",
                                 f"{sub_agent_name} | Turn: {turn_count} | Rollback",
-                                f"Unknown tool error - tool: {tool_name}, error: '{str(result)[:200]}'. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_attempts}",
+                                f"Tool result error - tool: {tool_name}, result: '{str(result)[:200]}'. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_attempts}",
                             )
-                            break  # Exit inner for loop, then continue outer while loop
+                            break
                         else:
-                            # Reached rollback limit, allow error to be sent to LLM as feedback
                             self.task_log.log_step(
                                 "warning",
                                 f"{sub_agent_name} | Turn: {turn_count} | Allow Error Feedback",
-                                f"Allowing unknown tool error to be sent to LLM after {consecutive_rollbacks} rollbacks - tool: {tool_name}, error: '{str(result)[:200]}'",
+                                f"Allowing error result after {consecutive_rollbacks} rollbacks - tool: {tool_name}, result: '{str(result)[:200]}'",
                             )
 
                     await self._stream_tool_call(
@@ -1147,9 +1173,15 @@ class Orchestrator:
                             else tool_result.get("error")
                         )
 
-                        # Check for "Unknown tool:" error and rollback
-                        if str(result).startswith("Unknown tool:"):
-                            # If we haven't reached rollback limit, rollback and retry
+                        # Check for errors that should trigger rollback
+                        should_rollback_result = (
+                            str(result).startswith("Unknown tool:")
+                            or str(result).startswith("Error executing tool")
+                            or self._is_google_search_empty_result(
+                                tool_name, tool_result
+                            )
+                        )
+                        if should_rollback_result:
                             if (
                                 consecutive_rollbacks
                                 < self.MAX_CONSECUTIVE_ROLLBACKS - 1
@@ -1161,15 +1193,14 @@ class Orchestrator:
                                 self.task_log.log_step(
                                     "warning",
                                     f"Main Agent | Turn: {turn_count} | Rollback",
-                                    f"Unknown tool error - tool: {tool_name}, error: '{str(result)[:200]}'. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_attempts}",
+                                    f"Tool result error - tool: {tool_name}, result: '{str(result)[:200]}'. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_attempts}",
                                 )
-                                break  # Exit inner for loop, then continue outer while loop
+                                break
                             else:
-                                # Reached rollback limit, allow error to be sent to LLM as feedback
                                 self.task_log.log_step(
                                     "warning",
                                     f"Main Agent | Turn: {turn_count} | Allow Error Feedback",
-                                    f"Allowing unknown tool error to be sent to LLM after {consecutive_rollbacks} rollbacks - tool: {tool_name}, error: '{str(result)[:200]}'",
+                                    f"Allowing error result after {consecutive_rollbacks} rollbacks - tool: {tool_name}, result: '{str(result)[:200]}'",
                                 )
 
                         await self._stream_tool_call(
