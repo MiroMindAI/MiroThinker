@@ -23,8 +23,14 @@ from ..logging.task_logger import (
     TaskLog,
     get_utc_plus_8_time,
 )
-from ..utils.parsing_utils import extract_llm_response_text
+from ..utils.parsing_utils import (
+    extract_failure_experience_summary,
+    extract_llm_response_text,
+)
 from ..utils.prompt_utils import (
+    FAILURE_SUMMARY_ASSISTANT_PREFIX,
+    FAILURE_SUMMARY_PROMPT,
+    FORMAT_ERROR_MESSAGE,
     generate_agent_specific_system_prompt,
     generate_agent_summarize_prompt,
     mcp_tags,
@@ -405,6 +411,79 @@ class Orchestrator:
             )
             # Return empty response with should_break=False, need to retry
             return "", False, None, original_message_history
+
+    async def _generate_failure_summary(
+        self,
+        system_prompt: str,
+        message_history: List[Dict[str, Any]],
+        tool_definitions: List[Dict],
+        turn_count: int,
+    ) -> Optional[str]:
+        """Generate a failure experience summary when task was not completed successfully.
+
+        Args:
+            message_history: The conversation history.
+            tool_definitions: Available tool definitions.
+            turn_count: Current turn count for step ID.
+
+        Returns:
+            The extracted failure experience summary, or None if generation failed.
+        """
+        self.task_log.log_step(
+            "info",
+            "Main Agent | Failure Summary",
+            "Generating failure experience summary for potential retry...",
+        )
+
+        # Build failure summary history
+        failure_summary_history = message_history.copy()
+        if failure_summary_history and failure_summary_history[-1]["role"] == "user":
+            failure_summary_history.pop()
+
+        # Add failure summary prompt and assistant prefix for structured output
+        failure_summary_history.append(
+            {"role": "user", "content": FAILURE_SUMMARY_PROMPT}
+        )
+        failure_summary_history.append(
+            {"role": "assistant", "content": FAILURE_SUMMARY_ASSISTANT_PREFIX}
+        )
+
+        # Call LLM to generate failure summary (auto-detects assistant prefix for vLLM continuation)
+        (
+            failure_summary_text,
+            _,
+            _,
+            _,
+        ) = await self._handle_llm_call(
+            system_prompt,
+            failure_summary_history,
+            tool_definitions,
+            turn_count + 10,  # Use a different step id
+            "Main Agent | Failure Experience Summary",
+            agent_type="main",
+        )
+
+        # Prepend the assistant prefix to the response for complete output
+        if failure_summary_text:
+            failure_summary_text = (
+                FAILURE_SUMMARY_ASSISTANT_PREFIX + failure_summary_text
+            )
+            failure_experience_summary = extract_failure_experience_summary(
+                failure_summary_text
+            )
+            self.task_log.log_step(
+                "info",
+                "Main Agent | Failure Summary",
+                f"Generated failure experience summary:\n{failure_experience_summary[:500]}...",
+            )
+            return failure_experience_summary
+        else:
+            self.task_log.log_step(
+                "warning",
+                "Main Agent | Failure Summary",
+                "Failed to generate failure experience summary",
+            )
+            return None
 
     async def run_sub_agent(
         self,
@@ -1371,10 +1450,7 @@ class Orchestrator:
                 )
 
                 # Check if we got a valid boxed answer
-                if (
-                    final_boxed_answer
-                    != "No \\boxed{} content found in the final answer."
-                ):
+                if final_boxed_answer != FORMAT_ERROR_MESSAGE:
                     self.task_log.log_step(
                         "info",
                         "Main Agent | Final Answer",
@@ -1415,7 +1491,7 @@ class Orchestrator:
         if not final_answer_text:
             final_answer_text = "No final answer generated."
             final_summary = final_answer_text
-            final_boxed_answer = "No \\boxed{} content found in the final answer."
+            final_boxed_answer = FORMAT_ERROR_MESSAGE
             self.task_log.log_step(
                 "error",
                 "Main Agent | Final Answer",
@@ -1430,7 +1506,7 @@ class Orchestrator:
 
         # Fallback to intermediate answer if still no boxed answer
         if (
-            final_boxed_answer == "No \\boxed{} content found in the final answer."
+            final_boxed_answer == FORMAT_ERROR_MESSAGE
             and self.intermediate_boxed_answers
         ):
             final_boxed_answer = self.intermediate_boxed_answers[-1]
@@ -1438,6 +1514,13 @@ class Orchestrator:
                 "info",
                 "Main Agent | Final Answer",
                 f"Using intermediate boxed answer as fallback: {final_boxed_answer}",
+            )
+
+        # Generate failure experience summary if no valid boxed answer found
+        failure_experience_summary = None
+        if final_boxed_answer == FORMAT_ERROR_MESSAGE:
+            failure_experience_summary = await self._generate_failure_summary(
+                system_prompt, message_history, tool_definitions, turn_count
             )
 
         await self._stream_tool_call("show_text", {"text": final_boxed_answer})
@@ -1461,4 +1544,4 @@ class Orchestrator:
             f"Main agent task {task_id} completed successfully",
         )
         gc.collect()
-        return final_summary, final_boxed_answer
+        return final_summary, final_boxed_answer, failure_experience_summary

@@ -137,6 +137,11 @@ class OpenAIClient(BaseClient):
             if "deepseek-v3-1" in self.model_name:
                 params["extra_body"]["thinking"] = {"type": "enabled"}
 
+            # auto-detect if we need to continue from the last assistant message
+            if messages_for_llm and messages_for_llm[-1].get("role") == "assistant":
+                params["extra_body"]["continue_final_message"] = True
+                params["extra_body"]["add_generation_prompt"] = False
+
             try:
                 if self.async_client:
                     response = await self.client.chat.completions.create(**params)

@@ -33,7 +33,7 @@ async def amain(cfg: DictConfig) -> None:
     task_file_name = ""
 
     # Execute task using the pipeline
-    final_summary, final_boxed_answer, log_file_path = await execute_task_pipeline(
+    final_summary, final_boxed_answer, log_file_path, _ = await execute_task_pipeline(
         cfg=cfg,
         task_id=task_id,
         task_file_name=task_file_name,

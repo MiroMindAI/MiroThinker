@@ -3,6 +3,8 @@
 
 import re
 
+from ..utils.prompt_utils import FORMAT_ERROR_MESSAGE
+
 
 class OutputFormatter:
     def _extract_boxed_content(self, text: str) -> str:
@@ -117,7 +119,7 @@ class OutputFormatter:
             summary_lines.append(boxed_result)
         elif final_answer_text:
             summary_lines.append("No \\boxed{} content found.")
-            boxed_result = "No \\boxed{} content found in the final answer."
+            boxed_result = FORMAT_ERROR_MESSAGE
 
         # Token usage statistics and cost estimation - use client method
         if client and hasattr(client, "format_token_usage_summary"):
