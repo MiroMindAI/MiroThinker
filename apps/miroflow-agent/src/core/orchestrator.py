@@ -1364,8 +1364,10 @@ class Orchestrator:
                     )
                     break
             else:
+                # LLM call failed, don't count this as a valid turn
+                turn_count -= 1
                 self.task_log.log_step(
-                    "info",
+                    "warning",
                     f"Main Agent | Turn: {turn_count} | LLM Call",
                     "No valid response from LLM, retrying",
                 )
