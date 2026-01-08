@@ -60,7 +60,3 @@ After adding the provider, add the models you deploy to the service provider's m
 Once configured, you can use MiroThinker in LobeChat with full tool-calling capabilities.
 
 ![Presentation Demo](img/presentation.gif)
-
-## Requirements
-
-- vLLM >= 0.11.0
