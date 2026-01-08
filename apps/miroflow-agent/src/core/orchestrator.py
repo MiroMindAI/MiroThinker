@@ -98,6 +98,7 @@ class Orchestrator:
         # Retry loop protection limits
         self.MAX_CONSECUTIVE_ROLLBACKS = 5
         self.MAX_FINAL_ANSWER_RETRIES = 3 if cfg.agent.keep_tool_result == -1 else 1
+        # When format_error_retry_limit > 0, enables a context compression mechanism
         self.format_error_retry_limit = cfg.agent.get("format_error_retry_limit", 0)
 
     async def _stream_update(self, event_type: str, data: dict):
@@ -420,15 +421,27 @@ class Orchestrator:
         tool_definitions: List[Dict],
         turn_count: int,
     ) -> Optional[str]:
-        """Generate a failure experience summary when task was not completed successfully.
+        """Generate a failure experience summary for context compression.
+
+        This is the core of the context management mechanism. When a task attempt fails
+        (i.e., the task is not completed within the given turns and context window),
+        we compress the entire conversation history into a structured summary containing:
+        - Failure type: incomplete / blocked / misdirected / format_missed
+        - What happened: the approach taken and why a final answer was not reached
+        - Useful findings: facts, intermediate results, or conclusions to be reused
+
+        This summary will be injected into the task description for the next retry,
+        effectively compressing potentially thousands of tokens of conversation into
+        a focused summary of ~500-1000 tokens.
 
         Args:
-            message_history: The conversation history.
+            system_prompt: The system prompt used in the conversation.
+            message_history: The full conversation history to be compressed.
             tool_definitions: Available tool definitions.
             turn_count: Current turn count for step ID.
 
         Returns:
-            The extracted failure experience summary, or None if generation failed.
+            The compressed failure experience summary, or None if generation failed.
         """
         self.task_log.log_step(
             "info",
@@ -686,7 +699,27 @@ class Orchestrator:
     ) -> Tuple[str, str, Optional[str], str, List[Dict[str, Any]]]:
         """Generate final answer and handle fallback based on context management settings.
 
-        There are 4 possible scenarios based on (context_management, reached_max_turns):
+        Context Management (format_error_retry_limit > 0) is essentially a context compression
+        mechanism that enables multi-attempt problem solving:
+
+        1. When the task is not completed within the given turns and context window,
+           we generate a "failure_experience_summary" - a structured post-mortem containing:
+           - Failure type: incomplete / blocked / misdirected / format_missed
+           - What happened: the approach taken and why it didn't reach a final answer
+           - Useful findings: facts, intermediate results, or conclusions to be reused
+
+        2. On retry, this compressed summary is injected into the task description,
+           allowing the model to:
+           - Start fresh with a clean context window
+           - Learn from previous failures without context overflow
+           - Try different approaches informed by past experience
+
+        This is more effective than simply continuing with a long context because:
+        - Avoids context window limits
+        - Focuses attention on key learnings rather than raw conversation
+        - Allows multiple "fresh starts" with accumulated wisdom
+
+        Decision table based on (context_management, reached_max_turns):
 
         | Context Management | Reached Max Turns | Behavior                                    |
         |--------------------|-------------------|---------------------------------------------|
