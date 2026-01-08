@@ -9,6 +9,7 @@ MCP format:
         </arguments>
     </use_mcp_tool>
 """
+
 import json
 from collections.abc import Sequence
 import json_repair
@@ -25,7 +26,8 @@ from vllm.entrypoints.openai.protocol import (
     ToolCall,
 )
 from vllm.entrypoints.openai.tool_parsers.abstract_tool_parser import (
-    ToolParser,ToolParserManager
+    ToolParser,
+    ToolParserManager,
 )
 from vllm.logger import init_logger
 
@@ -35,7 +37,7 @@ logger = init_logger(__name__)
 class MirothinkerToolParser(ToolParser):
     def __init__(self, tokenizer):
         super().__init__(tokenizer)
-        
+
         # State tracking for streaming
         self.current_tool_name_sent: bool = False
         self.prev_tool_call_arr: list[dict] = []
@@ -48,54 +50,58 @@ class MirothinkerToolParser(ToolParser):
         self._stream_mode: str = "text"  # "text" | "tool"
         self._text_token_prefix: str = ""  # possible prefix of <use_mcp_tool>
         self._tool_end_token_prefix: str = ""  # possible prefix of </use_mcp_tool>
-        self._tool_block_buffer: str = ""  # accumulates between <use_mcp_tool> and </use_mcp_tool>
+        self._tool_block_buffer: str = (
+            ""  # accumulates between <use_mcp_tool> and </use_mcp_tool>
+        )
         self._stream_tool_call_ids: list[str] = []
-        
+
         # Token definitions
         self.tool_call_start_token: str = "<use_mcp_tool>"
         self.tool_call_end_token: str = "</use_mcp_tool>"
-        
+
         # Regex patterns
         self.tool_call_regex = re.compile(
-            r'<use_mcp_tool>\s*'
-            r'<server_name>(.*?)</server_name>\s*'
-            r'<tool_name>(.*?)</tool_name>\s*'
-            r'<arguments>\s*(.*?)\s*</arguments>\s*'
-            r'</use_mcp_tool>',
-            re.DOTALL
+            r"<use_mcp_tool>\s*"
+            r"<server_name>(.*?)</server_name>\s*"
+            r"<tool_name>(.*?)</tool_name>\s*"
+            r"<arguments>\s*(.*?)\s*</arguments>\s*"
+            r"</use_mcp_tool>",
+            re.DOTALL,
         )
-        
+
         # For streaming partial tool calls
         # IMPORTANT: Use GREEDY matching (.*) for arguments to capture all content
         # in streaming mode. We'll clean up </arguments> tag in the code if present.
         # The outer ()? makes the whole <arguments> section optional
         # The inner (.*) will match empty string if <arguments> exists but has no content yet
         self.partial_tool_regex = re.compile(
-            r'<use_mcp_tool>\s*'
-            r'(?:<server_name>(.*?)</server_name>\s*)?'
-            r'(?:<tool_name>(.*?)</tool_name>\s*)?'
-            r'(?:<arguments>(\s*.*))?',  # Move \s* inside capture group so empty match returns ""
-            re.DOTALL
+            r"<use_mcp_tool>\s*"
+            r"(?:<server_name>(.*?)</server_name>\s*)?"
+            r"(?:<tool_name>(.*?)</tool_name>\s*)?"
+            r"(?:<arguments>(\s*.*))?",  # Move \s* inside capture group so empty match returns ""
+            re.DOTALL,
         )
 
         # For correctness-first parsing on COMPLETE tool blocks only
         self._complete_tool_block_regex = re.compile(
-            r'<use_mcp_tool>\s*'
-            r'(?:<server_name>(.*?)</server_name>\s*)?'
-            r'(?:<tool_name>(.*?)</tool_name>\s*)?'
-            r'(?:<arguments>\s*(.*?)\s*(?:</arguments>\s*)?)?'
-            r'</use_mcp_tool>',
+            r"<use_mcp_tool>\s*"
+            r"(?:<server_name>(.*?)</server_name>\s*)?"
+            r"(?:<tool_name>(.*?)</tool_name>\s*)?"
+            r"(?:<arguments>\s*(.*?)\s*(?:</arguments>\s*)?)?"
+            r"</use_mcp_tool>",
             re.DOTALL,
         )
 
-    def _resolve_tool_name(self, server_name: str, tool_name: str, request: ChatCompletionRequest) -> str:
+    def _resolve_tool_name(
+        self, server_name: str, tool_name: str, request: ChatCompletionRequest
+    ) -> str:
         """
         Resolve the actual tool name by combining server_name and tool_name
         if server_name is not 'default'.
         """
         if not server_name or server_name == "default":
             return tool_name
-            
+
         if not request or not request.tools:
             return tool_name
 
@@ -103,7 +109,7 @@ class MirothinkerToolParser(ToolParser):
         cached = self._resolved_tool_name_cache.get(cache_key)
         if cached:
             return cached
-            
+
         # Filter tools that contain server_name
         candidates = []
         for tool in request.tools:
@@ -118,10 +124,15 @@ class MirothinkerToolParser(ToolParser):
         # Find match containing tool_name
         for candidate in candidates:
             if server_name in candidate:
-                logger.debug("Resolved tool %s -> %s (server: %s)", tool_name, candidate, server_name)
+                logger.debug(
+                    "Resolved tool %s -> %s (server: %s)",
+                    tool_name,
+                    candidate,
+                    server_name,
+                )
                 self._resolved_tool_name_cache[cache_key] = candidate
                 return candidate
-                
+
         return tool_name
 
     def adjust_request(self, request: ChatCompletionRequest) -> ChatCompletionRequest:
@@ -130,18 +141,18 @@ class MirothinkerToolParser(ToolParser):
             # Do not skip special tokens for proper tool parsing
             request.skip_special_tokens = False
         return request
-    
+
     def _ensure_tool_id_valid(self, tool_id: int) -> bool:
         """Ensure the tool_id is valid and arrays have enough elements"""
         if tool_id < 0:
             return False
-        
+
         # Ensure arrays are large enough
         while len(self.streamed_args_for_tool) <= tool_id:
             self.streamed_args_for_tool.append("")
         while len(self.prev_tool_call_arr) <= tool_id:
             self.prev_tool_call_arr.append({})
-        
+
         return True
 
     def extract_tool_calls(
@@ -152,11 +163,15 @@ class MirothinkerToolParser(ToolParser):
         # Sanity check; avoid unnecessary processing
         if logger.isEnabledFor(10):  # DEBUG
             logger.debug("model_output len=%s", len(model_output))
-        if self.tool_call_start_token not in model_output or request.tool_choice == "none" or not request.tools:
+        if (
+            self.tool_call_start_token not in model_output
+            or request.tool_choice == "none"
+            or not request.tools
+        ):
             return ExtractedToolCallInformation(
                 tools_called=False, tool_calls=[], content=model_output
             )
-        
+
         try:
             tool_calls = []
             had_any_match = False
@@ -167,14 +182,14 @@ class MirothinkerToolParser(ToolParser):
                 server_name = match.group(1).strip()
                 tool_name = match.group(2).strip()
                 arguments_str = match.group(3).strip()
-                
+
                 # Resolve tool name
                 tool_name = self._resolve_tool_name(server_name, tool_name, request)
-                
+
                 try:
                     # Parse arguments as JSON
                     arguments = json.loads(arguments_str)
-                    
+
                     tool_call = ToolCall(
                         type="function",
                         function=FunctionCall(
@@ -183,14 +198,15 @@ class MirothinkerToolParser(ToolParser):
                         ),
                     )
                     tool_calls.append(tool_call)
-                    
+
                 except json.JSONDecodeError:
                     try:
                         repaired = json_repair.repair_json(arguments_str)
                         if not repaired:
                             had_parse_error = True
                             logger.warning(
-                                "Failed to repair tool arguments JSON: %s", arguments_str
+                                "Failed to repair tool arguments JSON: %s",
+                                arguments_str,
                             )
                             continue
 
@@ -206,26 +222,27 @@ class MirothinkerToolParser(ToolParser):
                     except Exception:
                         had_parse_error = True
                         logger.warning(
-                            "Failed to parse tool arguments after repair: %s", arguments_str
+                            "Failed to parse tool arguments after repair: %s",
+                            arguments_str,
                         )
                         continue
-            
+
             # If we couldn't successfully parse tool calls (or format didn't match), do not truncate.
             # Return the full model output as content to avoid losing text.
             if had_parse_error or not tool_calls or not had_any_match:
                 return ExtractedToolCallInformation(
                     tools_called=False, tool_calls=[], content=model_output
                 )
-            
+
             # Extract content before first tool call
-            content = model_output[:model_output.find(self.tool_call_start_token)]
-            
+            content = model_output[: model_output.find(self.tool_call_start_token)]
+
             return ExtractedToolCallInformation(
                 tools_called=len(tool_calls) > 0,
                 tool_calls=tool_calls,
                 content=content if content else None,
             )
-            
+
         except Exception:
             logger.exception("Error in extracting tool call from response.")
             return ExtractedToolCallInformation(
@@ -241,8 +258,7 @@ class MirothinkerToolParser(ToolParser):
         current_token_ids: Sequence[int],
         delta_token_ids: Sequence[int],
         request: ChatCompletionRequest,
-    ) -> DeltaMessage | None:     
-        
+    ) -> DeltaMessage | None:
         # Reset state if this is the start of a new request
         if not previous_text:
             self.current_tool_name_sent = False
@@ -297,7 +313,9 @@ class MirothinkerToolParser(ToolParser):
 
                 start_idx = chunk.find(self.tool_call_start_token)
                 if start_idx < 0:
-                    prefix = _longest_token_prefix_at_end(chunk, self.tool_call_start_token)
+                    prefix = _longest_token_prefix_at_end(
+                        chunk, self.tool_call_start_token
+                    )
                     if prefix:
                         safe = chunk[: -len(prefix)]
                         if safe:
@@ -334,7 +352,9 @@ class MirothinkerToolParser(ToolParser):
             # Complete tool block
             self._tool_block_buffer += chunk[:end_idx]
             tool_block = (
-                self.tool_call_start_token + self._tool_block_buffer + self.tool_call_end_token
+                self.tool_call_start_token
+                + self._tool_block_buffer
+                + self.tool_call_end_token
             )
             remainder = chunk[end_idx + len(self.tool_call_end_token) :]
 
@@ -353,7 +373,7 @@ class MirothinkerToolParser(ToolParser):
                 server_name = (m.group(1) or "").strip()
                 tool_name = (m.group(2) or "").strip()
                 arguments_str = (m.group(3) or "").strip()
-                
+
                 if not tool_name:
                     emitted_text_parts.append(tool_block)
                     chunk = remainder
@@ -409,7 +429,7 @@ class MirothinkerToolParser(ToolParser):
             emitted_text = None
         if emitted_text is None and not emitted_tool_calls:
             return None
-            
+
         # vLLM's DeltaMessage.tool_calls is validated as a list; do not pass None explicitly.
         if emitted_tool_calls:
             return DeltaMessage(content=emitted_text, tool_calls=emitted_tool_calls)
@@ -417,6 +437,4 @@ class MirothinkerToolParser(ToolParser):
 
 
 # Register the tool parser to ToolParserManager
-ToolParserManager.register_module(
-    "mirothinker", True ,MirothinkerToolParser
-)
+ToolParserManager.register_module("mirothinker", True, MirothinkerToolParser)
