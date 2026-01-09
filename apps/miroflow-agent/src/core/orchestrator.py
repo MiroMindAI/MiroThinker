@@ -98,8 +98,8 @@ class Orchestrator:
         # Retry loop protection limits
         self.MAX_CONSECUTIVE_ROLLBACKS = 5
         self.MAX_FINAL_ANSWER_RETRIES = 3 if cfg.agent.keep_tool_result == -1 else 1
-        # When format_error_retry_limit > 0, enables a context compression mechanism
-        self.format_error_retry_limit = cfg.agent.get("format_error_retry_limit", 0)
+        # When context_compress_limit > 0, enables a context compression mechanism
+        self.context_compress_limit = cfg.agent.get("context_compress_limit", 0)
 
     async def _stream_update(self, event_type: str, data: dict):
         """Send streaming update in new SSE protocol format"""
@@ -596,7 +596,7 @@ class Orchestrator:
         final_summary: str,
         final_boxed_answer: Optional[str],
     ) -> Tuple[str, str, str]:
-        """Handle fallback when format_error_retry_limit == 0 (no context management).
+        """Handle fallback when context_compress_limit == 0 (no context management).
 
         In this mode, the model has only one chance to answer.
         We should try to use intermediate answers as fallback to maximize accuracy.
@@ -646,7 +646,7 @@ class Orchestrator:
         final_summary: str,
         final_boxed_answer: Optional[str],
     ) -> Tuple[str, str, str]:
-        """Handle failure when format_error_retry_limit > 0 (context management enabled).
+        """Handle failure when context_compress_limit > 0 (context management enabled).
 
         In this mode, the model has multiple chances to retry with context management.
         We should NOT guess or use intermediate answers, because:
@@ -699,7 +699,7 @@ class Orchestrator:
     ) -> Tuple[str, str, Optional[str], str, List[Dict[str, Any]]]:
         """Generate final answer and handle fallback based on context management settings.
 
-        Context Management (format_error_retry_limit > 0) is essentially a context compression
+        Context Management (context_compress_limit > 0) is essentially a context compression
         mechanism that enables multi-attempt problem solving:
 
         1. When the task is not completed within the given turns and context window,
@@ -734,7 +734,7 @@ class Orchestrator:
         Returns:
             Tuple of (final_summary, final_boxed_answer, failure_experience_summary, usage_log, message_history)
         """
-        context_management_enabled = self.format_error_retry_limit > 0
+        context_management_enabled = self.context_compress_limit > 0
         failure_experience_summary = None
         usage_log = ""
 
@@ -1761,7 +1761,7 @@ class Orchestrator:
         self.current_agent_id = await self._stream_start_agent("Final Summary")
         await self._stream_start_llm("Final Summary")
 
-        # Generate final answer and handle fallback based on format_error_retry_limit
+        # Generate final answer and handle fallback based on context_compress_limit
         # If reached_max_turns is True and context management is enabled,
         # skip answer generation to avoid blind guessing
         (

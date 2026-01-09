@@ -138,7 +138,7 @@ class BenchmarkEvaluator(ABC):
 
         # Format error tracking and retry configuration
         # Read from agent config as it's part of context management
-        self.format_error_retry_limit = cfg.agent.get("format_error_retry_limit", 0)
+        self.context_compress_limit = cfg.agent.get("context_compress_limit", 0)
 
         # Get LLM provider and model from the config object
         self.llm_provider = cfg.llm.provider
@@ -293,7 +293,7 @@ class BenchmarkEvaluator(ABC):
                     # Try to get a valid response with format retry
                     print(f"TASK ID: {task.task_id}, ATTEMPT: {attempt}")
 
-                    max_format_retries = self.format_error_retry_limit
+                    max_format_retries = self.context_compress_limit
 
                     # Track accumulated failure experiences for this attempt
                     # Start with the original task description
