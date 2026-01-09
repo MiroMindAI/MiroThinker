@@ -50,8 +50,8 @@ Click the `+` button to add a new provider and configure it as follows:
 After adding the provider, add the models you deploy to the service provider's model list.:
 
 1. Add a new model with the ID `mirothinker` (must match `--served-model-name`).
-2. **Crucial**: Enable the **Function Calling** capability toggle.
-3. Click "Check" to verify connectivity.
+1. **Crucial**: Enable the **Function Calling** capability toggle.
+1. Click "Check" to verify connectivity.
 
 ![Model Configuration](img/model.png)
 
