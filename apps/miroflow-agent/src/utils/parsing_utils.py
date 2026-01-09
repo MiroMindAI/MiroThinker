@@ -100,6 +100,57 @@ def safe_json_loads(arguments_str: str) -> dict:
     }
 
 
+def extract_failure_experience_summary(text: str) -> str:
+    """
+    Extract failure experience summary from LLM response text.
+
+    The text may contain:
+    - <think>...</think> block (thinking content)
+    - Main content after </think> and before <use_mcp_tool>
+    - <use_mcp_tool>...</use_mcp_tool> block (tool call, ignored)
+
+    Examples:
+        "<think>\n{xxx}\n</think>\n\n{content}\n\n<use_mcp_tool>..."
+        "<think>\n{xxx}\n</think>\n\n{content}"
+        "{content}"  (no think block)
+
+    Returns:
+        - If content is empty after strip, return think_content
+        - If both think_content and content are non-empty, return content
+        - mcp_block is never used
+    """
+    if not text:
+        return ""
+
+    think_content = ""
+    content = ""
+
+    # Extract think content
+    think_match = re.search(r"<think>([\s\S]*?)</think>", text)
+    if think_match:
+        think_content = think_match.group(1).strip()
+        # Get content after </think>
+        after_think = text[think_match.end() :]
+    else:
+        # No think block, entire text is potential content
+        after_think = text
+
+    # Remove <use_mcp_tool>...</use_mcp_tool> block from content
+    mcp_match = re.search(r"<use_mcp_tool>[\s\S]*", after_think)
+    if mcp_match:
+        content = after_think[: mcp_match.start()].strip()
+    else:
+        content = after_think.strip()
+
+    # Apply the rules:
+    # - If content is empty, use think_content
+    # - If both are non-empty, use content
+    if content:
+        return content
+    else:
+        return think_content
+
+
 def extract_llm_response_text(llm_response):
     """
     Extract text from LLM response, excluding <use_mcp_tool> tags. Stop immediately when this opening tag is encountered.

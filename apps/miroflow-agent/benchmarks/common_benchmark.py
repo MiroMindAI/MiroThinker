@@ -23,9 +23,12 @@ from src.core.pipeline import (
     execute_task_pipeline,
 )
 from src.logging.summary_time_cost import generate_summary
-
-# Constants for format error detection
-FORMAT_ERROR_MESSAGE = "No \\boxed{} content found in the final answer."
+from src.utils.prompt_utils import (
+    FAILURE_EXPERIENCE_FOOTER,
+    FAILURE_EXPERIENCE_HEADER,
+    FAILURE_EXPERIENCE_ITEM,
+    FORMAT_ERROR_MESSAGE,
+)
 
 
 def _task_worker(task_dict, cfg_dict, evaluator_kwargs):
@@ -135,7 +138,7 @@ class BenchmarkEvaluator(ABC):
 
         # Format error tracking and retry configuration
         # Read from agent config as it's part of context management
-        self.format_error_retry_limit = cfg.agent.get("format_error_retry_limit", 0)
+        self.context_compress_limit = cfg.agent.get("context_compress_limit", 0)
 
         # Get LLM provider and model from the config object
         self.llm_provider = cfg.llm.provider
@@ -290,7 +293,57 @@ class BenchmarkEvaluator(ABC):
                     # Try to get a valid response with format retry
                     print(f"TASK ID: {task.task_id}, ATTEMPT: {attempt}")
 
-                    max_format_retries = self.format_error_retry_limit
+                    max_format_retries = self.context_compress_limit
+
+                    # Track accumulated failure experiences for this attempt
+                    # Start with the original task description
+                    current_task_description = task_description
+                    failure_experiences = []
+
+                    # Resume: Recover failure experiences from previous retry logs
+                    if format_retry_count > 0 and logs_dir.exists():
+                        print(
+                            f"    Resuming from retry {format_retry_count}, recovering previous failure experiences..."
+                        )
+                        for prev_retry in range(format_retry_count):
+                            prev_log_pattern = f"task_{task.task_id}_attempt-{attempt}_format-retry-{prev_retry}_*.json"
+                            prev_logs = sorted(list(logs_dir.glob(prev_log_pattern)))
+                            if prev_logs:
+                                prev_log_file = prev_logs[-1]  # Get the latest one
+                                try:
+                                    with open(
+                                        prev_log_file, "r", encoding="utf-8"
+                                    ) as f:
+                                        prev_log_data = json.load(f)
+                                        # Extract failure experience from trace_data
+                                        trace_data = prev_log_data.get("trace_data", {})
+                                        prev_failure_exp = trace_data.get(
+                                            "failure_experience_summary"
+                                        )
+                                        if prev_failure_exp:
+                                            failure_experiences.append(prev_failure_exp)
+                                            print(
+                                                f"      Recovered failure experience from retry {prev_retry}"
+                                            )
+                                except Exception as e:
+                                    print(
+                                        f"      Warning: Failed to load previous log {prev_log_file}: {e}"
+                                    )
+
+                        # Rebuild enhanced task description with recovered failure experiences
+                        if failure_experiences:
+                            current_task_description += FAILURE_EXPERIENCE_HEADER
+                            for idx, exp in enumerate(failure_experiences, 1):
+                                current_task_description += (
+                                    FAILURE_EXPERIENCE_ITEM.format(
+                                        attempt_number=idx,
+                                        failure_summary=exp,
+                                    )
+                                )
+                            current_task_description += FAILURE_EXPERIENCE_FOOTER
+                            print(
+                                f"    Recovered {len(failure_experiences)} failure experience(s) from previous retries"
+                            )
 
                     while format_retry_count <= max_format_retries:
                         try:
@@ -298,11 +351,12 @@ class BenchmarkEvaluator(ABC):
                                 response,
                                 final_boxed_answer,
                                 log_file_path,
+                                failure_experience_summary,
                             ) = await execute_task_pipeline(
                                 cfg=self.cfg,
                                 task_id=f"{task.task_id}_attempt-{attempt}_format-retry-{format_retry_count}",
                                 task_file_name=task_file_path,
-                                task_description=task_description,
+                                task_description=current_task_description,
                                 main_agent_tool_manager=self.main_agent_tool_manager,
                                 sub_agent_tool_managers=self.sub_agent_tool_managers,
                                 output_formatter=self.output_formatter,
@@ -322,12 +376,48 @@ class BenchmarkEvaluator(ABC):
                             ):
                                 format_retry_count += 1
                                 if format_retry_count <= max_format_retries:
+                                    # Use the model-generated failure experience summary
+                                    print(
+                                        f"    Format error detected, using model-generated failure summary for retry {format_retry_count}..."
+                                    )
+
+                                    if failure_experience_summary:
+                                        failure_experiences.append(
+                                            failure_experience_summary
+                                        )
+
+                                        # Build enhanced task description with accumulated failure experiences
+                                        # Start fresh from original task_description each time
+                                        current_task_description = task_description
+                                        current_task_description += (
+                                            FAILURE_EXPERIENCE_HEADER
+                                        )
+                                        for idx, exp in enumerate(
+                                            failure_experiences, 1
+                                        ):
+                                            current_task_description += (
+                                                FAILURE_EXPERIENCE_ITEM.format(
+                                                    attempt_number=idx,
+                                                    failure_summary=exp,
+                                                )
+                                            )
+                                        current_task_description += (
+                                            FAILURE_EXPERIENCE_FOOTER
+                                        )
+
+                                        print(
+                                            f"    Enhanced task description with {len(failure_experiences)} failure experience(s)"
+                                        )
+                                    else:
+                                        print(
+                                            "    No failure experience summary generated, retrying without enhancement..."
+                                        )
                                     continue
                                 else:
                                     # Exceeded format retry limit
                                     attempt_result["status"] = "success"
                                     attempt_result["model_boxed_answer"] = (
-                                        "No \\boxed{} content found after format error retry limit exceeded."
+                                        f"{FORMAT_ERROR_MESSAGE} (after {max_format_retries} retries)"
                                     )
                                     attempt_result["error_message"] = (
                                         f"Exceeded format error retry limit ({max_format_retries})"

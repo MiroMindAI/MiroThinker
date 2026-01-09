@@ -1,6 +1,61 @@
 # Copyright (c) 2025 MiroMind
 # This source code is licensed under the MIT License.
 
+# ============================================================================
+# Format Error Messages
+# ============================================================================
+
+FORMAT_ERROR_MESSAGE = "No \\boxed{} content found in the final answer."
+
+# ============================================================================
+# Failure Experience Templates (for format error retry)
+# ============================================================================
+
+# Header that appears once before all failure experiences
+FAILURE_EXPERIENCE_HEADER = """
+
+=== Previous Attempts Analysis ===
+The following summarizes what was tried before and why it didn't work. Use this to guide a NEW approach.
+
+"""
+
+# Template for each individual failure experience (used multiple times)
+FAILURE_EXPERIENCE_ITEM = """[Attempt {attempt_number}]
+{failure_summary}
+
+"""
+
+# Footer that appears once after all failure experiences
+FAILURE_EXPERIENCE_FOOTER = """=== End of Analysis ===
+
+Based on the above, you should try a different strategy this time.
+"""
+
+FAILURE_SUMMARY_PROMPT = """The task was not completed successfully. Do NOT call any tools. Provide a summary:
+
+Failure type: [incomplete / blocked / misdirected / format_missed]
+  - incomplete: ran out of turns before finishing
+  - blocked: got stuck due to tool failure or missing information
+  - misdirected: went down the wrong path
+  - format_missed: found the answer but forgot to use \\boxed{}
+What happened: [describe the approach taken and why a final answer was not reached]
+Useful findings: [list any facts, intermediate results, or conclusions discovered that should be reused]"""
+
+# Assistant prefix for failure summary generation (guides model to follow structured format)
+FAILURE_SUMMARY_THINK_CONTENT = """We need to write a structured post-mortem style summary **without calling any tools**, explaining why the task was not completed, using these required sections:
+
+* **Failure type**: pick one from **incomplete / blocked / misdirected / format_missed**
+* **What happened**: describe the approach taken and why it didn't reach a final answer
+* **Useful findings**: list any facts, intermediate results, or conclusions that can be reused"""
+
+FAILURE_SUMMARY_ASSISTANT_PREFIX = (
+    f"<think>\n{FAILURE_SUMMARY_THINK_CONTENT}\n</think>\n\n"
+)
+
+# ============================================================================
+# MCP Tags for Parsing
+# ============================================================================
+
 mcp_tags = [
     "<use_mcp_tool>",
     "</use_mcp_tool>",

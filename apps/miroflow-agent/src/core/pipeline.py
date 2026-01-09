@@ -98,7 +98,11 @@ async def execute_task_pipeline(
             sub_agent_tool_definitions=sub_agent_tool_definitions,
         )
 
-        final_summary, final_boxed_answer = await orchestrator.run_main_agent(
+        (
+            final_summary,
+            final_boxed_answer,
+            failure_experience_summary,
+        ) = await orchestrator.run_main_agent(
             task_description=task_description,
             task_file_name=task_file_name,
             task_id=task_id,
@@ -109,8 +113,19 @@ async def execute_task_pipeline(
         task_log.final_boxed_answer = final_boxed_answer
         task_log.status = "success"
 
+        # Store failure experience summary in task log if available
+        if failure_experience_summary:
+            task_log.trace_data["failure_experience_summary"] = (
+                failure_experience_summary
+            )
+
         log_file_path = task_log.save()
-        return final_summary, final_boxed_answer, log_file_path
+        return (
+            final_summary,
+            final_boxed_answer,
+            log_file_path,
+            failure_experience_summary,
+        )
 
     except Exception as e:
         error_details = traceback.format_exc()
@@ -134,7 +149,7 @@ async def execute_task_pipeline(
 
         log_file_path = task_log.save()
 
-        return error_message, "", log_file_path
+        return error_message, "", log_file_path, None
 
     finally:
         task_log.end_time = get_utc_plus_8_time()
