@@ -45,7 +45,7 @@ ANTHROPIC_BASE_URL = os.environ.get("ANTHROPIC_BASE_URL", "https://api.anthropic
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY")
 OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1")
 
-# API for Sougou Search
+# API for Sogou Search
 TENCENTCLOUD_SECRET_ID = os.environ.get("TENCENTCLOUD_SECRET_ID")
 TENCENTCLOUD_SECRET_KEY = os.environ.get("TENCENTCLOUD_SECRET_KEY")
 
@@ -90,16 +90,16 @@ def create_mcp_server_parameters(cfg: DictConfig, agent_cfg: DictConfig):
 
     if (
         agent_cfg.get("tools", None) is not None
-        and "tool-sougou-search" in agent_cfg["tools"]
+        and "tool-sogou-search" in agent_cfg["tools"]
     ):
         configs.append(
             {
-                "name": "tool-sougou-search",
+                "name": "tool-sogou-search",
                 "params": StdioServerParameters(
                     command=sys.executable,
                     args=[
                         "-m",
-                        "miroflow_tools.mcp_servers.searching_sougou_mcp_server",
+                        "miroflow_tools.mcp_servers.searching_sogou_mcp_server",
                     ],
                     env={
                         "TENCENTCLOUD_SECRET_ID": TENCENTCLOUD_SECRET_ID,

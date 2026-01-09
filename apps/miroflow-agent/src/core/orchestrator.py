@@ -315,13 +315,13 @@ class Orchestrator:
     ) -> Optional[str]:
         """
         Extracts the query string from tool call arguments based on tool_name.
-        Supports search_and_browse, google_search, sougou_search, scrape_website, and scrape_and_extract_info.
+        Supports search_and_browse, google_search, sogou_search, scrape_website, and scrape_and_extract_info.
         """
         if tool_name == "search_and_browse":
             return tool_name + "_" + arguments.get("subtask", "")
         elif tool_name == "google_search":
             return tool_name + "_" + arguments.get("q", "")
-        elif tool_name == "sougou_search":
+        elif tool_name == "sogou_search":
             return tool_name + "_" + arguments.get("Query", "")
         elif tool_name == "scrape_website":
             return tool_name + "_" + arguments.get("url", "")

@@ -23,12 +23,12 @@ JINA_API_KEY = os.environ.get("JINA_API_KEY", "")
 JINA_BASE_URL = os.environ.get("JINA_BASE_URL", "https://r.jina.ai")
 
 # Initialize FastMCP server
-mcp = FastMCP("searching-sougou-mcp-server")
+mcp = FastMCP("searching-sogou-mcp-server")
 
 
 @mcp.tool()
-async def sougou_search(Query: str, Cnt: int = 10) -> str:
-    """Performs web searches using the Tencent Cloud SearchPro API to retrieve comprehensive information, with Sougou search offering superior results for Chinese-language queries.
+async def sogou_search(Query: str, Cnt: int = 10) -> str:
+    """Performs web searches using the Tencent Cloud SearchPro API to retrieve comprehensive information, with Sogou search offering superior results for Chinese-language queries.
 
     Args:
         Query: The core search query string. Be specific to improve result relevance (e.g., "2024 World Cup final results"). (Required, no default value)
@@ -40,7 +40,7 @@ async def sougou_search(Query: str, Cnt: int = 10) -> str:
         - Pages: Array of JSON strings, each containing details of a single search result (e.g., title, url, passage, date, site, favicon)
     """
     if TENCENTCLOUD_SECRET_ID == "" or TENCENTCLOUD_SECRET_KEY == "":
-        return "[ERROR]: TENCENTCLOUD_SECRET_ID or TENCENTCLOUD_SECRET_KEY is not set, sougou_search tool is not available."
+        return "[ERROR]: TENCENTCLOUD_SECRET_ID or TENCENTCLOUD_SECRET_KEY is not set, sogou_search tool is not available."
 
     retry_count = 0
     max_retries = 3
@@ -80,7 +80,7 @@ async def sougou_search(Query: str, Cnt: int = 10) -> str:
         except TencentCloudSDKException:
             retry_count += 1
             if retry_count >= max_retries:
-                return f"[ERROR]: sougou_search tool execution failed after {max_retries} attempts: Unexpected error occurred."
+                return f"[ERROR]: sogou_search tool execution failed after {max_retries} attempts: Unexpected error occurred."
             # Wait before retrying
             await asyncio.sleep(min(2**retry_count, 60))
 

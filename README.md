@@ -415,7 +415,7 @@ The following optional tools are available but were not used in MiroThinker v1.5
 | `tool-reasoning-os`  | Open-Source  | Reasoning engine (open-source alternative)  |
 | `tool-reading`       | Open-Source  | Document reading using MarkItDown           |
 | `tool-google-search` | Commercial   | Web search using Google + scraping          |
-| `tool-sougou-search` | Commercial   | Web search using Sougou (Chinese)           |
+| `tool-sogou-search` | Commercial   | Web search using Sogou (Chinese)           |
 
 > **📖 Local Deployment**: For instructions on deploying open-source tools (`tool-vqa-os`, `tool-transcribe-os`, `tool-reasoning-os`) locally, see [Local Tool Deployment Guide](assets/LOCAL-TOOL-DEPLOYMENT.md).
 
@@ -547,7 +547,7 @@ REASONING_BASE_URL="https://your_reasoning_base_url/v1/chat/completions"
 # API for Claude Sonnet 3.7 as Commercial Tools (optional)
 ANTHROPIC_API_KEY=your_anthropic_key
 
-# API for Sougou Search (optional)
+# API for Sogou Search (optional)
 TENCENTCLOUD_SECRET_ID=your_tencent_cloud_secret_id
 TENCENTCLOUD_SECRET_KEY=your_tencent_cloud_secret_key
 

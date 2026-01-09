@@ -204,7 +204,7 @@ async def google_search(
     wait=wait_exponential(multiplier=1, min=4, max=10),
     retry=retry_if_exception_type(TencentCloudSDKException),
 )
-async def make_sougou_request(query: str, cnt: int) -> Dict[str, Any]:
+async def make_sogou_request(query: str, cnt: int) -> Dict[str, Any]:
     """Make request to Tencent Cloud SearchPro API with retry logic."""
     cred = credential.Credential(TENCENTCLOUD_SECRET_ID, TENCENTCLOUD_SECRET_KEY)
     httpProfile = HttpProfile()
@@ -219,14 +219,14 @@ async def make_sougou_request(query: str, cnt: int) -> Dict[str, Any]:
 
 
 @mcp.tool()
-async def sougou_search(
+async def sogou_search(
     q: str,
     num: int = 10,
 ) -> str:
     """
-    Tool to perform web searches via Tencent Cloud SearchPro API (Sougou search engine).
+    Tool to perform web searches via Tencent Cloud SearchPro API (Sogou search engine).
 
-    Sougou search offers superior results for Chinese-language queries compared to Google.
+    Sogou search offers superior results for Chinese-language queries compared to Google.
 
     Args:
         q: Search query string (Required)
@@ -272,7 +272,7 @@ async def sougou_search(
 
     try:
         # Make the API request
-        result = await make_sougou_request(q.strip(), num)
+        result = await make_sogou_request(q.strip(), num)
 
         # Remove RequestId from response
         if "RequestId" in result:

@@ -43,7 +43,7 @@ The following tools are implemented but were not used in the MiroThinker v1.0/v1
 | Category                    | Server Name          | Tools                                             | Key Environment Variables                                           | Link                           |
 |-----------------------------|----------------------|---------------------------------------------------|---------------------------------------------------------------------|--------------------------------|
 | **Web Searching**           | `tool-google-search` | `google_search`, `scrape_website`                 | `SERPER_API_KEY`, `SERPER_BASE_URL`, `JINA_API_KEY`, `JINA_BASE_URL` | [Details](#tool-google-search) |
-| **Web Searching (Sougou)**  | `tool-sougou-search` | `sougou_search`, `scrape_website`                 | `TENCENTCLOUD_SECRET_ID`, `TENCENTCLOUD_SECRET_KEY`, `JINA_API_KEY`, `JINA_BASE_URL` | [Details](#tool-sougou-search) |
+| **Web Searching (Sogou)**  | `tool-sogou-search` | `sogou_search`, `scrape_website`                 | `TENCENTCLOUD_SECRET_ID`, `TENCENTCLOUD_SECRET_KEY`, `JINA_API_KEY`, `JINA_BASE_URL` | [Details](#tool-sogou-search) |
 | **Vision Processing**       | `tool-vqa`           | `visual_question_answering`                       | `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`                            | [Details](#tool-vqa)           |
 | **Vision Processing**       | `tool-vqa-os`        | `visual_question_answering`                       | `VISION_API_KEY`, `VISION_BASE_URL`, `VISION_MODEL_NAME`            | [Details](#tool-vqa-os)        |
 | **Audio Processing**        | `tool-transcribe`    | `audio_transcription`, `audio_question_answering` | `OPENAI_API_KEY`, `OPENAI_BASE_URL`                                  | [Details](#tool-transcribe)    |
@@ -840,13 +840,13 @@ if __name__ == "__main__":
 
 </details>
 
-### Server: tool-sougou-search
+### Server: tool-sogou-search
 
-Sougou search (optimized for Chinese) with website scraping capabilities. *Optional: Not used in the MiroThinker v1.0/v1.5 evaluation*
+Sogou search (optimized for Chinese) with website scraping capabilities. *Optional: Not used in the MiroThinker v1.0/v1.5 evaluation*
 
 **Tools**:
 
-- 🔍 `sougou_search(Query, Cnt=10)`: Sougou search (Chinese)
+- 🔍 `sogou_search(Query, Cnt=10)`: Sogou search (Chinese)
 - 🌐 `scrape_website(url)`: Scrape website content using Jina.ai
 
 **Environment Variables**:
@@ -869,10 +869,10 @@ from mcp import StdioServerParameters
 async def main():
     server_configs = [
         {
-            "name": "tool-sougou-search",
+            "name": "tool-sogou-search",
             "params": StdioServerParameters(
                 command="python",
-                args=["-m", "miroflow_tools.mcp_servers.searching_sougou_mcp_server"],
+                args=["-m", "miroflow_tools.mcp_servers.searching_sogou_mcp_server"],
                 env={
                     "TENCENTCLOUD_SECRET_ID": "your_tencent_secret_id",
                     "TENCENTCLOUD_SECRET_KEY": "your_tencent_secret_key",
@@ -885,10 +885,10 @@ async def main():
 
     manager = ToolManager(server_configs)
 
-    # Sougou search
+    # Sogou search
     result = await manager.execute_tool_call(
-        server_name="tool-sougou-search",
-        tool_name="sougou_search",
+        server_name="tool-sogou-search",
+        tool_name="sogou_search",
         arguments={
             "Query": "Python 异步编程",
             "Cnt": 10
@@ -898,7 +898,7 @@ async def main():
 
     # Scrape website
     result = await manager.execute_tool_call(
-        server_name="tool-sougou-search",
+        server_name="tool-sogou-search",
         tool_name="scrape_website",
         arguments={"url": "https://example.com/article"}
     )
