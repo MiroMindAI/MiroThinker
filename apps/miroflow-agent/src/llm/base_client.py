@@ -1,6 +1,13 @@
 # Copyright (c) 2025 MiroMind
 # This source code is licensed under the MIT License.
 
+"""
+Base client module for LLM providers.
+
+This module defines the abstract base class and common utilities for LLM clients,
+supporting both OpenAI and Anthropic API formats.
+"""
+
 import asyncio
 import dataclasses
 from abc import ABC
@@ -9,6 +16,7 @@ from typing import (
     Dict,
     List,
     Optional,
+    Tuple,
     TypedDict,
 )
 
@@ -17,16 +25,21 @@ from omegaconf import DictConfig
 from ..logging.task_logger import TaskLog
 from .util import with_timeout
 
+# Default timeout for LLM API calls (10 minutes)
+DEFAULT_LLM_TIMEOUT_SECONDS = 600
+
 
 class TokenUsage(TypedDict, total=True):
     """
-    we unify openai and anthropic format. there are four usage types:
-    - input/output tokens
-    - cache write/read tokens
-    openai:
-    - cache write is free. cache read is cheaper.
-    anthropic:
-    - cache write costs a bit, cache read is cheaper.
+    Unified token usage tracking across different LLM providers.
+
+    We unify OpenAI and Anthropic formats. There are four usage types:
+    - input/output tokens: Standard input and output token counts
+    - cache write/read tokens: Tokens involved in caching operations
+
+    Provider-specific notes:
+    - OpenAI: Cache write is free, cache read is cheaper
+    - Anthropic: Cache write has a small cost, cache read is cheaper
     """
 
     total_input_tokens: int
@@ -37,6 +50,19 @@ class TokenUsage(TypedDict, total=True):
 
 @dataclasses.dataclass
 class BaseClient(ABC):
+    """
+    Abstract base class for LLM provider clients.
+
+    This class provides the common interface and utilities for interacting with
+    different LLM providers (OpenAI, Anthropic, etc.). Concrete implementations
+    should override _create_client() and provider-specific methods.
+
+    Attributes:
+        task_id: Unique identifier for the current task (used for tracking)
+        cfg: Hydra configuration containing LLM settings
+        task_log: Optional logger for recording task execution details
+    """
+
     # Required arguments (no default value)
     task_id: str
     cfg: DictConfig
@@ -44,11 +70,18 @@ class BaseClient(ABC):
     # Optional arguments (with default value)
     task_log: Optional["TaskLog"] = None
 
-    # post_init
+    # Initialized in __post_init__
     client: Any = dataclasses.field(init=False)
     token_usage: TokenUsage = dataclasses.field(init=False)
+    last_call_tokens: Dict[str, int] = dataclasses.field(init=False)
 
     def __post_init__(self):
+        # Initialize last_call_tokens before other operations
+        self.last_call_tokens: Dict[str, int] = {
+            "prompt_tokens": 0,
+            "completion_tokens": 0,
+        }
+
         # Explicitly assign from cfg object
         self.provider: str = self.cfg.llm.provider
         self.model_name: str = self.cfg.llm.model_name
@@ -59,7 +92,7 @@ class BaseClient(ABC):
         self.max_context_length: int = self.cfg.llm.max_context_length
         self.max_tokens: int = self.cfg.llm.max_tokens
         self.async_client: bool = self.cfg.llm.async_client
-        self.keep_tool_result: int = self.cfg.llm.keep_tool_result
+        self.keep_tool_result: int = self.cfg.agent.keep_tool_result
         self.api_key: Optional[str] = self.cfg.llm.get("api_key")
         self.base_url: Optional[str] = self.cfg.llm.get("base_url")
         self.use_tool_calls: Optional[bool] = self.cfg.llm.get("use_tool_calls")
@@ -75,7 +108,12 @@ class BaseClient(ABC):
         )
 
     def _reset_token_usage(self) -> TokenUsage:
-        """Reset token usage counter - implemented by concrete classes"""
+        """
+        Reset token usage counter to zero.
+
+        Returns:
+            A new TokenUsage dict with all counters set to zero.
+        """
         return TokenUsage(
             total_input_tokens=0,
             total_output_tokens=0,
@@ -181,7 +219,7 @@ class BaseClient(ABC):
 
         return messages_copy
 
-    @with_timeout(600)
+    @with_timeout(DEFAULT_LLM_TIMEOUT_SECONDS)
     async def create_message(
         self,
         system_prompt: str,
@@ -191,9 +229,26 @@ class BaseClient(ABC):
         step_id: int = 1,
         task_log: Optional["TaskLog"] = None,
         agent_type: str = "main",
-    ):
+    ) -> Tuple[Any, List[Dict]]:
         """
-        Call LLM to generate response, supports tool calls - unified implementation
+        Call LLM to generate a response with optional tool call support.
+
+        This is the main entry point for LLM interactions. It handles:
+        - Message history management
+        - Tool result filtering based on keep_tool_result
+        - Error handling and logging
+
+        Args:
+            system_prompt: System prompt to guide the LLM's behavior
+            message_history: List of previous messages in the conversation
+            tool_definitions: List of available tool definitions
+            keep_tool_result: Number of recent tool results to keep (-1 = keep all)
+            step_id: Current step identifier for logging
+            task_log: Optional logger for task execution
+            agent_type: Type of agent making the call ("main" or sub-agent name)
+
+        Returns:
+            Tuple of (response, updated_message_history)
         """
         # Unified LLM call processing
         try:
@@ -216,6 +271,20 @@ class BaseClient(ABC):
 
     @staticmethod
     async def convert_tool_definition_to_tool_call(tools_definitions):
+        """
+        Convert MCP tool definitions to OpenAI function call format.
+
+        Transforms the internal tool definition format used by MCP servers into
+        the format expected by OpenAI's function calling API.
+
+        Args:
+            tools_definitions: List of server definitions, each containing a 'name'
+                and 'tools' list with tool specifications.
+
+        Returns:
+            List of tool definitions in OpenAI function call format, where each
+            tool name is prefixed with its server name (e.g., "server-name-tool-name").
+        """
         tool_list = []
         for server in tools_definitions:
             if "tools" in server and len(server["tools"]) > 0:
@@ -232,20 +301,28 @@ class BaseClient(ABC):
         return tool_list
 
     def close(self):
-        """Close client connection"""
+        """Close client connection.
+
+        Note: For async clients (AsyncOpenAI, AsyncAnthropic), the connection
+        will be closed when the client object is garbage collected.
+        For proper async cleanup, use `await client.aclose()` in an async context.
+        """
         if hasattr(self.client, "close"):
             if asyncio.iscoroutinefunction(self.client.close):
-                # For async clients, we cannot call close directly here
-                # Need to call in async function
-                pass
+                # For async clients, we cannot call close() synchronously.
+                # The async HTTP client will be closed when garbage collected.
+                # For explicit async cleanup, call aclose() from an async context.
+                if hasattr(self.client, "_client"):
+                    # Try to close the underlying httpx client if available
+                    try:
+                        self.client._client.close()
+                    except Exception:
+                        pass  # Ignore errors during cleanup
             else:
                 self.client.close()
         elif hasattr(self.client, "_client") and hasattr(self.client._client, "close"):
             # Some clients may have internal _client attribute
             self.client._client.close()
-        else:
-            # If client has no close method, or is async, we skip
-            pass
 
     def _format_response_for_log(self, response) -> Dict:
         """Format response for logging"""

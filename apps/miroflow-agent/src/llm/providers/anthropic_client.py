@@ -1,6 +1,19 @@
 # Copyright (c) 2025 MiroMind
 # This source code is licensed under the MIT License.
 
+"""
+Anthropic Claude LLM client implementation.
+
+This module provides the AnthropicClient class for interacting with Anthropic's
+Claude API, with support for prompt caching and extended thinking.
+
+Features:
+- Async and sync API support
+- Prompt caching with ephemeral cache control
+- Token usage tracking including cache statistics
+- MCP tool call parsing and response processing
+"""
+
 import asyncio
 import dataclasses
 import logging
@@ -114,6 +127,7 @@ class AnthropicClient(BaseClient):
         processed_messages = self._apply_cache_control(messages_for_llm)
 
         try:
+            # Note: Anthropic API does not support repetition_penalty parameter
             if self.async_client:
                 response = await self.client.messages.create(
                     model=self.model_name,
@@ -121,9 +135,6 @@ class AnthropicClient(BaseClient):
                     top_p=self.top_p if self.top_p != 1.0 else NOT_GIVEN,
                     top_k=self.top_k if self.top_k != -1 else NOT_GIVEN,
                     max_tokens=self.max_tokens,
-                    repetition_penalty=self.repetition_penalty
-                    if self.repetition_penalty != 1.0
-                    else NOT_GIVEN,
                     system=[
                         {
                             "type": "text",
@@ -141,9 +152,6 @@ class AnthropicClient(BaseClient):
                     top_p=self.top_p if self.top_p != 1.0 else NOT_GIVEN,
                     top_k=self.top_k if self.top_k != -1 else NOT_GIVEN,
                     max_tokens=self.max_tokens,
-                    repetition_penalty=self.repetition_penalty
-                    if self.repetition_penalty != 1.0
-                    else NOT_GIVEN,
                     system=[
                         {
                             "type": "text",

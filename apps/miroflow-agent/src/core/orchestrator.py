@@ -1,16 +1,21 @@
 # Copyright (c) 2025 MiroMind
 # This source code is licensed under the MIT License.
 
+"""
+Orchestrator module for coordinating agent task execution.
+
+This module contains the main Orchestrator class that manages the execution of tasks
+by coordinating between the main agent, sub-agents, and various tools.
+"""
+
 import asyncio
 import gc
-import json
 import logging
-import os
 import time
 import uuid
 from collections import defaultdict
 from datetime import date
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional
 
 from miroflow_tools.manager import ToolManager
 from omegaconf import DictConfig
@@ -18,31 +23,50 @@ from omegaconf import DictConfig
 from ..config.settings import expose_sub_agents_as_tools
 from ..io.input_handler import process_input
 from ..io.output_formatter import OutputFormatter
-from ..llm.factory import ClientFactory
-from ..logging.task_logger import (
-    TaskLog,
-    get_utc_plus_8_time,
-)
-from ..utils.parsing_utils import (
-    extract_failure_experience_summary,
-    extract_llm_response_text,
-)
+from ..llm.base_client import BaseClient
+from ..logging.task_logger import TaskLog, get_utc_plus_8_time
+from ..utils.parsing_utils import extract_llm_response_text
 from ..utils.prompt_utils import (
-    FAILURE_SUMMARY_ASSISTANT_PREFIX,
-    FAILURE_SUMMARY_PROMPT,
-    FORMAT_ERROR_MESSAGE,
     generate_agent_specific_system_prompt,
     generate_agent_summarize_prompt,
     mcp_tags,
     refusal_keywords,
 )
-from ..utils.wrapper_utils import ErrorBox, ResponseBox
+from .answer_generator import AnswerGenerator
+from .stream_handler import StreamHandler
+from .tool_executor import ToolExecutor
 
 logger = logging.getLogger(__name__)
 
 
+# =============================================================================
+# Constants
+# =============================================================================
+
+# Default timeout for LLM calls in seconds
+DEFAULT_LLM_TIMEOUT = 600
+
+# Safety limits for retry loops
+DEFAULT_MAX_CONSECUTIVE_ROLLBACKS = 5
+
+# Additional attempts beyond max_turns for total loop protection
+EXTRA_ATTEMPTS_BUFFER = 200
+
+
 def _list_tools(sub_agent_tool_managers: Dict[str, ToolManager]):
-    # Use a dictionary to store the cached result
+    """
+    Create a cached async function for fetching sub-agent tool definitions.
+
+    This factory function returns an async closure that lazily fetches and caches
+    tool definitions from all sub-agent tool managers. The cache ensures that
+    tool definitions are only fetched once per orchestrator instance.
+
+    Args:
+        sub_agent_tool_managers: Dictionary mapping sub-agent names to their ToolManager instances.
+
+    Returns:
+        An async function that returns a dictionary of tool definitions for each sub-agent.
+    """
     cache = None
 
     async def wrapped():
@@ -60,11 +84,18 @@ def _list_tools(sub_agent_tool_managers: Dict[str, ToolManager]):
 
 
 class Orchestrator:
+    """
+    Main orchestrator for coordinating agent task execution.
+
+    Manages the execution loop for main and sub-agents, coordinating
+    LLM calls, tool execution, streaming events, and context management.
+    """
+
     def __init__(
         self,
         main_agent_tool_manager: ToolManager,
         sub_agent_tool_managers: Dict[str, ToolManager],
-        llm_client: ClientFactory,
+        llm_client: BaseClient,
         output_formatter: OutputFormatter,
         cfg: DictConfig,
         task_log: Optional["TaskLog"] = None,
@@ -72,6 +103,20 @@ class Orchestrator:
         tool_definitions: Optional[List[Dict[str, Any]]] = None,
         sub_agent_tool_definitions: Optional[Dict[str, List[Dict[str, Any]]]] = None,
     ):
+        """
+        Initialize the orchestrator.
+
+        Args:
+            main_agent_tool_manager: Tool manager for main agent
+            sub_agent_tool_managers: Dictionary of tool managers for sub-agents
+            llm_client: The LLM client for API calls
+            output_formatter: Formatter for output processing
+            cfg: Configuration object
+            task_log: Logger for task execution
+            stream_queue: Optional async queue for streaming events
+            tool_definitions: Pre-fetched tool definitions (optional)
+            sub_agent_tool_definitions: Pre-fetched sub-agent tool definitions (optional)
+        """
         self.main_agent_tool_manager = main_agent_tool_manager
         self.sub_agent_tool_managers = sub_agent_tool_managers
         self.llm_client = llm_client
@@ -81,7 +126,8 @@ class Orchestrator:
         self.stream_queue = stream_queue
         self.tool_definitions = tool_definitions
         self.sub_agent_tool_definitions = sub_agent_tool_definitions
-        # call this once, then use cache value
+
+        # Initialize sub-agent tool list function
         self._list_sub_agent_tools = None
         if sub_agent_tool_managers:
             self._list_sub_agent_tools = _list_tools(sub_agent_tool_managers)
@@ -91,737 +137,34 @@ class Orchestrator:
             self.llm_client.task_log = task_log
 
         # Track boxed answers extracted during main loop turns
-        self.intermediate_boxed_answers = []
-        # Record used subtask / q / Query
-        self.used_queries = {}
+        self.intermediate_boxed_answers: List[str] = []
+
+        # Record used subtask / q / Query to detect duplicates
+        self.used_queries: Dict[str, Dict[str, int]] = {}
 
         # Retry loop protection limits
-        self.MAX_CONSECUTIVE_ROLLBACKS = 5
-        self.MAX_FINAL_ANSWER_RETRIES = 3 if cfg.agent.keep_tool_result == -1 else 1
-        # When context_compress_limit > 0, enables a context compression mechanism
+        self.MAX_CONSECUTIVE_ROLLBACKS = DEFAULT_MAX_CONSECUTIVE_ROLLBACKS
+
+        # Context management settings
         self.context_compress_limit = cfg.agent.get("context_compress_limit", 0)
 
-    async def _stream_update(self, event_type: str, data: dict):
-        """Send streaming update in new SSE protocol format"""
-        if self.stream_queue:
-            try:
-                stream_message = {
-                    "event": event_type,
-                    "data": data,
-                }
-                await self.stream_queue.put(stream_message)
-            except Exception as e:
-                logger.warning(f"Failed to send stream update: {e}")
-
-    async def _stream_start_workflow(self, user_input: str) -> str:
-        """Send start_of_workflow event"""
-        workflow_id = str(uuid.uuid4())
-        await self._stream_update(
-            "start_of_workflow",
-            {
-                "workflow_id": workflow_id,
-                "input": [
-                    {
-                        "role": "user",
-                        "content": user_input,
-                    }
-                ],
-            },
+        # Initialize helper components
+        self.stream = StreamHandler(stream_queue)
+        self.tool_executor = ToolExecutor(
+            main_agent_tool_manager=main_agent_tool_manager,
+            sub_agent_tool_managers=sub_agent_tool_managers,
+            output_formatter=output_formatter,
+            task_log=task_log,
+            stream_handler=self.stream,
+            max_consecutive_rollbacks=DEFAULT_MAX_CONSECUTIVE_ROLLBACKS,
         )
-        return workflow_id
-
-    async def _stream_end_workflow(self, workflow_id: str):
-        """Send end_of_workflow event"""
-        await self._stream_update(
-            "end_of_workflow",
-            {
-                "workflow_id": workflow_id,
-            },
-        )
-
-    async def _stream_show_error(self, error: str):
-        """Send show_error event"""
-        await self._stream_tool_call("show_error", {"error": error})
-        if self.stream_queue:
-            try:
-                await self.stream_queue.put(None)
-            except Exception as e:
-                logger.warning(f"Failed to send show_error: {e}")
-
-    async def _stream_start_agent(self, agent_name: str, display_name: str = None):
-        """Send start_of_agent event"""
-        agent_id = str(uuid.uuid4())
-        await self._stream_update(
-            "start_of_agent",
-            {
-                "agent_name": agent_name,
-                "display_name": display_name,
-                "agent_id": agent_id,
-            },
-        )
-        return agent_id
-
-    async def _stream_end_agent(self, agent_name: str, agent_id: str):
-        """Send end_of_agent event"""
-        await self._stream_update(
-            "end_of_agent",
-            {
-                "agent_name": agent_name,
-                "agent_id": agent_id,
-            },
-        )
-
-    async def _stream_start_llm(self, agent_name: str, display_name: str = None):
-        """Send start_of_llm event"""
-        await self._stream_update(
-            "start_of_llm",
-            {
-                "agent_name": agent_name,
-                "display_name": display_name,
-            },
-        )
-
-    async def _stream_end_llm(self, agent_name: str):
-        """Send end_of_llm event"""
-        await self._stream_update(
-            "end_of_llm",
-            {
-                "agent_name": agent_name,
-            },
-        )
-
-    async def _stream_message(self, message_id: str, delta_content: str):
-        """Send message event"""
-        await self._stream_update(
-            "message",
-            {
-                "message_id": message_id,
-                "delta": {
-                    "content": delta_content,
-                },
-            },
-        )
-
-    async def _stream_tool_call(
-        self,
-        tool_name: str,
-        payload: dict,
-        streaming: bool = False,
-        tool_call_id: str = None,
-    ) -> str:
-        """Send tool_call event"""
-        if not tool_call_id:
-            tool_call_id = str(uuid.uuid4())
-
-        if streaming:
-            for key, value in payload.items():
-                await self._stream_update(
-                    "tool_call",
-                    {
-                        "tool_call_id": tool_call_id,
-                        "tool_name": tool_name,
-                        "delta_input": {key: value},
-                    },
-                )
-        else:
-            # Send complete tool call
-            await self._stream_update(
-                "tool_call",
-                {
-                    "tool_call_id": tool_call_id,
-                    "tool_name": tool_name,
-                    "tool_input": payload,
-                },
-            )
-
-        return tool_call_id
-
-    def _is_google_search_empty_result(self, tool_name: str, tool_result: dict) -> bool:
-        """
-        Check if google_search result has empty organic results.
-        This indicates a poor search query that should be retried.
-        """
-        if tool_name != "google_search":
-            return False
-
-        result = tool_result.get("result")
-        if not result:
-            return False
-
-        try:
-            if isinstance(result, str):
-                result_dict = json.loads(result)
-            else:
-                result_dict = result
-
-            organic = result_dict.get("organic", [])
-            return len(organic) == 0
-        except (json.JSONDecodeError, TypeError, AttributeError):
-            return False
-
-    def get_scrape_result(self, result: str) -> str:
-        """
-        Process scrape result and truncate if too long to support more conversation turns.
-        """
-        SCRAPE_MAX_LENGTH = 20000
-        try:
-            scrape_result_dict = json.loads(result)
-            text = scrape_result_dict.get("text")
-            if text and len(text) > SCRAPE_MAX_LENGTH:
-                text = text[:SCRAPE_MAX_LENGTH]
-            return json.dumps({"text": text}, ensure_ascii=False)
-        except json.JSONDecodeError:
-            if isinstance(result, str) and len(result) > SCRAPE_MAX_LENGTH:
-                result = result[:SCRAPE_MAX_LENGTH]
-            return result
-
-    def post_process_tool_call_result(self, tool_name, tool_call_result: dict):
-        """Process tool call results"""
-        # Only in demo mode: truncate scrape results to 20,000 chars
-        # to support more conversation turns. Skipped in perf tests to avoid loss.
-        if os.environ.get("DEMO_MODE") == "1":
-            if "result" in tool_call_result and tool_name in [
-                "scrape",
-                "scrape_website",
-            ]:
-                tool_call_result["result"] = self.get_scrape_result(
-                    tool_call_result["result"]
-                )
-        return tool_call_result
-
-    def _fix_tool_call_arguments(self, tool_name: str, arguments: dict) -> dict:
-        """
-        Fix common parameter name mistakes made by LLM.
-        """
-        # Create a copy to avoid modifying the original
-        fixed_args = arguments.copy()
-        # Fix scrape_and_extract_info parameter names
-        if tool_name == "scrape_and_extract_info":
-            # Map common mistakes to the correct parameter name
-            mistake_names = [
-                "description",
-                "introduction",
-            ]
-            if "info_to_extract" not in fixed_args:
-                for mistake_name in mistake_names:
-                    if mistake_name in fixed_args:
-                        fixed_args["info_to_extract"] = fixed_args.pop(mistake_name)
-                        break
-
-        return fixed_args
-
-    def _get_query_str_from_tool_call(
-        self, tool_name: str, arguments: dict
-    ) -> Optional[str]:
-        """
-        Extracts the query string from tool call arguments based on tool_name.
-        Supports search_and_browse, google_search, sogou_search, scrape_website, and scrape_and_extract_info.
-        """
-        if tool_name == "search_and_browse":
-            return tool_name + "_" + arguments.get("subtask", "")
-        elif tool_name == "google_search":
-            return tool_name + "_" + arguments.get("q", "")
-        elif tool_name == "sogou_search":
-            return tool_name + "_" + arguments.get("Query", "")
-        elif tool_name == "scrape_website":
-            return tool_name + "_" + arguments.get("url", "")
-        elif tool_name == "scrape_and_extract_info":
-            return (
-                tool_name
-                + "_"
-                + arguments.get("url", "")
-                + "_"
-                + arguments.get("info_to_extract", "")
-            )
-        return None
-
-    async def _handle_llm_call(
-        self,
-        system_prompt,
-        message_history,
-        tool_definitions,
-        step_id: int,
-        purpose: str = "",
-        agent_type: str = "main",
-    ) -> Tuple[Optional[str], bool, Optional[Any], List[Dict[str, Any]]]:
-        """Unified LLM call and logging processing
-        Returns:
-            Tuple[Optional[str], bool, Optional[Any], List[Dict[str, Any]]]:
-                (response_text, should_break, tool_calls_info, message_history)
-        """
-        original_message_history = message_history
-        try:
-            response, message_history = await self.llm_client.create_message(
-                system_prompt=system_prompt,
-                message_history=message_history,
-                tool_definitions=tool_definitions,
-                keep_tool_result=self.cfg.agent.keep_tool_result,
-                step_id=step_id,
-                task_log=self.task_log,
-                agent_type=agent_type,
-            )
-            if ErrorBox.is_error_box(response):
-                await self._stream_show_error(str(response))
-                response = None
-            if ResponseBox.is_response_box(response):
-                if response.has_extra_info():
-                    extra_info = response.get_extra_info()
-                    if extra_info.get("warning_msg"):
-                        await self._stream_show_error(
-                            extra_info.get("warning_msg", "Empty warning message")
-                        )
-
-                response = response.get_response()
-            # Check if response is None (indicating an error occurred)
-            if response is None:
-                self.task_log.log_step(
-                    "error",
-                    f"{purpose} | LLM Call Failed",
-                    f"{purpose} failed - no response received",
-                )
-                return "", False, None, original_message_history
-
-            # Use client's response processing method
-            assistant_response_text, should_break, message_history = (
-                self.llm_client.process_llm_response(
-                    response, message_history, agent_type
-                )
-            )
-
-            # Use client's tool call information extraction method
-            tool_calls_info = self.llm_client.extract_tool_calls_info(
-                response, assistant_response_text
-            )
-
-            self.task_log.log_step(
-                "info",
-                f"{purpose} | LLM Call",
-                "completed successfully",
-            )
-            return (
-                assistant_response_text,
-                should_break,
-                tool_calls_info,
-                message_history,
-            )
-
-        except Exception as e:
-            self.task_log.log_step(
-                "error",
-                f"{purpose} | LLM Call ERROR",
-                f"{purpose} error: {str(e)}",
-            )
-            # Return empty response with should_break=False, need to retry
-            return "", False, None, original_message_history
-
-    async def _generate_failure_summary(
-        self,
-        system_prompt: str,
-        message_history: List[Dict[str, Any]],
-        tool_definitions: List[Dict],
-        turn_count: int,
-    ) -> Optional[str]:
-        """Generate a failure experience summary for context compression.
-
-        This is the core of the context management mechanism. When a task attempt fails
-        (i.e., the task is not completed within the given turns and context window),
-        we compress the entire conversation history into a structured summary containing:
-        - Failure type: incomplete / blocked / misdirected / format_missed
-        - What happened: the approach taken and why a final answer was not reached
-        - Useful findings: facts, intermediate results, or conclusions to be reused
-
-        This summary will be injected into the task description for the next retry,
-        effectively compressing potentially thousands of tokens of conversation into
-        a focused summary of ~500-1000 tokens.
-
-        Args:
-            system_prompt: The system prompt used in the conversation.
-            message_history: The full conversation history to be compressed.
-            tool_definitions: Available tool definitions.
-            turn_count: Current turn count for step ID.
-
-        Returns:
-            The compressed failure experience summary, or None if generation failed.
-        """
-        self.task_log.log_step(
-            "info",
-            "Main Agent | Failure Summary",
-            "Generating failure experience summary for potential retry...",
-        )
-
-        # Build failure summary history
-        failure_summary_history = message_history.copy()
-        if failure_summary_history and failure_summary_history[-1]["role"] == "user":
-            failure_summary_history.pop()
-
-        # Add failure summary prompt and assistant prefix for structured output
-        failure_summary_history.append(
-            {"role": "user", "content": FAILURE_SUMMARY_PROMPT}
-        )
-        failure_summary_history.append(
-            {"role": "assistant", "content": FAILURE_SUMMARY_ASSISTANT_PREFIX}
-        )
-
-        # Call LLM to generate failure summary (auto-detects assistant prefix for vLLM continuation)
-        (
-            failure_summary_text,
-            _,
-            _,
-            _,
-        ) = await self._handle_llm_call(
-            system_prompt,
-            failure_summary_history,
-            tool_definitions,
-            turn_count + 10,  # Use a different step id
-            "Main Agent | Failure Experience Summary",
-            agent_type="main",
-        )
-
-        # Prepend the assistant prefix to the response for complete output
-        if failure_summary_text:
-            failure_summary_text = (
-                FAILURE_SUMMARY_ASSISTANT_PREFIX + failure_summary_text
-            )
-            failure_experience_summary = extract_failure_experience_summary(
-                failure_summary_text
-            )
-            self.task_log.log_step(
-                "info",
-                "Main Agent | Failure Summary",
-                f"Generated failure experience summary:\n{failure_experience_summary[:500]}...",
-            )
-            return failure_experience_summary
-        else:
-            self.task_log.log_step(
-                "warning",
-                "Main Agent | Failure Summary",
-                "Failed to generate failure experience summary",
-            )
-            return None
-
-    async def _generate_final_answer_with_retries(
-        self,
-        system_prompt: str,
-        message_history: List[Dict[str, Any]],
-        tool_definitions: List[Dict],
-        turn_count: int,
-        task_description: str,
-    ) -> Tuple[Optional[str], str, Optional[str], str, List[Dict[str, Any]]]:
-        """Generate final answer with retry mechanism.
-
-        Returns:
-            Tuple of (final_answer_text, final_summary, final_boxed_answer, usage_log, message_history)
-        """
-        # Generate summary prompt
-        summary_prompt = generate_agent_summarize_prompt(
-            task_description,
-            agent_type="main",
-        )
-
-        if message_history[-1]["role"] == "user":
-            message_history.pop(-1)
-        message_history.append({"role": "user", "content": summary_prompt})
-
-        final_answer_text = None
-        final_boxed_answer = None
-        final_summary = ""
-        usage_log = ""
-
-        for retry_idx in range(self.MAX_FINAL_ANSWER_RETRIES):
-            (
-                final_answer_text,
-                should_break,
-                tool_calls_info,
-                message_history,
-            ) = await self._handle_llm_call(
-                system_prompt,
-                message_history,
-                tool_definitions,
-                turn_count + 1 + retry_idx,
-                f"Main agent | Final Summary (attempt {retry_idx + 1}/{self.MAX_FINAL_ANSWER_RETRIES})",
-                agent_type="main",
-            )
-
-            if final_answer_text:
-                final_summary, final_boxed_answer, usage_log = (
-                    self.output_formatter.format_final_summary_and_log(
-                        final_answer_text, self.llm_client
-                    )
-                )
-
-                if final_boxed_answer != FORMAT_ERROR_MESSAGE:
-                    self.task_log.log_step(
-                        "info",
-                        "Main Agent | Final Answer",
-                        f"Boxed answer found on attempt {retry_idx + 1}",
-                    )
-                    break
-                else:
-                    self.task_log.log_step(
-                        "warning",
-                        "Main Agent | Final Answer",
-                        f"No boxed answer on attempt {retry_idx + 1}, retrying...",
-                    )
-                    if retry_idx < self.MAX_FINAL_ANSWER_RETRIES - 1:
-                        if (
-                            message_history
-                            and message_history[-1]["role"] == "assistant"
-                        ):
-                            message_history.pop()
-            else:
-                self.task_log.log_step(
-                    "warning",
-                    "Main Agent | Final Answer",
-                    f"Failed to generate answer on attempt {retry_idx + 1}",
-                )
-                if retry_idx < self.MAX_FINAL_ANSWER_RETRIES - 1:
-                    if message_history and message_history[-1]["role"] == "assistant":
-                        message_history.pop()
-
-        # Ensure final_boxed_answer is never None - treat it as FORMAT_ERROR_MESSAGE
-        if final_boxed_answer is None:
-            final_boxed_answer = FORMAT_ERROR_MESSAGE
-
-        return (
-            final_answer_text,
-            final_summary,
-            final_boxed_answer,
-            usage_log,
-            message_history,
-        )
-
-    def _handle_no_context_management_fallback(
-        self,
-        final_answer_text: Optional[str],
-        final_summary: str,
-        final_boxed_answer: Optional[str],
-    ) -> Tuple[str, str, str]:
-        """Handle fallback when context_compress_limit == 0 (no context management).
-
-        In this mode, the model has only one chance to answer.
-        We should try to use intermediate answers as fallback to maximize accuracy.
-
-        Returns:
-            Tuple of (final_answer_text, final_summary, final_boxed_answer)
-        """
-        # Validate final_answer_text
-        if not final_answer_text:
-            final_answer_text = "No final answer generated."
-            final_summary = final_answer_text
-            final_boxed_answer = FORMAT_ERROR_MESSAGE
-            self.task_log.log_step(
-                "error",
-                "Main Agent | Final Answer",
-                "Unable to generate final answer after all retries",
-            )
-        else:
-            self.task_log.log_step(
-                "info",
-                "Main Agent | Final Answer",
-                f"Final answer content:\n\n{final_answer_text}",
-            )
-
-        # Fallback to intermediate answer if no valid boxed answer
-        # This is important when context management is disabled to maximize answer accuracy
-        # Check for both FORMAT_ERROR_MESSAGE and None (defensive)
-        if (
-            final_boxed_answer == FORMAT_ERROR_MESSAGE or final_boxed_answer is None
-        ) and self.intermediate_boxed_answers:
-            final_boxed_answer = self.intermediate_boxed_answers[-1]
-            self.task_log.log_step(
-                "info",
-                "Main Agent | Final Answer (No Context Management)",
-                f"Using intermediate boxed answer as fallback: {final_boxed_answer}",
-            )
-
-        # Ensure final_boxed_answer is never None
-        if final_boxed_answer is None:
-            final_boxed_answer = FORMAT_ERROR_MESSAGE
-
-        return final_answer_text, final_summary, final_boxed_answer
-
-    def _handle_context_management_no_fallback(
-        self,
-        final_answer_text: Optional[str],
-        final_summary: str,
-        final_boxed_answer: Optional[str],
-    ) -> Tuple[str, str, str]:
-        """Handle failure when context_compress_limit > 0 (context management enabled).
-
-        In this mode, the model has multiple chances to retry with context management.
-        We should NOT guess or use intermediate answers, because:
-        - A wrong guess can reduce accuracy
-        - The model will have another chance to answer with failure experience
-
-        Returns:
-            Tuple of (final_answer_text, final_summary, final_boxed_answer)
-        """
-        # Validate final_answer_text
-        if not final_answer_text:
-            final_answer_text = "No final answer generated."
-            final_summary = final_answer_text
-            final_boxed_answer = FORMAT_ERROR_MESSAGE
-            self.task_log.log_step(
-                "error",
-                "Main Agent | Final Answer",
-                "Unable to generate final answer after all retries",
-            )
-        else:
-            self.task_log.log_step(
-                "info",
-                "Main Agent | Final Answer",
-                f"Final answer content:\n\n{final_answer_text}",
-            )
-
-        # Ensure final_boxed_answer is never None
-        if final_boxed_answer is None:
-            final_boxed_answer = FORMAT_ERROR_MESSAGE
-
-        # With context management, do NOT fallback to intermediate answers
-        # Keep FORMAT_ERROR_MESSAGE to trigger failure summary and allow retry
-        if final_boxed_answer == FORMAT_ERROR_MESSAGE:
-            self.task_log.log_step(
-                "info",
-                "Main Agent | Final Answer (Context Management Mode)",
-                "No valid boxed answer found. Not using intermediate fallback - will generate failure summary for retry.",
-            )
-
-        return final_answer_text, final_summary, final_boxed_answer
-
-    async def _generate_and_finalize_answer(
-        self,
-        system_prompt: str,
-        message_history: List[Dict[str, Any]],
-        tool_definitions: List[Dict],
-        turn_count: int,
-        task_description: str,
-        reached_max_turns: bool = False,
-    ) -> Tuple[str, str, Optional[str], str, List[Dict[str, Any]]]:
-        """Generate final answer and handle fallback based on context management settings.
-
-        Context Management (context_compress_limit > 0) is essentially a context compression
-        mechanism that enables multi-attempt problem solving:
-
-        1. When the task is not completed within the given turns and context window,
-           we generate a "failure_experience_summary" - a structured post-mortem containing:
-           - Failure type: incomplete / blocked / misdirected / format_missed
-           - What happened: the approach taken and why it didn't reach a final answer
-           - Useful findings: facts, intermediate results, or conclusions to be reused
-
-        2. On retry, this compressed summary is injected into the task description,
-           allowing the model to:
-           - Start fresh with a clean context window
-           - Learn from previous failures without context overflow
-           - Try different approaches informed by past experience
-
-        This is more effective than simply continuing with a long context because:
-        - Avoids context window limits
-        - Focuses attention on key learnings rather than raw conversation
-        - Allows multiple "fresh starts" with accumulated wisdom
-
-        Decision table based on (context_management, reached_max_turns):
-
-        | Context Management | Reached Max Turns | Behavior                                    |
-        |--------------------|-------------------|---------------------------------------------|
-        | OFF (limit=0)      | No                | Generate answer → fallback to intermediate  |
-        | OFF (limit=0)      | Yes               | Generate answer → fallback to intermediate  |
-        | ON  (limit>0)      | No                | Generate answer → no fallback, fail summary |
-        | ON  (limit>0)      | Yes               | SKIP generation → fail summary directly     |
-
-        Args:
-            reached_max_turns: Whether the main loop ended due to reaching max turns or context limit.
-
-        Returns:
-            Tuple of (final_summary, final_boxed_answer, failure_experience_summary, usage_log, message_history)
-        """
-        context_management_enabled = self.context_compress_limit > 0
-        failure_experience_summary = None
-        usage_log = ""
-
-        # =============================================================================
-        # CASE: Context management ON + reached max turns
-        # Skip answer generation entirely - any answer would be a blind guess
-        # =============================================================================
-        if context_management_enabled and reached_max_turns:
-            self.task_log.log_step(
-                "info",
-                "Main Agent | Final Answer (Context Management Mode)",
-                "Reached max turns. Skipping answer generation to avoid blind guessing.",
-            )
-
-            self._save_message_history(system_prompt, message_history)
-
-            failure_experience_summary = await self._generate_failure_summary(
-                system_prompt, message_history, tool_definitions, turn_count
-            )
-
-            return (
-                "Task incomplete - reached maximum turns. Will retry with failure experience.",
-                FORMAT_ERROR_MESSAGE,
-                failure_experience_summary,
-                usage_log,
-                message_history,
-            )
-
-        # =============================================================================
-        # ALL OTHER CASES: Generate final answer first
-        # =============================================================================
-        (
-            final_answer_text,
-            final_summary,
-            final_boxed_answer,
-            usage_log,
-            message_history,
-        ) = await self._generate_final_answer_with_retries(
-            system_prompt=system_prompt,
-            message_history=message_history,
-            tool_definitions=tool_definitions,
-            turn_count=turn_count,
-            task_description=task_description,
-        )
-
-        self._save_message_history(system_prompt, message_history)
-
-        # =============================================================================
-        # CASE: Context management OFF
-        # Try to use intermediate answers as fallback to maximize accuracy
-        # =============================================================================
-        if not context_management_enabled:
-            final_answer_text, final_summary, final_boxed_answer = (
-                self._handle_no_context_management_fallback(
-                    final_answer_text, final_summary, final_boxed_answer
-                )
-            )
-            # No failure summary needed - won't be used without context management
-            return (
-                final_summary,
-                final_boxed_answer,
-                None,
-                usage_log,
-                message_history,
-            )
-
-        # =============================================================================
-        # CASE: Context management ON + normal completion (not reached max turns)
-        # Don't use fallback - wrong guess would reduce accuracy
-        # =============================================================================
-        final_answer_text, final_summary, final_boxed_answer = (
-            self._handle_context_management_no_fallback(
-                final_answer_text, final_summary, final_boxed_answer
-            )
-        )
-
-        if final_boxed_answer == FORMAT_ERROR_MESSAGE:
-            failure_experience_summary = await self._generate_failure_summary(
-                system_prompt, message_history, tool_definitions, turn_count
-            )
-
-        return (
-            final_summary,
-            final_boxed_answer,
-            failure_experience_summary,
-            usage_log,
-            message_history,
+        self.answer_generator = AnswerGenerator(
+            llm_client=llm_client,
+            output_formatter=output_formatter,
+            task_log=task_log,
+            stream_handler=self.stream,
+            cfg=cfg,
+            intermediate_boxed_answers=self.intermediate_boxed_answers,
         )
 
     def _save_message_history(
@@ -834,12 +177,168 @@ class Orchestrator:
         }
         self.task_log.save()
 
+    async def _handle_response_format_issues(
+        self,
+        assistant_response_text: str,
+        message_history: List[Dict[str, Any]],
+        turn_count: int,
+        consecutive_rollbacks: int,
+        total_attempts: int,
+        max_attempts: int,
+        agent_name: str,
+    ) -> tuple:
+        """
+        Handle MCP tag format errors and refusal keywords.
+
+        Args:
+            assistant_response_text: The LLM response text
+            message_history: Current message history
+            turn_count: Current turn count
+            consecutive_rollbacks: Current consecutive rollback count
+            total_attempts: Total attempts made
+            max_attempts: Maximum allowed attempts
+            agent_name: Name of the agent for logging
+
+        Returns:
+            Tuple of (should_continue, should_break, turn_count, consecutive_rollbacks, message_history)
+        """
+        # Check for MCP tags in response (format error)
+        if any(mcp_tag in assistant_response_text for mcp_tag in mcp_tags):
+            if consecutive_rollbacks < self.MAX_CONSECUTIVE_ROLLBACKS - 1:
+                turn_count -= 1
+                consecutive_rollbacks += 1
+                if message_history[-1]["role"] == "assistant":
+                    message_history.pop()
+                self.task_log.log_step(
+                    "warning",
+                    f"{agent_name} | Turn: {turn_count} | Rollback",
+                    f"Tool call format incorrect - found MCP tags in response. "
+                    f"Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, "
+                    f"Total attempts: {total_attempts}/{max_attempts}",
+                )
+                return True, False, turn_count, consecutive_rollbacks, message_history
+            else:
+                self.task_log.log_step(
+                    "warning",
+                    f"{agent_name} | Turn: {turn_count} | End After Max Rollbacks",
+                    f"Ending agent loop after {consecutive_rollbacks} consecutive MCP format errors",
+                )
+                return False, True, turn_count, consecutive_rollbacks, message_history
+
+        # Check for refusal keywords
+        if any(keyword in assistant_response_text for keyword in refusal_keywords):
+            matched_keywords = [
+                kw for kw in refusal_keywords if kw in assistant_response_text
+            ]
+            if consecutive_rollbacks < self.MAX_CONSECUTIVE_ROLLBACKS - 1:
+                turn_count -= 1
+                consecutive_rollbacks += 1
+                if message_history[-1]["role"] == "assistant":
+                    message_history.pop()
+                self.task_log.log_step(
+                    "warning",
+                    f"{agent_name} | Turn: {turn_count} | Rollback",
+                    f"LLM refused to answer - found refusal keywords: {matched_keywords}. "
+                    f"Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, "
+                    f"Total attempts: {total_attempts}/{max_attempts}",
+                )
+                return True, False, turn_count, consecutive_rollbacks, message_history
+            else:
+                self.task_log.log_step(
+                    "warning",
+                    f"{agent_name} | Turn: {turn_count} | End After Max Rollbacks",
+                    f"Ending agent loop after {consecutive_rollbacks} consecutive refusals with keywords: {matched_keywords}",
+                )
+                return False, True, turn_count, consecutive_rollbacks, message_history
+
+        # No format issues - normal end without tool calls
+        return False, True, turn_count, consecutive_rollbacks, message_history
+
+    async def _check_duplicate_query(
+        self,
+        tool_name: str,
+        arguments: dict,
+        cache_name: str,
+        consecutive_rollbacks: int,
+        turn_count: int,
+        total_attempts: int,
+        max_attempts: int,
+        message_history: List[Dict[str, Any]],
+        agent_name: str,
+    ) -> tuple:
+        """
+        Check for duplicate queries and handle rollback if needed.
+
+        Args:
+            tool_name: Name of the tool being called
+            arguments: Tool arguments
+            cache_name: Name of the query cache to use
+            consecutive_rollbacks: Current consecutive rollback count
+            turn_count: Current turn count
+            total_attempts: Total attempts made
+            max_attempts: Maximum allowed attempts
+            message_history: Current message history
+            agent_name: Name of the agent for logging
+
+        Returns:
+            Tuple of (is_duplicate, should_rollback, turn_count, consecutive_rollbacks, message_history)
+        """
+        query_str = self.tool_executor.get_query_str_from_tool_call(
+            tool_name, arguments
+        )
+        if not query_str:
+            return False, False, turn_count, consecutive_rollbacks, message_history
+
+        self.used_queries.setdefault(cache_name, defaultdict(int))
+        count = self.used_queries[cache_name][query_str]
+
+        if count > 0:
+            if consecutive_rollbacks < self.MAX_CONSECUTIVE_ROLLBACKS - 1:
+                message_history.pop()
+                turn_count -= 1
+                consecutive_rollbacks += 1
+                self.task_log.log_step(
+                    "warning",
+                    f"{agent_name} | Turn: {turn_count} | Rollback",
+                    f"Duplicate query detected - tool: {tool_name}, query: '{query_str}', "
+                    f"previous count: {count}. Consecutive rollbacks: {consecutive_rollbacks}/"
+                    f"{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_attempts}",
+                )
+                return True, True, turn_count, consecutive_rollbacks, message_history
+            else:
+                self.task_log.log_step(
+                    "warning",
+                    f"{agent_name} | Turn: {turn_count} | Allow Duplicate",
+                    f"Allowing duplicate query after {consecutive_rollbacks} rollbacks - "
+                    f"tool: {tool_name}, query: '{query_str}', previous count: {count}",
+                )
+
+        return False, False, turn_count, consecutive_rollbacks, message_history
+
+    async def _record_query(self, cache_name: str, tool_name: str, arguments: dict):
+        """Record a successful query execution."""
+        query_str = self.tool_executor.get_query_str_from_tool_call(
+            tool_name, arguments
+        )
+        if query_str:
+            self.used_queries.setdefault(cache_name, defaultdict(int))
+            self.used_queries[cache_name][query_str] += 1
+
     async def run_sub_agent(
         self,
         sub_agent_name: str,
         task_description: str,
     ):
-        """Run sub agent"""
+        """
+        Run a sub-agent to handle a subtask.
+
+        Args:
+            sub_agent_name: Name of the sub-agent to run
+            task_description: Description of the subtask
+
+        Returns:
+            The final answer text from the sub-agent
+        """
         task_description += "\n\nPlease provide the answer and detailed supporting information of the subtask given to you."
         self.task_log.log_step(
             "info",
@@ -849,15 +348,14 @@ class Orchestrator:
 
         # Stream sub-agent start
         display_name = sub_agent_name.replace("agent-", "")
-        sub_agent_id = await self._stream_start_agent(display_name)
-        await self._stream_start_llm(display_name)
+        sub_agent_id = await self.stream.start_agent(display_name)
+        await self.stream.start_llm(display_name)
 
         # Start new sub-agent session
         self.task_log.start_sub_agent_session(sub_agent_name, task_description)
 
-        # Simplified initial user content (no file attachments)
-        initial_user_content = task_description
-        message_history = [{"role": "user", "content": initial_user_content}]
+        # Initialize message history
+        message_history = [{"role": "user", "content": task_description}]
 
         # Get sub-agent tool definitions
         if not self.sub_agent_tool_definitions:
@@ -886,17 +384,18 @@ class Orchestrator:
             max_turns = 0
         turn_count = 0
         total_attempts = 0
-        max_attempts = max_turns + 200
+        max_attempts = max_turns + EXTRA_ATTEMPTS_BUFFER
         consecutive_rollbacks = 0
 
         while turn_count < max_turns and total_attempts < max_attempts:
             turn_count += 1
             total_attempts += 1
+
             if consecutive_rollbacks >= self.MAX_CONSECUTIVE_ROLLBACKS:
                 self.task_log.log_step(
                     "error",
                     f"{sub_agent_name} | Too Many Rollbacks",
-                    f"Reached {consecutive_rollbacks} consecutive rollbacks (limit: {self.MAX_CONSECUTIVE_ROLLBACKS}), breaking loop. Total attempts: {total_attempts}/{max_attempts}",
+                    f"Reached {consecutive_rollbacks} consecutive rollbacks, breaking loop.",
                 )
                 break
 
@@ -908,13 +407,13 @@ class Orchestrator:
                 "completion_tokens": 0,
             }
 
-            # Use unified LLM call processing
+            # LLM call using answer generator
             (
                 assistant_response_text,
                 should_break,
                 tool_calls,
                 message_history,
-            ) = await self._handle_llm_call(
+            ) = await self.answer_generator.handle_llm_call(
                 system_prompt,
                 message_history,
                 tool_definitions,
@@ -931,14 +430,11 @@ class Orchestrator:
                 )
                 break
 
-            # Process LLM response
-            elif assistant_response_text:
+            if assistant_response_text:
                 text_response = extract_llm_response_text(assistant_response_text)
                 if text_response:
-                    await self._stream_tool_call("show_text", {"text": text_response})
-
+                    await self.stream.tool_call("show_text", {"text": text_response})
             else:
-                # LLM call failed, end current turn
                 self.task_log.log_step(
                     "info",
                     f"{sub_agent_name} | Turn: {turn_count} | LLM Call",
@@ -947,68 +443,37 @@ class Orchestrator:
                 await asyncio.sleep(5)
                 continue
 
-            # Use tool calls parsed from LLM response
+            # Handle no tool calls case
             if not tool_calls:
-                if any(mcp_tag in assistant_response_text for mcp_tag in mcp_tags):
-                    # If we haven't reached rollback limit, rollback and retry
-                    if consecutive_rollbacks < self.MAX_CONSECUTIVE_ROLLBACKS - 1:
-                        turn_count -= 1
-                        consecutive_rollbacks += 1
-                        if message_history[-1]["role"] == "assistant":
-                            message_history.pop()
+                (
+                    should_continue,
+                    should_break_loop,
+                    turn_count,
+                    consecutive_rollbacks,
+                    message_history,
+                ) = await self._handle_response_format_issues(
+                    assistant_response_text,
+                    message_history,
+                    turn_count,
+                    consecutive_rollbacks,
+                    total_attempts,
+                    max_attempts,
+                    sub_agent_name,
+                )
+                if should_continue:
+                    continue
+                if should_break_loop:
+                    if not any(
+                        mcp_tag in assistant_response_text for mcp_tag in mcp_tags
+                    ) and not any(
+                        keyword in assistant_response_text
+                        for keyword in refusal_keywords
+                    ):
                         self.task_log.log_step(
-                            "warning",
-                            f"{sub_agent_name} | Turn: {turn_count} | Rollback",
-                            f"Tool call format incorrect - found MCP tags in response. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_attempts}",
+                            "info",
+                            f"{sub_agent_name} | Turn: {turn_count} | LLM Call",
+                            f"No tool calls found in {sub_agent_name}, ending on turn {turn_count}",
                         )
-                        continue
-                    else:
-                        # Reached rollback limit, allow the loop to end naturally
-                        self.task_log.log_step(
-                            "warning",
-                            f"{sub_agent_name} | Turn: {turn_count} | End After Max Rollbacks",
-                            f"Ending sub-agent loop after {consecutive_rollbacks} consecutive MCP format errors",
-                        )
-                        break
-                elif any(
-                    keyword in assistant_response_text for keyword in refusal_keywords
-                ):
-                    # If we haven't reached rollback limit, rollback and retry
-                    if consecutive_rollbacks < self.MAX_CONSECUTIVE_ROLLBACKS - 1:
-                        turn_count -= 1
-                        consecutive_rollbacks += 1
-                        matched_keywords = [
-                            kw
-                            for kw in refusal_keywords
-                            if kw in assistant_response_text
-                        ]
-                        if message_history[-1]["role"] == "assistant":
-                            message_history.pop()
-                        self.task_log.log_step(
-                            "warning",
-                            f"{sub_agent_name} | Turn: {turn_count} | Rollback",
-                            f"LLM refused to answer - found refusal keywords: {matched_keywords}. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_attempts}",
-                        )
-                        continue
-                    else:
-                        # Reached rollback limit, allow the loop to end naturally
-                        matched_keywords = [
-                            kw
-                            for kw in refusal_keywords
-                            if kw in assistant_response_text
-                        ]
-                        self.task_log.log_step(
-                            "warning",
-                            f"{sub_agent_name} | Turn: {turn_count} | End After Max Rollbacks",
-                            f"Ending sub-agent loop after {consecutive_rollbacks} consecutive refusals with keywords: {matched_keywords}",
-                        )
-                        break
-                else:
-                    self.task_log.log_step(
-                        "info",
-                        f"{sub_agent_name} | Turn: {turn_count} | LLM Call",
-                        f"No tool calls found in {sub_agent_name}, ending on turn {turn_count}",
-                    )
                     break
 
             # Execute tool calls
@@ -1023,7 +488,9 @@ class Orchestrator:
                 call_id = call["id"]
 
                 # Fix common parameter name mistakes
-                arguments = self._fix_tool_call_arguments(tool_name, arguments)
+                arguments = self.tool_executor.fix_tool_call_arguments(
+                    tool_name, arguments
+                )
 
                 self.task_log.log_step(
                     "info",
@@ -1033,38 +500,31 @@ class Orchestrator:
 
                 call_start_time = time.time()
                 try:
-                    # Check for duplicate query before sending stream events
-                    query_str = self._get_query_str_from_tool_call(tool_name, arguments)
-                    if query_str:
-                        cache_name = sub_agent_id + "_" + tool_name
-                        self.used_queries.setdefault(cache_name, defaultdict(int))
-                        count = self.used_queries[cache_name][query_str]
-                        if count > 0:
-                            # If we haven't reached rollback limit, rollback and retry
-                            if (
-                                consecutive_rollbacks
-                                < self.MAX_CONSECUTIVE_ROLLBACKS - 1
-                            ):
-                                message_history.pop()
-                                turn_count -= 1
-                                consecutive_rollbacks += 1
-                                should_rollback_turn = True
-                                self.task_log.log_step(
-                                    "warning",
-                                    f"{sub_agent_name} | Turn: {turn_count} | Rollback",
-                                    f"Duplicate query detected - tool: {tool_name}, query: '{query_str}', previous count: {count}. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_attempts}",
-                                )
-                                break  # Exit inner for loop, then continue outer while loop
-                            else:
-                                # Reached rollback limit, allow execution but add feedback
-                                self.task_log.log_step(
-                                    "warning",
-                                    f"{sub_agent_name} | Turn: {turn_count} | Allow Duplicate",
-                                    f"Allowing duplicate query after {consecutive_rollbacks} rollbacks - tool: {tool_name}, query: '{query_str}', previous count: {count}",
-                                )
+                    # Check for duplicate query
+                    cache_name = sub_agent_id + "_" + tool_name
+                    (
+                        is_duplicate,
+                        should_rollback,
+                        turn_count,
+                        consecutive_rollbacks,
+                        message_history,
+                    ) = await self._check_duplicate_query(
+                        tool_name,
+                        arguments,
+                        cache_name,
+                        consecutive_rollbacks,
+                        turn_count,
+                        total_attempts,
+                        max_attempts,
+                        message_history,
+                        sub_agent_name,
+                    )
+                    if should_rollback:
+                        should_rollback_turn = True
+                        break
 
-                    # Send stream event only after duplicate check
-                    tool_call_id = await self._stream_tool_call(tool_name, arguments)
+                    # Send stream event
+                    tool_call_id = await self.stream.tool_call(tool_name, arguments)
 
                     # Execute tool call
                     tool_result = await self.sub_agent_tool_managers[
@@ -1072,11 +532,11 @@ class Orchestrator:
                     ].execute_tool_call(server_name, tool_name, arguments)
 
                     # Update query count if successful
-                    if query_str and "error" not in tool_result:
-                        self.used_queries[cache_name][query_str] += 1
+                    if "error" not in tool_result:
+                        await self._record_query(cache_name, tool_name, arguments)
 
-                    # Only in demo mode: truncate scrape results to 20,000 chars
-                    tool_result = self.post_process_tool_call_result(
+                    # Post-process result
+                    tool_result = self.tool_executor.post_process_tool_call_result(
                         tool_name, tool_result
                     )
                     result = (
@@ -1086,12 +546,9 @@ class Orchestrator:
                     )
 
                     # Check for errors that should trigger rollback
-                    should_rollback_result = (
-                        str(result).startswith("Unknown tool:")
-                        or str(result).startswith("Error executing tool")
-                        or self._is_google_search_empty_result(tool_name, tool_result)
-                    )
-                    if should_rollback_result:
+                    if self.tool_executor.should_rollback_result(
+                        tool_name, result, tool_result
+                    ):
                         if consecutive_rollbacks < self.MAX_CONSECUTIVE_ROLLBACKS - 1:
                             message_history.pop()
                             turn_count -= 1
@@ -1100,17 +557,11 @@ class Orchestrator:
                             self.task_log.log_step(
                                 "warning",
                                 f"{sub_agent_name} | Turn: {turn_count} | Rollback",
-                                f"Tool result error - tool: {tool_name}, result: '{str(result)[:200]}'. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_attempts}",
+                                f"Tool result error - tool: {tool_name}, result: '{str(result)[:200]}'",
                             )
                             break
-                        else:
-                            self.task_log.log_step(
-                                "warning",
-                                f"{sub_agent_name} | Turn: {turn_count} | Allow Error Feedback",
-                                f"Allowing error result after {consecutive_rollbacks} rollbacks - tool: {tool_name}, result: '{str(result)[:200]}'",
-                            )
 
-                    await self._stream_tool_call(
+                    await self.stream.tool_call(
                         tool_name, {"result": result}, tool_call_id=tool_call_id
                     )
                     call_end_time = time.time()
@@ -1161,12 +612,10 @@ class Orchestrator:
                 tool_result_for_llm = self.output_formatter.format_tool_result_for_user(
                     tool_result
                 )
-
                 all_tool_results_content_with_id.append((call_id, tool_result_for_llm))
 
-            # Check if we need to rollback and retry the turn
             if should_rollback_turn:
-                continue  # Continue outer while loop
+                continue
 
             # Reset consecutive rollbacks on successful execution
             if consecutive_rollbacks > 0:
@@ -1177,12 +626,12 @@ class Orchestrator:
                 )
             consecutive_rollbacks = 0
 
-            # Record tool calls to current sub-agent turn
+            # Update message history
             message_history = self.llm_client.update_message_history(
                 message_history, all_tool_results_content_with_id
             )
 
-            # Generate summary_prompt to check token limits
+            # Check context length
             temp_summary_prompt = generate_agent_summarize_prompt(
                 task_description,
                 agent_type=sub_agent_name,
@@ -1192,9 +641,7 @@ class Orchestrator:
                 message_history, temp_summary_prompt
             )
 
-            # Check if current context will exceed limits, if so automatically rollback messages and trigger summary
             if not pass_length_check:
-                # Context exceeded limits, set turn_count to trigger summary
                 turn_count = max_turns
                 self.task_log.log_step(
                     "info",
@@ -1203,7 +650,7 @@ class Orchestrator:
                 )
                 break
 
-        # Record browsing agent loop end
+        # Log loop end
         if turn_count >= max_turns:
             self.task_log.log_step(
                 "info",
@@ -1217,14 +664,13 @@ class Orchestrator:
                 f"Main loop completed after {turn_count} turns",
             )
 
-        # Final summary
+        # Generate final summary
         self.task_log.log_step(
             "info",
             f"{sub_agent_name} | Final Summary",
             f"Generating {sub_agent_name} final summary",
         )
 
-        # Generate sub agent summary prompt
         summary_prompt = generate_agent_summarize_prompt(
             task_description,
             agent_type=sub_agent_name,
@@ -1234,17 +680,17 @@ class Orchestrator:
             message_history.pop()
         message_history.append({"role": "user", "content": summary_prompt})
 
-        await self._stream_tool_call(
+        await self.stream.tool_call(
             "Partial Summary", {}, tool_call_id=str(uuid.uuid4())
         )
 
-        # Use unified LLM call processing to generate final summary
+        # Generate final answer
         (
             final_answer_text,
             should_break,
             tool_calls_info,
             message_history,
-        ) = await self._handle_llm_call(
+        ) = await self.answer_generator.handle_llm_call(
             system_prompt,
             message_history,
             tool_definitions,
@@ -1269,6 +715,7 @@ class Orchestrator:
                 "Unable to generate final answer",
             )
 
+        # Save session history
         self.task_log.sub_agent_message_history_sessions[
             self.task_log.current_sub_agent_session_id
         ] = {"system_prompt": system_prompt, "message_history": message_history}
@@ -1276,23 +723,31 @@ class Orchestrator:
         self.task_log.save()
         self.task_log.end_sub_agent_session(sub_agent_name)
 
-        # Remove thinking content in tool response
-        # For the return result of a sub-agent, the content within the `<think>` tags is unnecessary in any case.
+        # Remove thinking content
         final_answer_text = final_answer_text.split("<think>")[-1].strip()
         final_answer_text = final_answer_text.split("</think>")[-1].strip()
 
         # Stream sub-agent end
-        await self._stream_end_llm(display_name)
-        await self._stream_end_agent(display_name, sub_agent_id)
+        await self.stream.end_llm(display_name)
+        await self.stream.end_agent(display_name, sub_agent_id)
 
-        # Return final answer instead of conversation log, so main agent can use it directly
         return final_answer_text
 
     async def run_main_agent(
         self, task_description, task_file_name=None, task_id="default_task"
     ):
-        """Execute the main end-to-end task"""
-        workflow_id = await self._stream_start_workflow(task_description)
+        """
+        Execute the main end-to-end task.
+
+        Args:
+            task_description: Description of the task to execute
+            task_file_name: Optional file associated with the task
+            task_id: Unique identifier for the task
+
+        Returns:
+            Tuple of (final_summary, final_boxed_answer, failure_experience_summary)
+        """
+        workflow_id = await self.stream.start_workflow(task_description)
 
         self.task_log.log_step("info", "Main Agent", f"Start task with id: {task_id}")
         self.task_log.log_step(
@@ -1325,6 +780,7 @@ class Orchestrator:
                 )
         else:
             tool_definitions = self.tool_definitions
+
         if not tool_definitions:
             self.task_log.log_step(
                 "warning",
@@ -1339,35 +795,37 @@ class Orchestrator:
         ) + generate_agent_specific_system_prompt(agent_type="main")
         system_prompt = system_prompt.strip()
 
-        # Main loop: LLM <-> Tools
+        # Main loop configuration
         max_turns = self.cfg.agent.main_agent.max_turns
         turn_count = 0
         total_attempts = 0
-        max_attempts = max_turns + 200
+        max_attempts = max_turns + EXTRA_ATTEMPTS_BUFFER
         consecutive_rollbacks = 0
 
-        self.current_agent_id = await self._stream_start_agent("main")
-        await self._stream_start_llm("main")
+        self.current_agent_id = await self.stream.start_agent("main")
+        await self.stream.start_llm("main")
+
         while turn_count < max_turns and total_attempts < max_attempts:
             turn_count += 1
             total_attempts += 1
+
             if consecutive_rollbacks >= self.MAX_CONSECUTIVE_ROLLBACKS:
                 self.task_log.log_step(
                     "error",
                     "Main Agent | Too Many Rollbacks",
-                    f"Reached {consecutive_rollbacks} consecutive rollbacks (limit: {self.MAX_CONSECUTIVE_ROLLBACKS}), breaking loop. Total attempts: {total_attempts}/{max_attempts}",
+                    f"Reached {consecutive_rollbacks} consecutive rollbacks, breaking loop.",
                 )
                 break
 
             self.task_log.save()
 
-            # Use unified LLM call processing
+            # LLM call
             (
                 assistant_response_text,
                 should_break,
                 tool_calls,
                 message_history,
-            ) = await self._handle_llm_call(
+            ) = await self.answer_generator.handle_llm_call(
                 system_prompt,
                 message_history,
                 tool_definitions,
@@ -1380,9 +838,9 @@ class Orchestrator:
             if assistant_response_text:
                 text_response = extract_llm_response_text(assistant_response_text)
                 if text_response:
-                    await self._stream_tool_call("show_text", {"text": text_response})
+                    await self.stream.tool_call("show_text", {"text": text_response})
 
-                # Try to extract boxed content from this turn's response
+                # Extract boxed content
                 boxed_content = self.output_formatter._extract_boxed_content(
                     assistant_response_text
                 )
@@ -1397,7 +855,6 @@ class Orchestrator:
                     )
                     break
             else:
-                # LLM call failed, don't count this as a valid turn
                 turn_count -= 1
                 self.task_log.log_step(
                     "warning",
@@ -1407,70 +864,40 @@ class Orchestrator:
                 await asyncio.sleep(5)
                 continue
 
+            # Handle no tool calls case
             if not tool_calls:
-                if any(mcp_tag in assistant_response_text for mcp_tag in mcp_tags):
-                    # If we haven't reached rollback limit, rollback and retry
-                    if consecutive_rollbacks < self.MAX_CONSECUTIVE_ROLLBACKS - 1:
-                        turn_count -= 1
-                        consecutive_rollbacks += 1
-                        if message_history[-1]["role"] == "assistant":
-                            message_history.pop()
+                (
+                    should_continue,
+                    should_break_loop,
+                    turn_count,
+                    consecutive_rollbacks,
+                    message_history,
+                ) = await self._handle_response_format_issues(
+                    assistant_response_text,
+                    message_history,
+                    turn_count,
+                    consecutive_rollbacks,
+                    total_attempts,
+                    max_attempts,
+                    "Main Agent",
+                )
+                if should_continue:
+                    continue
+                if should_break_loop:
+                    if not any(
+                        mcp_tag in assistant_response_text for mcp_tag in mcp_tags
+                    ) and not any(
+                        keyword in assistant_response_text
+                        for keyword in refusal_keywords
+                    ):
                         self.task_log.log_step(
-                            "warning",
-                            f"Main Agent | Turn: {turn_count} | Rollback",
-                            f"Tool call format incorrect - found MCP tags in response. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_attempts}",
+                            "info",
+                            f"Main Agent | Turn: {turn_count} | LLM Call",
+                            "LLM did not request tool usage, ending process.",
                         )
-                        continue
-                    else:
-                        # Reached rollback limit, allow the loop to end naturally
-                        self.task_log.log_step(
-                            "warning",
-                            f"Main Agent | Turn: {turn_count} | End After Max Rollbacks",
-                            f"Ending main agent loop after {consecutive_rollbacks} consecutive MCP format errors",
-                        )
-                        break
-                elif any(
-                    keyword in assistant_response_text for keyword in refusal_keywords
-                ):
-                    # If we haven't reached rollback limit, rollback and retry
-                    if consecutive_rollbacks < self.MAX_CONSECUTIVE_ROLLBACKS - 1:
-                        turn_count -= 1
-                        consecutive_rollbacks += 1
-                        matched_keywords = [
-                            kw
-                            for kw in refusal_keywords
-                            if kw in assistant_response_text
-                        ]
-                        if message_history[-1]["role"] == "assistant":
-                            message_history.pop()
-                        self.task_log.log_step(
-                            "warning",
-                            f"Main Agent | Turn: {turn_count} | Rollback",
-                            f"LLM refused to answer - found refusal keywords: {matched_keywords}. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_attempts}",
-                        )
-                        continue
-                    else:
-                        # Reached rollback limit, allow the loop to end naturally
-                        matched_keywords = [
-                            kw
-                            for kw in refusal_keywords
-                            if kw in assistant_response_text
-                        ]
-                        self.task_log.log_step(
-                            "warning",
-                            f"Main Agent | Turn: {turn_count} | End After Max Rollbacks",
-                            f"Ending main agent loop after {consecutive_rollbacks} consecutive refusals with keywords: {matched_keywords}",
-                        )
-                        break
-                else:
-                    self.task_log.log_step(
-                        "info",
-                        f"Main Agent | Turn: {turn_count} | LLM Call",
-                        "LLM did not request tool usage, ending process.",
-                    )
                     break
 
-            # Execute tool calls (execute in order)
+            # Execute tool calls
             tool_calls_data = []
             all_tool_results_content_with_id = []
             should_rollback_turn = False
@@ -1483,46 +910,39 @@ class Orchestrator:
                 call_id = call["id"]
 
                 # Fix common parameter name mistakes
-                arguments = self._fix_tool_call_arguments(tool_name, arguments)
+                arguments = self.tool_executor.fix_tool_call_arguments(
+                    tool_name, arguments
+                )
 
                 call_start_time = time.time()
                 try:
                     if server_name.startswith("agent-") and self.cfg.agent.sub_agents:
-                        # Check for duplicate query before sending stream events
-                        query_str = self._get_query_str_from_tool_call(
-                            tool_name, arguments
+                        # Sub-agent execution
+                        cache_name = "main_" + tool_name
+                        (
+                            is_duplicate,
+                            should_rollback,
+                            turn_count,
+                            consecutive_rollbacks,
+                            message_history,
+                        ) = await self._check_duplicate_query(
+                            tool_name,
+                            arguments,
+                            cache_name,
+                            consecutive_rollbacks,
+                            turn_count,
+                            total_attempts,
+                            max_attempts,
+                            message_history,
+                            "Main Agent",
                         )
-                        if query_str:
-                            cache_name = "main_" + tool_name
-                            self.used_queries.setdefault(cache_name, defaultdict(int))
-                            count = self.used_queries[cache_name][query_str]
-                            if count > 0:
-                                # If we haven't reached rollback limit, rollback and retry
-                                if (
-                                    consecutive_rollbacks
-                                    < self.MAX_CONSECUTIVE_ROLLBACKS - 1
-                                ):
-                                    message_history.pop()
-                                    turn_count -= 1
-                                    consecutive_rollbacks += 1
-                                    should_rollback_turn = True
-                                    self.task_log.log_step(
-                                        "warning",
-                                        f"Main Agent | Turn: {turn_count} | Rollback",
-                                        f"Duplicate sub-agent query detected - agent: {server_name}, query: '{query_str}', previous count: {count}. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_attempts}",
-                                    )
-                                    break  # Exit inner for loop, then continue outer while loop
-                                else:
-                                    # Reached rollback limit, allow execution but add feedback
-                                    self.task_log.log_step(
-                                        "warning",
-                                        f"Main Agent | Turn: {turn_count} | Allow Duplicate",
-                                        f"Allowing duplicate sub-agent query after {consecutive_rollbacks} rollbacks - agent: {server_name}, query: '{query_str}', previous count: {count}",
-                                    )
+                        if should_rollback:
+                            should_rollback_turn = True
+                            break
 
-                        # Send stream events only after duplicate check
-                        await self._stream_end_llm("main")
-                        await self._stream_end_agent("main", self.current_agent_id)
+                        # Stream events
+                        await self.stream.end_llm("main")
+                        await self.stream.end_agent("main", self.current_agent_id)
 
                         # Execute sub-agent
                         sub_agent_result = await self.run_sub_agent(
@@ -1530,56 +950,44 @@ class Orchestrator:
                             arguments["subtask"],
                         )
 
-                        # Update query count if successful
-                        if query_str:
-                            self.used_queries[cache_name][query_str] += 1
+                        # Update query count
+                        await self._record_query(cache_name, tool_name, arguments)
 
                         tool_result = {
                             "server_name": server_name,
                             "tool_name": tool_name,
                             "result": sub_agent_result,
                         }
-                        self.current_agent_id = await self._stream_start_agent(
+                        self.current_agent_id = await self.stream.start_agent(
                             "main", display_name="Summarizing"
                         )
-                        await self._stream_start_llm("main", display_name="Summarizing")
+                        await self.stream.start_llm("main", display_name="Summarizing")
                     else:
-                        # Check for duplicate query before sending stream events
-                        query_str = self._get_query_str_from_tool_call(
-                            tool_name, arguments
+                        # Regular tool execution
+                        cache_name = "main_" + tool_name
+                        (
+                            is_duplicate,
+                            should_rollback,
+                            turn_count,
+                            consecutive_rollbacks,
+                            message_history,
+                        ) = await self._check_duplicate_query(
+                            tool_name,
+                            arguments,
+                            cache_name,
+                            consecutive_rollbacks,
+                            turn_count,
+                            total_attempts,
+                            max_attempts,
+                            message_history,
+                            "Main Agent",
                         )
-                        if query_str:
-                            cache_name = "main_" + tool_name
-                            self.used_queries.setdefault(cache_name, defaultdict(int))
-                            count = self.used_queries[cache_name][query_str]
-                            if count > 0:
-                                # If we haven't reached rollback limit, rollback and retry
-                                if (
-                                    consecutive_rollbacks
-                                    < self.MAX_CONSECUTIVE_ROLLBACKS - 1
-                                ):
-                                    message_history.pop()
-                                    turn_count -= 1
-                                    consecutive_rollbacks += 1
-                                    should_rollback_turn = True
-                                    self.task_log.log_step(
-                                        "warning",
-                                        f"Main Agent | Turn: {turn_count} | Rollback",
-                                        f"Duplicate tool query detected - tool: {tool_name}, query: '{query_str}', previous count: {count}. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_attempts}",
-                                    )
-                                    break  # Exit inner for loop, then continue outer while loop
-                                else:
-                                    # Reached rollback limit, allow execution but add feedback
-                                    self.task_log.log_step(
-                                        "warning",
-                                        f"Main Agent | Turn: {turn_count} | Allow Duplicate",
-                                        f"Allowing duplicate query after {consecutive_rollbacks} rollbacks - tool: {tool_name}, query: '{query_str}', previous count: {count}",
-                                    )
+                        if should_rollback:
+                            should_rollback_turn = True
+                            break
 
-                        # Send stream event only after duplicate check
-                        tool_call_id = await self._stream_tool_call(
-                            tool_name, arguments
-                        )
+                        # Send stream event
+                        tool_call_id = await self.stream.tool_call(tool_name, arguments)
 
                         # Execute tool call
                         tool_result = (
@@ -1591,10 +999,11 @@ class Orchestrator:
                         )
 
                         # Update query count if successful
-                        if query_str and "error" not in tool_result:
-                            self.used_queries[cache_name][query_str] += 1
-                        # Only in demo mode: truncate scrape results to 20,000 chars
-                        tool_result = self.post_process_tool_call_result(
+                        if "error" not in tool_result:
+                            await self._record_query(cache_name, tool_name, arguments)
+
+                        # Post-process result
+                        tool_result = self.tool_executor.post_process_tool_call_result(
                             tool_name, tool_result
                         )
                         result = (
@@ -1604,14 +1013,9 @@ class Orchestrator:
                         )
 
                         # Check for errors that should trigger rollback
-                        should_rollback_result = (
-                            str(result).startswith("Unknown tool:")
-                            or str(result).startswith("Error executing tool")
-                            or self._is_google_search_empty_result(
-                                tool_name, tool_result
-                            )
-                        )
-                        if should_rollback_result:
+                        if self.tool_executor.should_rollback_result(
+                            tool_name, result, tool_result
+                        ):
                             if (
                                 consecutive_rollbacks
                                 < self.MAX_CONSECUTIVE_ROLLBACKS - 1
@@ -1623,17 +1027,11 @@ class Orchestrator:
                                 self.task_log.log_step(
                                     "warning",
                                     f"Main Agent | Turn: {turn_count} | Rollback",
-                                    f"Tool result error - tool: {tool_name}, result: '{str(result)[:200]}'. Consecutive rollbacks: {consecutive_rollbacks}/{self.MAX_CONSECUTIVE_ROLLBACKS}, Total attempts: {total_attempts}/{max_attempts}",
+                                    f"Tool result error - tool: {tool_name}, result: '{str(result)[:200]}'",
                                 )
                                 break
-                            else:
-                                self.task_log.log_step(
-                                    "warning",
-                                    f"Main Agent | Turn: {turn_count} | Allow Error Feedback",
-                                    f"Allowing error result after {consecutive_rollbacks} rollbacks - tool: {tool_name}, result: '{str(result)[:200]}'",
-                                )
 
-                        await self._stream_tool_call(
+                        await self.stream.tool_call(
                             tool_name, {"result": result}, tool_call_id=tool_call_id
                         )
 
@@ -1681,16 +1079,14 @@ class Orchestrator:
                         f"Tool {tool_name} failed to execute: {str(e)}",
                     )
 
-                # Format results to feedback to LLM (more concise)
+                # Format results for LLM
                 tool_result_for_llm = self.output_formatter.format_tool_result_for_user(
                     tool_result
                 )
-
                 all_tool_results_content_with_id.append((call_id, tool_result_for_llm))
 
-            # Check if we need to rollback and retry the turn
             if should_rollback_turn:
-                continue  # Continue outer while loop
+                continue
 
             # Reset consecutive rollbacks on successful execution
             if consecutive_rollbacks > 0:
@@ -1704,7 +1100,7 @@ class Orchestrator:
             # Update 'last_call_tokens'
             self.llm_client.last_call_tokens = main_agent_last_call_tokens
 
-            # Update message history with tool calls data (llm client specific)
+            # Update message history
             message_history = self.llm_client.update_message_history(
                 message_history, all_tool_results_content_with_id
             )
@@ -1715,7 +1111,7 @@ class Orchestrator:
             }
             self.task_log.save()
 
-            # Assess current context length, determine if we need to trigger summary
+            # Check context length
             temp_summary_prompt = generate_agent_summarize_prompt(
                 task_description,
                 agent_type="main",
@@ -1725,7 +1121,6 @@ class Orchestrator:
                 message_history, temp_summary_prompt
             )
 
-            # Check if current context will exceed limits, if so automatically rollback messages and trigger summary
             if not pass_length_check:
                 turn_count = max_turns
                 self.task_log.log_step(
@@ -1735,10 +1130,10 @@ class Orchestrator:
                 )
                 break
 
-        await self._stream_end_llm("main")
-        await self._stream_end_agent("main", self.current_agent_id)
+        await self.stream.end_llm("main")
+        await self.stream.end_agent("main", self.current_agent_id)
 
-        # Record main loop end and determine if max turns was reached
+        # Determine if max turns was reached
         reached_max_turns = turn_count >= max_turns
         if reached_max_turns:
             self.task_log.log_step(
@@ -1758,31 +1153,30 @@ class Orchestrator:
             "info", "Main Agent | Final Summary", "Generating final summary"
         )
 
-        self.current_agent_id = await self._stream_start_agent("Final Summary")
-        await self._stream_start_llm("Final Summary")
+        self.current_agent_id = await self.stream.start_agent("Final Summary")
+        await self.stream.start_llm("Final Summary")
 
-        # Generate final answer and handle fallback based on context_compress_limit
-        # If reached_max_turns is True and context management is enabled,
-        # skip answer generation to avoid blind guessing
+        # Generate final answer using answer generator
         (
             final_summary,
             final_boxed_answer,
             failure_experience_summary,
             usage_log,
             message_history,
-        ) = await self._generate_and_finalize_answer(
+        ) = await self.answer_generator.generate_and_finalize_answer(
             system_prompt=system_prompt,
             message_history=message_history,
             tool_definitions=tool_definitions,
             turn_count=turn_count,
             task_description=task_description,
             reached_max_turns=reached_max_turns,
+            save_callback=self._save_message_history,
         )
 
-        await self._stream_tool_call("show_text", {"text": final_boxed_answer})
-        await self._stream_end_llm("Final Summary")
-        await self._stream_end_agent("Final Summary", self.current_agent_id)
-        await self._stream_end_workflow(workflow_id)
+        await self.stream.tool_call("show_text", {"text": final_boxed_answer})
+        await self.stream.end_llm("Final Summary")
+        await self.stream.end_agent("Final Summary", self.current_agent_id)
+        await self.stream.end_workflow(workflow_id)
 
         self.task_log.log_step(
             "info", "Main Agent | Usage Calculation", f"Usage log: {usage_log}"

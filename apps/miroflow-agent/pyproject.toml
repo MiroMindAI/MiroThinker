@@ -1,7 +1,7 @@
 [project]
 name = "miroflow-agent"
 version = "0.1.0"
-description = "Add your description here"
+description = "An agent framework for complex task solving with LLM and MCP tools"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [

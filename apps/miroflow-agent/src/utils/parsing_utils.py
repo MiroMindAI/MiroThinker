@@ -1,18 +1,35 @@
 # Copyright (c) 2025 MiroMind
 # This source code is licensed under the MIT License.
 
+"""
+Parsing utilities for LLM responses and tool calls.
+
+This module provides functions for:
+- Parsing tool calls from LLM responses (both OpenAI and MCP formats)
+- Extracting text content from responses
+- Safe JSON parsing with automatic repair
+- Failure experience summary extraction
+"""
+
 import json
 import logging
 import re
+from typing import Any, Dict, List, Union
 
 from json_repair import repair_json
 
 logger = logging.getLogger("miroflow_agent")
 
 
-def filter_none_values(arguments: dict) -> dict:
+def filter_none_values(arguments: Union[Dict, Any]) -> Union[Dict, Any]:
     """
     Filter out keys with None values from arguments dictionary.
+
+    Args:
+        arguments: A dictionary to filter, or any other value
+
+    Returns:
+        The filtered dictionary, or the original value if not a dict
     """
     if not isinstance(arguments, dict):
         return arguments
@@ -73,12 +90,20 @@ def _fix_backslash_escapes(json_str: str) -> str:
     return fixed_str
 
 
-def safe_json_loads(arguments_str: str) -> dict:
+def safe_json_loads(arguments_str: str) -> Dict[str, Any]:
     """
-    Safely parse a JSON string with multiple fallbacks:
+    Safely parse a JSON string with multiple fallbacks.
+
+    Parsing strategy:
     1. Try standard json.loads()
-    2. If it fails, try json_repair
+    2. If it fails, try json_repair to fix common issues
     3. If all attempts fail, return an error object
+
+    Args:
+        arguments_str: JSON string to parse
+
+    Returns:
+        Parsed dictionary, or error dict with 'error' and 'raw' keys
     """
     # Step 1: Try standard JSON parsing
     try:
@@ -151,9 +176,18 @@ def extract_failure_experience_summary(text: str) -> str:
         return think_content
 
 
-def extract_llm_response_text(llm_response):
+def extract_llm_response_text(llm_response: Union[str, Dict]) -> str:
     """
-    Extract text from LLM response, excluding <use_mcp_tool> tags. Stop immediately when this opening tag is encountered.
+    Extract text from LLM response, excluding <use_mcp_tool> tags.
+
+    Stops immediately when <use_mcp_tool> tag is encountered, returning
+    only the content before it.
+
+    Args:
+        llm_response: Either a string or a dict with 'content' key
+
+    Returns:
+        Extracted text content, stripped of trailing whitespace
     """
     # If it's a dictionary type, extract the content field
     if isinstance(llm_response, dict):
@@ -174,18 +208,35 @@ def extract_llm_response_text(llm_response):
         return content.strip()
 
 
-def parse_llm_response_for_tool_calls(llm_response_content_text):
+def parse_llm_response_for_tool_calls(
+    llm_response_content_text: Union[str, Dict, List],
+) -> List[Dict[str, Any]]:
     """
-    Parse tool_calls or <use_mcp_tool> tags from LLM response text.
-    Returns a list containing tool call information.
+    Parse tool calls from LLM response content.
+
+    Supports multiple formats:
+    - OpenAI Response API format (dict with 'output' containing function_call items)
+    - OpenAI Completion API format (list of tool_call objects)
+    - MCP format (<use_mcp_tool> XML tags in text)
+
+    Args:
+        llm_response_content_text: Response content in any supported format
+
+    Returns:
+        List of tool call dicts with keys: server_name, tool_name, arguments, id
     """
     # tool_calls or MCP reponse are handled differently
     # for openai response api, the tool_calls are in the response text
     if isinstance(llm_response_content_text, dict):
         tool_calls = []
-        for item in llm_response_content_text.get("output", None):
+        for item in llm_response_content_text.get("output") or []:
             if item.get("type") == "function_call":
-                server_name, tool_name = item.get("name").rsplit("-", maxsplit=1)
+                name = item.get("name", "")
+                if "-" in name:
+                    server_name, tool_name = name.rsplit("-", maxsplit=1)
+                else:
+                    server_name = "unknown"
+                    tool_name = name
                 arguments_str = item.get("arguments")
                 arguments = safe_json_loads(arguments_str)
                 arguments = filter_none_values(arguments)
@@ -203,7 +254,12 @@ def parse_llm_response_for_tool_calls(llm_response_content_text):
     if isinstance(llm_response_content_text, list):
         tool_calls = []
         for tool_call in llm_response_content_text:
-            server_name, tool_name = tool_call.function.name.rsplit("-", maxsplit=1)
+            name = tool_call.function.name
+            if "-" in name:
+                server_name, tool_name = name.rsplit("-", maxsplit=1)
+            else:
+                server_name = "unknown"
+                tool_name = name
             arguments_str = tool_call.function.arguments
 
             # Parse JSON string to dictionary

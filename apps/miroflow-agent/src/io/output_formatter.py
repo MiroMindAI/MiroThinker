@@ -1,22 +1,36 @@
 # Copyright (c) 2025 MiroMind
 # This source code is licensed under the MIT License.
 
+"""Output formatting utilities for agent responses."""
+
 import re
+from typing import Tuple
 
 from ..utils.prompt_utils import FORMAT_ERROR_MESSAGE
 
+# Maximum length for tool results before truncation (100k chars ≈ 25k tokens)
+TOOL_RESULT_MAX_LENGTH = 100_000
+
 
 class OutputFormatter:
+    """Formatter for processing and formatting agent outputs."""
+
     def _extract_boxed_content(self, text: str) -> str:
         r"""
         Extract the content of the last \boxed{...} occurrence in the given text.
+
         Supports:
           - Arbitrary levels of nested braces
           - Escaped braces (\{ and \})
           - Whitespace between \boxed and the opening brace
           - Empty content inside braces
           - Incomplete boxed expressions (extracts to end of string as fallback)
-        Returns an empty string if no match is found.
+
+        Args:
+            text: Input text that may contain \boxed{...} expressions
+
+        Returns:
+            The extracted boxed content, or empty string if no match is found.
         """
         if not text:
             return ""
@@ -78,10 +92,19 @@ class OutputFormatter:
         black_list = ["?", "??", "???", "？", "……", "…", "...", "unknown", None]
         return last_result.strip() if last_result not in black_list else ""
 
-    def format_tool_result_for_user(self, tool_call_execution_result):
+    def format_tool_result_for_user(self, tool_call_execution_result: dict) -> dict:
         """
         Format tool execution results to be fed back to LLM as user messages.
-        Only includes necessary information (results or errors).
+
+        Only includes necessary information (results or errors). Long results
+        are truncated to TOOL_RESULT_MAX_LENGTH to prevent context overflow.
+
+        Args:
+            tool_call_execution_result: Dict containing server_name, tool_name,
+                and either 'result' or 'error'.
+
+        Returns:
+            Dict with 'type' and 'text' keys suitable for LLM message content.
         """
         server_name = tool_call_execution_result["server_name"]
         tool_name = tool_call_execution_result["tool_name"]
@@ -92,19 +115,27 @@ class OutputFormatter:
         elif "result" in tool_call_execution_result:
             # Provide the original output result of the tool
             content = tool_call_execution_result["result"]
-            # Consider truncating overly long results
-            max_len = 100_000  # 100k chars = 25k tokens
-            if len(content) > max_len:
-                content = content[:max_len] + "\n... [Result truncated]"
+            # Truncate overly long results to prevent context overflow
+            if len(content) > TOOL_RESULT_MAX_LENGTH:
+                content = content[:TOOL_RESULT_MAX_LENGTH] + "\n... [Result truncated]"
         else:
             content = f"Tool call to {tool_name} on {server_name} completed, but produced no specific output or result."
 
-        # Return format suitable as user message content
-        # return [{"type": "text", "text": content}]
         return {"type": "text", "text": content}
 
-    def format_final_summary_and_log(self, final_answer_text, client=None):
-        """Format final summary information, including answers and token statistics"""
+    def format_final_summary_and_log(
+        self, final_answer_text: str, client=None
+    ) -> Tuple[str, str, str]:
+        """
+        Format final summary information, including answers and token statistics.
+
+        Args:
+            final_answer_text: The final answer text from the agent
+            client: Optional LLM client for token usage statistics
+
+        Returns:
+            Tuple of (summary_text, boxed_result, usage_log)
+        """
         summary_lines = []
         summary_lines.append("\n" + "=" * 30 + " Final Answer " + "=" * 30)
         summary_lines.append(final_answer_text)

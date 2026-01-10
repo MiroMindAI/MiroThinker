@@ -1,6 +1,18 @@
 # Copyright (c) 2025 MiroMind
 # This source code is licensed under the MIT License.
 
+"""
+Task logging and structured output module.
+
+This module provides:
+- TaskLog: Main dataclass for tracking task execution state and history
+- StepLog: Individual step logging with timestamps and metadata
+- ColoredFormatter: Console output formatting with color-coded log levels
+- Utility functions for time handling and logger configuration
+
+All logs are persisted to JSON files for later analysis and debugging.
+"""
+
 import json
 import logging
 import os
@@ -278,7 +290,19 @@ class TaskLog:
         else:
             return obj
 
-    def to_json(self):
+    def to_json(self) -> str:
+        """
+        Serialize the TaskLog to a JSON string.
+
+        Converts the dataclass to a dictionary, handles non-JSON-serializable
+        objects (like Path), and returns a formatted JSON string.
+
+        Returns:
+            A JSON string representation of the task log with 2-space indentation.
+
+        Note:
+            Falls back to ASCII encoding if Unicode encoding fails.
+        """
         # Convert to dict first
         data_dict = asdict(self)
         # Serialize any non-JSON-serializable objects
@@ -309,5 +333,17 @@ class TaskLog:
         return filename
 
     @classmethod
-    def from_dict(cls, d):
+    def from_dict(cls, d: dict) -> "TaskLog":
+        """
+        Create a TaskLog instance from a dictionary.
+
+        Args:
+            d: Dictionary containing TaskLog field values.
+
+        Returns:
+            A new TaskLog instance initialized with the dictionary values.
+
+        Note:
+            The dictionary keys should match the TaskLog field names.
+        """
         return cls(**d)

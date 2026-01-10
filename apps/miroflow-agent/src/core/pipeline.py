@@ -1,6 +1,16 @@
 # Copyright (c) 2025 MiroMind
 # This source code is licensed under the MIT License.
 
+"""
+Task execution pipeline module.
+
+This module provides:
+- execute_task_pipeline: Main function to run a complete task from start to finish
+- create_pipeline_components: Factory function to initialize all pipeline components
+
+The pipeline orchestrates the interaction between LLM clients, tool managers,
+and the orchestrator to execute complex multi-turn agent tasks.
+"""
 
 import traceback
 import uuid
@@ -28,7 +38,7 @@ async def execute_task_pipeline(
     task_description: str,
     task_file_name: str,
     main_agent_tool_manager: ToolManager,
-    sub_agent_tool_managers: List[Dict[str, ToolManager]],
+    sub_agent_tool_managers: Dict[str, ToolManager],
     output_formatter: OutputFormatter,
     ground_truth: Optional[Any] = None,
     log_dir: str = "logs",
@@ -41,22 +51,24 @@ async def execute_task_pipeline(
 
     Args:
         cfg: The Hydra configuration object.
-        task_description: The description of the task for the LLM.
-        task_file_name: The path to an associated file (optional).
         task_id: A unique identifier for this task run (used for logging).
+        task_description: The description of the task for the LLM.
+        task_file_name: The path to an associated file (empty string if none).
         main_agent_tool_manager: An initialized main agent ToolManager instance.
-        sub_agent_tool_managers: A dictionary of initialized sub-agent ToolManager instances.
+        sub_agent_tool_managers: Dictionary mapping sub-agent names to their ToolManager instances.
         output_formatter: An initialized OutputFormatter instance.
         ground_truth: The ground truth for the task (optional).
         log_dir: The directory to save the task log (default: "logs").
         stream_queue: A queue for streaming the task execution (optional).
         tool_definitions: The definitions of the tools for the main agent (optional).
         sub_agent_tool_definitions: The definitions of the tools for the sub-agents (optional).
+
     Returns:
-        A tuple containing:
-        - A string with the final execution log and summary, or an error message.
-        - The final boxed answer.
-        - The path to the log file.
+        A tuple of (final_summary, final_boxed_answer, log_file_path, failure_experience_summary):
+        - final_summary: A string with the final execution summary, or an error message.
+        - final_boxed_answer: The extracted boxed answer from the LLM response.
+        - log_file_path: The path to the saved task log file.
+        - failure_experience_summary: Summary of failure experience for retry (None if successful).
     """
     # Create task log
     task_log = TaskLog(

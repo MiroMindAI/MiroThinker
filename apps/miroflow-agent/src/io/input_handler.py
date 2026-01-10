@@ -1,17 +1,35 @@
 # Copyright (c) 2025 MiroMind
 # This source code is licensed under the MIT License.
 
+"""
+Input handler module for processing various file types.
+
+This module provides functions for:
+- Processing task inputs with associated files
+- Converting documents (PDF, DOCX, PPTX, XLSX) to markdown
+- Generating captions for images, audio, and video files
+- Extracting task-relevant information from media files
+
+Supported file formats:
+- Documents: PDF, DOCX, DOC, PPTX, PPT, XLSX, XLS, HTML
+- Images: JPG, JPEG, PNG, GIF, WEBP
+- Audio: WAV, MP3, M4A
+- Video: MP4, MOV, AVI, MKV, WEBM
+- Data: JSON, JSONLD, CSV, YAML, TOML
+- Code: PY, SH, MD, TXT
+- Archives: ZIP
+"""
+
 import base64
 import html
 import json
 import os
 import re
 import shutil
-import subprocess
 import tempfile
 import traceback
-from typing import Any, Dict, List, Union
-from urllib.parse import parse_qs, quote, unquote, urlparse, urlunparse
+from typing import Any, Tuple, Union
+from urllib.parse import quote, unquote, urlparse, urlunparse
 
 import mammoth
 import markdownify
@@ -19,18 +37,22 @@ import openpyxl
 import pdfminer
 import pdfminer.high_level
 import pptx
-import pydub
-import speech_recognition as sr
 from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 from markitdown import MarkItDown
 from openai import OpenAI
 from openpyxl.utils import get_column_letter
-from youtube_transcript_api._api import YouTubeTranscriptApi
-from youtube_transcript_api.formatters import SRTFormatter
 
 # Ensure .env file is loaded
 load_dotenv()
+
+# File extension constants for different media types
+IMAGE_EXTENSIONS = {"jpg", "jpeg", "png", "gif", "webp"}
+AUDIO_EXTENSIONS = {"wav", "mp3", "m4a"}
+VIDEO_EXTENSIONS = {"mp4", "mov", "avi", "mkv", "webm"}
+MEDIA_EXTENSIONS = IMAGE_EXTENSIONS | AUDIO_EXTENSIONS | VIDEO_EXTENSIONS
+# Extensions that should skip MarkItDown fallback processing
+SKIP_MARKITDOWN_EXTENSIONS = MEDIA_EXTENSIONS | {"pdb"}
 
 
 def _generate_image_caption(image_path: str) -> str:
@@ -91,7 +113,8 @@ def _generate_image_caption(image_path: str) -> str:
             temperature=0,
         )
 
-        return response.choices[0].message.content
+        content = response.choices[0].message.content
+        return content if content else "[Caption unavailable: Empty response]"
 
     except Exception as e:
         return f"[Caption generation failed: {str(e)}]"
@@ -122,7 +145,8 @@ def _generate_audio_caption(audio_path: str) -> str:
                 model="gpt-4o-transcribe", file=audio_file
             )
 
-        return transcription.text
+        text = transcription.text
+        return text if text else "[Transcription unavailable: Empty response]"
 
     except Exception as e:
         return f"[Caption generation failed: {str(e)}]"
@@ -186,7 +210,8 @@ def _generate_video_caption(video_path: str) -> str:
             temperature=0,
         )
 
-        return response.choices[0].message.content
+        content = response.choices[0].message.content
+        return content if content else "[Caption unavailable: Empty response]"
 
     except Exception as e:
         return f"[Caption generation failed: {str(e)}]"
@@ -410,10 +435,20 @@ Please provide a concise summary of the relevant information from the video that
         return ""
 
 
-def process_input(task_description, task_file_name):
+def process_input(task_description: str, task_file_name: str) -> Tuple[str, str]:
     """
-    Process user input, especially files.
-    Returns formatted initial user message content and updated task description.
+    Process user input and associated files.
+
+    Extracts content from the task file (if provided) and appends it to the
+    task description in a format suitable for the LLM.
+
+    Args:
+        task_description: The original task description
+        task_file_name: Path to an associated file, or empty string if none
+
+    Returns:
+        Tuple of (updated_task_description, updated_task_description)
+        Both values are the same - the task description with file content appended
     """
     updated_task_description = task_description
     file_content_section = ""  # Collect file content to append at the end
@@ -423,7 +458,7 @@ def process_input(task_description, task_file_name):
             file_extension = task_file_name.rsplit(".", maxsplit=1)[-1].lower()
             parsing_result = None
 
-            if file_extension in ["jpg", "jpeg", "png", "gif", "webp"]:
+            if file_extension in IMAGE_EXTENSIONS:
                 # Generate unconditional image caption
                 caption = _generate_image_caption(task_file_name)
 
@@ -511,7 +546,7 @@ def process_input(task_description, task_file_name):
                     f"## PowerPoint Presentation\nFile: {task_file_name}\n\n"
                 )
 
-            elif file_extension in ["wav", "mp3", "m4a"]:
+            elif file_extension in AUDIO_EXTENSIONS:
                 # Generate unconditional audio transcription
                 caption = _generate_audio_caption(task_file_name)
 
@@ -529,7 +564,7 @@ def process_input(task_description, task_file_name):
                     file_content_section += "Task-Relevant Information:\n\n"
                     file_content_section += f"{relevant_info}\n\n"
 
-            elif file_extension in ["mp4", "mov", "avi", "mkv", "webm"]:
+            elif file_extension in VIDEO_EXTENSIONS:
                 # Generate unconditional video caption
                 caption = _generate_video_caption(task_file_name)
 
@@ -563,22 +598,7 @@ def process_input(task_description, task_file_name):
             #### markitdown process - ONLY if no specialized converter handled it ####
             if parsing_result is None:
                 try:
-                    if file_extension not in [
-                        "jpg",
-                        "jpeg",
-                        "png",
-                        "gif",
-                        "webp",
-                        "wav",
-                        "mp3",
-                        "m4a",
-                        "mp4",
-                        "mov",
-                        "avi",
-                        "mkv",
-                        "webm",
-                        "pdb",
-                    ]:
+                    if file_extension not in SKIP_MARKITDOWN_EXTENSIONS:
                         md = MarkItDown(enable_plugins=True)
                         parsing_result = md.convert(task_file_name)
                         print(
@@ -618,8 +638,6 @@ def process_input(task_description, task_file_name):
             )
         except Exception as e:
             print(f"Error: Error processing file {task_file_name}: {e}")
-            import traceback
-
             traceback.print_exc()
             file_content_section += f"\nWarning: There was an error processing the file '{task_file_name}': {str(e)}"
 
@@ -755,6 +773,15 @@ def convert_html_to_md(html_content):
 
 
 def HtmlConverter(local_path: str):
+    """
+    Convert an HTML file to Markdown format.
+
+    Args:
+        local_path: Path to the HTML file to convert.
+
+    Returns:
+        DocumentConverterResult containing the converted Markdown text.
+    """
     with open(local_path, "rt", encoding="utf-8") as fh:
         html_content = fh.read()
 
@@ -762,162 +789,22 @@ def HtmlConverter(local_path: str):
 
 
 def DocxConverter(local_path: str):
+    """
+    Convert a DOCX file to Markdown format.
+
+    Uses mammoth library to first convert DOCX to HTML, then converts
+    the HTML to Markdown.
+
+    Args:
+        local_path: Path to the DOCX file to convert.
+
+    Returns:
+        DocumentConverterResult containing the converted Markdown text.
+    """
     with open(local_path, "rb") as docx_file:
         result = mammoth.convert_to_html(docx_file)
         html_content = result.value
     return convert_html_to_md(html_content)
-
-
-def WikipediaConverter(local_path: str, **kwargs):
-    url = kwargs.get("url", "")
-    assert re.search(r"^https?:\/\/[a-zA-Z]{2,3}\.wikipedia.org\/", url) is not None
-
-    # Parse the file
-    soup = None
-    with open(local_path, "rt", encoding="utf-8") as fh:
-        soup = BeautifulSoup(fh.read(), "html.parser")
-
-    # Remove javascript and style blocks
-    for script in soup(["script", "style"]):
-        script.extract()
-
-    # Print only the main content
-    body_elm = soup.find("div", {"id": "mw-content-text"})
-    title_elm = soup.find("span", {"class": "mw-page-title-main"})
-
-    webpage_text = ""
-    main_title = None if soup.title is None else soup.title.string
-
-    if body_elm:
-        # What's the title
-        if title_elm and len(title_elm) > 0:
-            main_title = title_elm.string  # type: ignore
-            assert isinstance(main_title, str)
-
-        # Convert the page
-        webpage_text = f"# {main_title}\n\n" + _CustomMarkdownify().convert_soup(
-            body_elm
-        )
-    else:
-        webpage_text = _CustomMarkdownify().convert_soup(soup)
-
-    return DocumentConverterResult(
-        title=main_title,
-        text_content=webpage_text,
-    )
-
-
-def YouTubeConverter(local_path: str, url: str):
-    assert url.startswith("https://www.youtube.com/watch?")
-
-    def _get(
-        metadata: Dict[str, str], keys: List[str], default: Union[str, None] = None
-    ) -> Union[str, None]:
-        for k in keys:
-            if k in metadata:
-                return metadata[k]
-        return default
-
-    def _findKey(json: Any, key: str) -> Union[str, None]:  # TODO: Fix json type
-        if isinstance(json, list):
-            for elm in json:
-                ret = _findKey(elm, key)
-                if ret is not None:
-                    return ret
-        elif isinstance(json, dict):
-            for k in json:
-                if k == key:
-                    return json[k]
-                else:
-                    ret = _findKey(json[k], key)
-                    if ret is not None:
-                        return ret
-        return None
-
-    # Parse the file
-    soup = None
-    with open(local_path, "rt", encoding="utf-8") as fh:
-        soup = BeautifulSoup(fh.read(), "html.parser")
-
-    # Read the meta tags
-    assert soup.title is not None and soup.title.string is not None
-    metadata: Dict[str, str] = {"title": soup.title.string}
-    for meta in soup(["meta"]):
-        for a in meta.attrs:
-            if a in ["itemprop", "property", "name"]:
-                metadata[meta[a]] = meta.get("content", "")
-                break
-
-    # We can also try to read the full description. This is more prone to breaking, since it reaches into the page implementation
-    try:
-        for script in soup(["script"]):
-            content = script.text
-            if "ytInitialData" in content:
-                lines = re.split(r"\r?\n", content)
-                obj_start = lines[0].find("{")
-                obj_end = lines[0].rfind("}")
-                if obj_start >= 0 and obj_end >= 0:
-                    data = json.loads(lines[0][obj_start : obj_end + 1])
-                    attrdesc = _findKey(data, "attributedDescriptionBodyText")  # type: ignore
-                    if attrdesc:
-                        metadata["description"] = str(attrdesc["content"])
-                break
-    except Exception:
-        pass
-
-    # Start preparing the page
-    webpage_text = "# YouTube\n"
-
-    title = _get(metadata, ["title", "og:title", "name"])  # type: ignore
-    assert isinstance(title, str)
-
-    if title:
-        webpage_text += f"\n## {title}\n"
-
-    stats = ""
-    views = _get(metadata, ["interactionCount"])  # type: ignore
-    if views:
-        stats += f"- **Views:** {views}\n"
-
-    keywords = _get(metadata, ["keywords"])  # type: ignore
-    if keywords:
-        stats += f"- **Keywords:** {keywords}\n"
-
-    runtime = _get(metadata, ["duration"])  # type: ignore
-    if runtime:
-        stats += f"- **Runtime:** {runtime}\n"
-
-    if len(stats) > 0:
-        webpage_text += f"\n### Video Metadata\n{stats}\n"
-
-    description = _get(metadata, ["description", "og:description"])  # type: ignore
-    if description:
-        webpage_text += f"\n### Description\n{description}\n"
-
-    transcript_text = ""
-    parsed_url = urlparse(url)  # type: ignore
-    params = parse_qs(parsed_url.query)  # type: ignore
-    if "v" in params:
-        assert isinstance(params["v"][0], str)
-        video_id = str(params["v"][0])
-        try:
-            # Must be a single transcript.
-            transcript = YouTubeTranscriptApi.get_transcript(video_id)  # type: ignore
-            # transcript_text = " ".join([part["text"] for part in transcript])  # type: ignore
-            # Alternative formatting:
-            transcript_text = SRTFormatter().format_transcript(transcript)
-        except Exception:
-            pass
-    if transcript_text:
-        webpage_text += f"\n### Transcript\n{transcript_text}\n"
-
-    title = title if title else soup.title.string
-    assert isinstance(title, str)
-
-    return DocumentConverterResult(
-        title=title,
-        text_content=webpage_text,
-    )
 
 
 def XlsxConverter(local_path: str):
@@ -1168,16 +1055,15 @@ def XlsxConverter(local_path: str):
     )
 
 
-def PptxConverter(local_path) -> Union[None, dict]:
+def PptxConverter(local_path: str) -> DocumentConverterResult:
     """
     Converts PPTX files to Markdown. Supports headings, tables and images with alt text.
 
     Args:
         local_path: Path to the PPTX file
-        file_extension: Extension of the file (default: ".pptx")
 
     Returns:
-        None if not a PPTX file, otherwise a dictionary with title and text_content
+        DocumentConverterResult containing the converted Markdown text
     """
 
     def is_picture(shape):
@@ -1195,7 +1081,11 @@ def PptxConverter(local_path) -> Union[None, dict]:
             return True
         return False
 
-    assert local_path.endswith(".pptx")
+    if not local_path.endswith(".pptx"):
+        return DocumentConverterResult(
+            title=None,
+            text_content=f"Error: Expected .pptx file, got: {local_path}",
+        )
 
     md_content = ""
     presentation = pptx.Presentation(local_path)
@@ -1261,151 +1151,6 @@ def PptxConverter(local_path) -> Union[None, dict]:
                 md_content += notes_frame.text
             md_content = md_content.strip()
 
-    return DocumentConverterResult(
-        title=None,
-        text_content=md_content.strip(),
-    )
-
-
-def _get_metadata(local_path):
-    """
-    Extract metadata from media files using exiftool
-
-    Args:
-        local_path: Path to the media file
-
-    Returns:
-        Dictionary of metadata if exiftool is available, None otherwise
-    """
-    exiftool = shutil.which("exiftool")
-    if not exiftool:
-        return None
-    else:
-        try:
-            result = subprocess.run(
-                [exiftool, "-json", local_path], capture_output=True, text=True
-            ).stdout
-            return json.loads(result)[0]
-        except Exception:
-            return None
-
-
-def _transcribe_audio(local_path) -> str:
-    """
-    Transcribe audio using Google's speech recognition
-
-    Args:
-        local_path: Path to the audio file
-
-    Returns:
-        Transcription as a string
-    """
-    recognizer = sr.Recognizer()
-    with sr.AudioFile(local_path) as source:
-        audio = recognizer.record(source)
-        return recognizer.recognize_google(audio).strip()
-
-
-def WavConverter(local_path) -> Union[None, dict]:
-    """
-    Converts WAV files to markdown via extraction of metadata (if `exiftool` is installed),
-    and speech transcription (if `speech_recognition` is installed).
-
-    Args:
-        local_path: Path to the WAV file
-        file_extension: Extension of the file (default: ".wav")
-
-    Returns:
-        None if not a WAV file, otherwise a dictionary with title and text_content
-    """
-    # Bail if not a WAV file
-
-    md_content = ""
-
-    # Add metadata
-    metadata = _get_metadata(local_path)
-    if metadata:
-        for f in [
-            "Title",
-            "Artist",
-            "Author",
-            "Band",
-            "Album",
-            "Genre",
-            "Track",
-            "DateTimeOriginal",
-            "CreateDate",
-            "Duration",
-        ]:
-            if f in metadata:
-                md_content += f"{f}: {metadata[f]}\n"
-
-    # Transcribe
-    try:
-        transcript = _transcribe_audio(local_path)
-        md_content += "\n\n### Audio Transcript:\n" + (
-            "[No speech detected]" if transcript == "" else transcript
-        )
-    except Exception:
-        md_content += (
-            "\n\n### Audio Transcript:\nError. Could not transcribe this audio."
-        )
-
-    return DocumentConverterResult(
-        title=None,
-        text_content=md_content.strip(),
-    )
-
-
-def Mp3Converter(local_path: str, extension: str, **kwargs):
-    md_content = ""
-
-    # Add metadata
-    metadata = _get_metadata(local_path)
-    if metadata:
-        for f in [
-            "Title",
-            "Artist",
-            "Author",
-            "Band",
-            "Album",
-            "Genre",
-            "Track",
-            "DateTimeOriginal",
-            "CreateDate",
-            "Duration",
-        ]:
-            if f in metadata:
-                md_content += f"{f}: {metadata[f]}\n"
-
-    # Transcribe
-    handle, temp_path = tempfile.mkstemp(suffix=".wav")
-    os.close(handle)
-    try:
-        if extension.lower() == ".mp3":
-            sound = pydub.AudioSegment.from_mp3(local_path)
-        else:
-            sound = pydub.AudioSegment.from_file(local_path, format="m4a")
-        sound.export(temp_path, format="wav")
-
-        _args = dict()
-        _args.update(kwargs)
-        _args["file_extension"] = ".wav"
-
-        try:
-            transcript = super()._transcribe_audio(temp_path).strip()
-            md_content += "\n\n### Audio Transcript:\n" + (
-                "[No speech detected]" if transcript == "" else transcript
-            )
-        except Exception:
-            md_content += (
-                "\n\n### Audio Transcript:\nError. Could not transcribe this audio."
-            )
-
-    finally:
-        os.unlink(temp_path)
-
-    # Return the result
     return DocumentConverterResult(
         title=None,
         text_content=md_content.strip(),
@@ -1499,21 +1244,21 @@ def ZipConverter(local_path: str, **kwargs):
                     elif file_extension in ["pptx", "ppt"]:
                         file_result = PptxConverter(local_path=file_path)
 
-                    elif file_extension in ["jpg", "jpeg", "png", "gif", "webp"]:
+                    elif file_extension in IMAGE_EXTENSIONS:
                         # Generate image caption for files in ZIP
                         caption = _generate_image_caption(file_path)
                         md_content += "[Image file]\n\n"
                         md_content += f"> {caption}\n\n"
                         continue
 
-                    elif file_extension in ["wav", "mp3", "m4a"]:
+                    elif file_extension in AUDIO_EXTENSIONS:
                         # Generate audio caption for files in ZIP
                         caption = _generate_audio_caption(file_path)
                         md_content += "[Audio file]\n\n"
                         md_content += f"> {caption}\n\n"
                         continue
 
-                    elif file_extension in ["mp4", "mov", "avi", "mkv", "webm"]:
+                    elif file_extension in VIDEO_EXTENSIONS:
                         # Generate video caption for files in ZIP
                         caption = _generate_video_caption(file_path)
                         md_content += "[Video file]\n\n"

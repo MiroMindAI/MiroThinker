@@ -1,6 +1,19 @@
 # Copyright (c) 2025 MiroMind
 # This source code is licensed under the MIT License.
 
+"""
+OpenAI-compatible LLM client implementation.
+
+This module provides the OpenAIClient class for interacting with OpenAI's API
+and OpenAI-compatible endpoints (such as vLLM, Qwen, DeepSeek, etc.).
+
+Features:
+- Async and sync API support
+- Automatic retry with exponential backoff
+- Token usage tracking and context length management
+- MCP tool call parsing and response processing
+"""
+
 import asyncio
 import dataclasses
 import logging
@@ -117,7 +130,6 @@ class OpenAIClient(BaseClient):
                 "model": self.model_name,
                 "temperature": self.temperature,
                 "messages": messages_for_llm,
-                "tools": [],
                 "stream": False,
                 "top_p": self.top_p,
                 "extra_body": {},
@@ -389,7 +401,7 @@ class OpenAIClient(BaseClient):
         last_user_tokens = 0
         if message_history[-1]["role"] == "user":
             content = message_history[-1]["content"]
-            last_user_tokens = int(self._estimate_tokens(content) * buffer_factor)
+            last_user_tokens = int(self._estimate_tokens(str(content)) * buffer_factor)
 
         # Calculate total token count: last prompt + completion + last user message + summary + reserved response space
         estimated_total = (

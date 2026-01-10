@@ -19,4 +19,4 @@ sub_agents:
 
 # Settings for context management
 keep_tool_result: -1
-context_compress_limit: 0  # Maximum number of retries for format errors in context management
+context_compress_limit: 0  # Enable context compression (>0 = enabled, 0 = disabled).

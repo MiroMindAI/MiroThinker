@@ -1,6 +1,16 @@
 # Copyright (c) 2025 MiroMind
 # This source code is licensed under the MIT License.
 
+"""
+Prompt templates and utilities for agent system prompts.
+
+This module provides:
+- System prompt generation for MCP tool usage
+- Agent-specific prompt generation (main agent, browsing agent)
+- Summary prompt templates for final answer generation
+- Failure experience templates for retry mechanisms
+"""
+
 # ============================================================================
 # Format Error Messages
 # ============================================================================
@@ -73,6 +83,20 @@ refusal_keywords = [
 
 
 def generate_mcp_system_prompt(date, mcp_servers):
+    """
+    Generate the MCP (Model Context Protocol) system prompt for LLM.
+
+    Creates a structured prompt that instructs the LLM on how to use available
+    MCP tools. Includes tool definitions, XML formatting instructions, and
+    general task-solving guidelines.
+
+    Args:
+        date: Current date object for timestamp inclusion
+        mcp_servers: List of server definitions, each containing 'name' and 'tools'
+
+    Returns:
+        Complete system prompt string with tool definitions and usage instructions
+    """
     formatted_date = date.strftime("%Y-%m-%d")
 
     # Start building the template, now follows https://docs.anthropic.com/en/docs/build-with-claude/tool-use/overview#tool-use-system-prompt
@@ -141,6 +165,17 @@ You accomplish a given task iteratively, breaking it down into clear steps and w
 
 
 def generate_no_mcp_system_prompt(date):
+    """
+    Generate a minimal system prompt without MCP tool definitions.
+
+    Used when no tools are available or when running in tool-less mode.
+
+    Args:
+        date: Current date object for timestamp inclusion
+
+    Returns:
+        Basic system prompt string without tool definitions
+    """
     formatted_date = date.strftime("%Y-%m-%d")
 
     # Start building the template, now follows https://docs.anthropic.com/en/docs/build-with-claude/tool-use/overview#tool-use-system-prompt
@@ -167,6 +202,19 @@ You accomplish a given task iteratively, breaking it down into clear steps and w
 
 
 def generate_agent_specific_system_prompt(agent_type=""):
+    """
+    Generate agent-specific objective prompts based on agent type.
+
+    Different agent types have different objectives:
+    - main: Task-solving agent that uses tools to answer questions
+    - agent-browsing: Web search and browsing agent for information retrieval
+
+    Args:
+        agent_type: Type of agent ("main", "agent-browsing", or "browsing-agent")
+
+    Returns:
+        Agent-specific objective prompt string
+    """
     if agent_type == "main":
         system_prompt = """\n
 # Agent Specific Objective
@@ -186,6 +234,21 @@ Do not infer, speculate, summarize broadly, or attempt to fill in missing parts 
 
 
 def generate_agent_summarize_prompt(task_description, agent_type=""):
+    """
+    Generate the final summarization prompt for an agent.
+
+    Creates prompts that instruct agents to summarize their work and provide
+    final answers. Different agent types have different summarization formats:
+    - main: Must wrap answer in \\boxed{} with strict formatting rules
+    - agent-browsing: Provides structured report of findings
+
+    Args:
+        task_description: The original task/question to reference in the summary
+        agent_type: Type of agent ("main" or "agent-browsing")
+
+    Returns:
+        Summarization prompt string with formatting instructions
+    """
     if agent_type == "main":
         summarize_prompt = (
             "Summarize the above conversation, and output the FINAL ANSWER to the original question.\n\n"

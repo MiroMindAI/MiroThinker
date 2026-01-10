@@ -1,6 +1,14 @@
 # Copyright (c) 2025 MiroMind
 # This source code is licensed under the MIT License.
 
+"""
+Utility decorators and helpers for LLM client operations.
+
+This module provides:
+- Timeout decorator for async LLM API calls
+- Other common utilities shared across LLM providers
+"""
+
 import asyncio
 import functools
 from typing import Awaitable, Callable, TypeVar

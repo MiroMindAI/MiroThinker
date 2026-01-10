@@ -1,6 +1,16 @@
 # Copyright (c) 2025 MiroMind
 # This source code is licensed under the MIT License.
 
+"""
+Configuration settings and MCP server parameter management.
+
+This module handles:
+- Loading environment variables for API keys and service URLs
+- Creating MCP server configurations for different tools
+- Exposing sub-agents as callable tools
+- Collecting environment information for logging
+"""
+
 import os
 import sys
 
@@ -57,7 +67,22 @@ SUMMARY_LLM_MODEL_NAME = os.environ.get("SUMMARY_LLM_MODEL_NAME")
 
 # MCP server configuration generation function
 def create_mcp_server_parameters(cfg: DictConfig, agent_cfg: DictConfig):
-    """Define and return MCP server configuration list"""
+    """
+    Create MCP server configurations based on agent configuration.
+
+    Dynamically generates StdioServerParameters for each tool specified in the
+    agent configuration. Each tool type (search, python, vqa, etc.) has its own
+    MCP server with appropriate environment variables.
+
+    Args:
+        cfg: Global Hydra configuration object
+        agent_cfg: Agent-specific configuration containing 'tools' and 'tool_blacklist'
+
+    Returns:
+        Tuple of (configs, blacklist) where:
+        - configs: List of dicts with 'name' and 'params' (StdioServerParameters)
+        - blacklist: Set of (server_name, tool_name) tuples to exclude
+    """
     configs = []
 
     if (
@@ -356,7 +381,19 @@ def create_mcp_server_parameters(cfg: DictConfig, agent_cfg: DictConfig):
 
 
 def expose_sub_agents_as_tools(sub_agents_cfg: DictConfig):
-    """Expose sub-agents as tools"""
+    """
+    Convert sub-agent configurations into tool definitions for the main agent.
+
+    This allows the main agent to invoke sub-agents (like the browsing agent)
+    as if they were regular MCP tools, enabling a hierarchical agent architecture.
+
+    Args:
+        sub_agents_cfg: Configuration containing sub-agent definitions
+
+    Returns:
+        List of server parameter dicts, each with 'name' and 'tools' keys.
+        Each tool includes 'name', 'description', and 'schema' for the sub-agent.
+    """
     sub_agents_server_params = []
     for sub_agent in sub_agents_cfg.keys():
         if "agent-browsing" in sub_agent:
@@ -383,7 +420,22 @@ def expose_sub_agents_as_tools(sub_agents_cfg: DictConfig):
 
 
 def get_env_info(cfg: DictConfig) -> dict:
-    """Collect current configuration environment variable information for logging"""
+    """
+    Collect current configuration and environment information for logging.
+
+    Gathers LLM settings, agent configuration, API key availability (masked),
+    and base URLs. Used for debugging and task log enrichment.
+
+    Args:
+        cfg: Hydra configuration object
+
+    Returns:
+        Dictionary containing:
+        - LLM configuration (provider, model, temperature, etc.)
+        - Agent configuration (max turns for main/sub agents)
+        - API key availability flags (boolean, not actual keys)
+        - Service base URLs
+    """
     return {
         # LLM Configuration
         "llm_provider": cfg.llm.provider,
@@ -396,7 +448,7 @@ def get_env_info(cfg: DictConfig) -> dict:
         "llm_max_tokens": cfg.llm.max_tokens,
         "llm_repetition_penalty": cfg.llm.repetition_penalty,
         "llm_async_client": cfg.llm.async_client,
-        "keep_tool_result": cfg.llm.keep_tool_result,
+        "keep_tool_result": cfg.agent.keep_tool_result,
         # Agent Configuration
         "main_agent_max_turns": cfg.agent.main_agent.max_turns,
         **(
