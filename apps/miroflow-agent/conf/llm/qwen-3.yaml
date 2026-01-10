@@ -10,3 +10,4 @@ max_context_length: 262144
 max_tokens: 16384
 top_p: 0.95
 repetition_penalty: 1.05
+temperature: 1.0
