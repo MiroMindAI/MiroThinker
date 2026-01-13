@@ -2,6 +2,17 @@
 
 This guide describes how to integrate the MiroThinker model with [LobeChat](https://github.com/lobehub/lobe-chat), an open-source, modern LLM UI framework supporting tool usage (function calling).
 
+## Before You Start
+
+MiroThinker is a reasoning model. When generating responses, it first outputs its reasoning process inside `<think>...</think>` tags, then provides the final answer. For agentic tasks (multi-step tool use), the model performs better when it can see its previous reasoning in the conversation history.
+
+However, LobeChat does not preserve reasoning content in conversation history. When sending messages back to the API, LobeChat strips the `<think>...</think>` content from previous assistant messages. This means the model cannot see its prior reasoning steps.
+
+- For general chat: This works fine.
+- For agentic workflows: Performance may be degraded since the model cannot reference its previous reasoning.
+
+If you need full reasoning preservation for agentic use cases, consider modifying LobeChat's source code to return `reasoning_content` in conversation history.
+
 ## 1. Start the Inference Service
 
 First, launch the MiroThinker model using vLLM with the OpenAI-compatible API adapter. We use vLLM because it supports loading custom tool parsers from external Python files, while SGLang does not. Ensure you include the tool parser plugin.
