@@ -4,7 +4,7 @@ This guide describes how to integrate the MiroThinker model with [LobeChat](http
 
 ## 1. Start the Inference Service
 
-First, launch the MiroThinker model using vLLM with the OpenAI-compatible API adapter. Ensure you include the tool parser plugin.
+First, launch the MiroThinker model using vLLM with the OpenAI-compatible API adapter. We use vLLM because it supports loading custom tool parsers from external Python files, while SGLang does not. Ensure you include the tool parser plugin.
 
 ```bash
 # Configuration
@@ -17,7 +17,7 @@ vllm serve $MODEL_PATH \
     --port $PORT \
     --trust-remote-code \
     --chat-template chat_template.jinja \
-    --tool-parser-plugin MirothinkerToolParser.py \
+    --tool-parser-plugin MiroThinkerToolParser.py \
     --tool-call-parser mirothinker \
     --enable-auto-tool-choice
 ```
