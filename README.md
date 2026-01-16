@@ -63,7 +63,7 @@ The project currently comprises four key components:
 
 ### MiroThinker-v1.5
 
-MiroThinker v1.5 is the world-leading open-source search agent that advances tool-augmented reasoning through **interactive scaling** — training the model to handle deeper and more frequent agent-environment interactions as a third dimension of performance improvement, beyond model size and context length.
+MiroThinker v1.5 is the world-leading open-source search agent that advances tool-augmented reasoning through **interactive scaling** — training the agent to handle deeper and more frequent agent-environment interactions as a third dimension of performance improvement, beyond model size and context length.
 
 ![image](https://huggingface.co/datasets/miromind-ai/MiroFlow-Benchmarks/resolve/main/assets/mirothinker_v1.5_framework.png)
 
@@ -75,7 +75,7 @@ MiroThinker v1.5 is the world-leading open-source search agent that advances too
 
 <div align="center">
 
-|      Model Name       |         Base Model            | Max Context | Max Tool Calls |                              HF Link                               |
+|      Agent Name       |         Base Agent            | Max Context | Max Tool Calls |                              HF Link                               |
 |:---------------------:|:-----------------------------:|:-----------:|:--------------:|:------------------------------------------------------------------:|
 | MiroThinker-v1.5-30B  | Qwen3-30B-A3B-Thinking-2507   |    256K     |      400       | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-v1.5-30B) |
 | MiroThinker-v1.5-235B | Qwen3-235B-A22B-Thinking-2507 |    256K     |      400       | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-v1.5-235B) |
@@ -91,7 +91,7 @@ MiroThinker v1.5 demonstrates strong general-research performance across a broad
 <details>
   <summary>📦 Click to expand MiroThinker-v1.0 details</summary>
 
-Unlike previous agents that scale only model size or context length, MiroThinker v1.0 introduces **interactive scaling** at the model level, systematically training the model to handle deeper and more frequent agent–environment interactions as a third dimension of performance improvement. Interactive scaling leverages environment feedback and external information acquisition to correct errors and refine trajectories.
+Unlike previous agents that scale only model size or context length, MiroThinker v1.0 introduces **interactive scaling** at the agent level, systematically training the agent to handle deeper and more frequent agent–environment interactions as a third dimension of performance improvement. Interactive scaling leverages environment feedback and external information acquisition to correct errors and refine trajectories.
 
 ![image](https://huggingface.co/datasets/miromind-ai/MiroFlow-Benchmarks/resolve/main/assets/MiroThinker_v1.0_Overall.png)
 
@@ -103,7 +103,7 @@ Unlike previous agents that scale only model size or context length, MiroThinker
 
 <div align="center">
 
-|      Model Name      |         Base Model          | Max Context | Max Tool Calls |                              HF Link                               |
+|      Agent Name      |         Base Agent          | Max Context | Max Tool Calls |                              HF Link                               |
 |:--------------------:|:---------------------------:|:-----------:|:--------------:|:------------------------------------------------------------------:|
 | MiroThinker-v1.0-8B  |        Qwen3-8B             |    256K     |      600       | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-v1.0-8B)  |
 | MiroThinker-v1.0-30B | Qwen3-30B-A3B-Thinking-2507 |    256K    |      600       | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-v1.0-30B) |
@@ -127,14 +127,14 @@ MiroThinker v1.0 demonstrates strong general-research performance across a broad
 In this new version, we introduced three key improvements:
 
 - 📚 **Richer training data** from both English and Chinese sources, yielding significant gains in benchmark performance and generalization
-- 🎯 **Unified DPO training** with a single preference dataset across all models
+- 🎯 **Unified DPO training** with a single preference dataset across all agents
 - 📏 **Extended context length** from 40k to 64k for more challenging multi-turn tool-use tasks
 
 Compared to v0.1, MiroThinker v0.2 delivers consistent gains across benchmarks. For example, scores improved from **57.3 → 64.1** on **GAIA-Text-103** and from **17.0 → 29.4** on **BrowseComp-ZH**, reflecting substantial advancements in the model’s general research agent capabilities.
 
 <div align="center">
 
-|        Model Name        |      Base Model       | Max Context |                                HF Link                                 |
+|        Agent Name        |      Base Agent       | Max Context |                                HF Link                                 |
 |:------------------------:|:---------------------:|:-----------:|:----------------------------------------------------------------------:|
 | MiroThinker-4B-SFT-v0.2  |       Qwen3-4B        |    64K     | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-4B-SFT-v0.2)  |
 | MiroThinker-4B-DPO-v0.2  |       Qwen3-4B        |    64K     | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-4B-DPO-v0.2)  |
@@ -156,14 +156,14 @@ Compared to v0.1, MiroThinker v0.2 delivers consistent gains across benchmarks. 
 
 <div align="center">
   <img src="assets/gaia_text_103.png" width="98%" alt="MiroFlow Performance on GAIA-Validation" />
-  <p><strong>Performance of Open-Source Models on GAIA-Validation Benchmark.</strong></p>
+  <p><strong>Performance of Open-Source Agents on GAIA-Validation Benchmark.</strong></p>
 </div>
 
 We have released the **MiroThinker v0.1** series, including both SFT and DPO variants at parameter scales of **8B**, **14B**, and **32B**. Notably, MiroThinker v0.1 achieves **state-of-the-art performance** among open-source models on the [GAIA benchmark](https://huggingface.co/datasets/gaia-benchmark/GAIA), a rigorous evaluation suite for advanced agentic capabilities, demonstrating its strength in long-context, decision-intensive, and real-world task scenarios.
 
 <div align="center">
 
-| Model Name                | Base Model | Max Context | HF Link                                                               |
+| Agent Name                | Base Agent | Max Context | HF Link                                                               |
 | :-----------------------: |:----------:|:-----------:| :--------------------------------------------------------------------:|
 | MiroThinker-8B-SFT-v0.1   |  Qwen3-8B  |    40K     | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-8B-SFT-v0.1)  |
 | MiroThinker-8B-DPO-v0.1   |  Qwen3-8B  |    40K     | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-8B-DPO-v0.1)  |
@@ -180,7 +180,7 @@ We have released the **MiroThinker v0.1** series, including both SFT and DPO var
 
 ### 🤖 **MiroThinker-Optimized Framework**
 
-- 🔓 **Fully Open-Source Agent Framework**: Complete transparency with open framework and open models
+- 🔓 **Fully Open-Source Agent Framework**: Complete transparency with open framework and open agents
 - 🔗 **Tool Integration**: Seamless integration with external tools and APIs
 - 📝 **Trace Collection**: Comprehensive logging and analysis of agent interactions with elapsed time and estimated completion time displayed in minutes. Ready for SFT and DPO
 - 📊 **Benchmark Evaluation**: Extensive testing across multiple benchmark datasets
@@ -260,7 +260,7 @@ We have released the **MiroThinker v0.1** series, including both SFT and DPO var
 
 | **Method**                   | Text-103<br>Best Pass@1 | Text-103<br>Pass@1 (Avg@8) | Val-165<br>Best Pass@1 | Val-165<br>Pass@1 (Avg@8) |
 |------------------------------|:-----------------------:|:--------------------------:|:----------------------:|:-------------------------:|
-| **🔹—— 7B/8B Models ——**     |                         |                            |                        |                           |
+| **🔹—— 7B/8B Agents ——**     |                         |                            |                        |                           |
 | Search-o1-7B                 |          17.5           |             -              |           -            |             -             |
 | R1-Searcher-7B               |          20.4           |             -              |           -            |             -             |
 | WebDancer-7B                 |          31.0           |             -              |           -            |             -             |
@@ -270,12 +270,12 @@ We have released the **MiroThinker v0.1** series, including both SFT and DPO var
 |     + Commercial Tools       |          46.6           |            42.1            |          37.6          |           33.9            |
 | **MiroThinker-8B-DPO-v0.1**  |          46.6           |            44.8            |          37.0          |           35.4            |
 |     + Commercial Tools       |        **50.5**         |          **46.7**          |        **38.2**        |         **35.9**          |
-| **🔹—— 14B Models ——**       |                         |                            |                        |                           |
+| **🔹—— 14B Agents ——**       |                         |                            |                        |                           |
 | **MiroThinker-14B-SFT-v0.1** |          47.6           |            44.4            |          37.0          |           34.4            |
 |     + Commercial Tools       |          49.5           |            47.5            |          41.8          |           39.8            |
 | **MiroThinker-14B-DPO-v0.1** |          48.5           |            46.6            |          42.4          |           39.2            |
 |     + Commercial Tools       |        **52.4**         |          **48.5**          |        **45.5**        |         **42.0**          |
-| **🔹—— 32B Models ——**       |                         |                            |                        |                           |
+| **🔹—— 32B Agents ——**       |                         |                            |                        |                           |
 | Qwen3-32B                    |          31.1           |            26.7            |          29.7          |           26.4            |
 | Search-o1-32B                |          28.2           |             -              |           -            |             -             |
 | WebThinker-32B-RL            |          48.5           |             -              |           -            |             -             |
@@ -295,7 +295,7 @@ We have released the **MiroThinker v0.1** series, including both SFT and DPO var
 
 1. By default, we use open-source tools wherever possible, except for the code tool [E2B](https://github.com/e2b-dev/E2B) and the Google search tool [Serper](https://serper.dev/). We use [Whisper](https://huggingface.co/openai/whisper-large-v3-turbo), [Qwen2.5-VL-72B-Instruct](https://huggingface.co/Qwen/Qwen2.5-VL-72B-Instruct), and [Qwen3-235B-A22B-Thinking-2507](https://huggingface.co/Qwen/Qwen3-235B-A22B-Thinking-2507) in our implementation. The framework can be easily extended to other open-source tools of your choice.
 
-1. Replacing these open-source tools with commercial alternatives can yield performance gains. Commercial tools were mainly used for multimodal capabilities and certain complex reasoning subtasks. The majority of tasks, including planning, browsing, refinement, navigation, and more, were handled by our models.
+1. Replacing these open-source tools with commercial alternatives can yield performance gains. Commercial tools were mainly used for multimodal capabilities and certain complex reasoning subtasks. The majority of tasks, including planning, browsing, refinement, navigation, and more, were handled by our agents.
 
 #### More Benchmarks
 
@@ -321,9 +321,9 @@ We have released the **MiroThinker v0.1** series, including both SFT and DPO var
 
 </div>
 
-1. MiroThinker’s performance was tested with this repository and open-source tools; other models’ results are from their papers and official sites.
+1. MiroThinker’s performance was tested with this repository and open-source tools; other agents’ results are from their papers and official sites.
 
-1. As [MiroVerse-v0.1](https://huggingface.co/datasets/miromind-ai/MiroVerse-v0.1) mainly contains English data, the model’s Chinese capability is limited. We plan to add more Chinese data to improve performance in the next version.
+1. As [MiroVerse-v0.1](https://huggingface.co/datasets/miromind-ai/MiroVerse-v0.1) mainly contains English data, the agent’s Chinese capability is limited. We plan to add more Chinese data to improve performance in the next version.
 
 </details>
 
@@ -482,12 +482,12 @@ sub_agents:
 keep_tool_result: -1  # Context retention budget: -1 keeps all tool results, or specify K to keep only the K most recent tool responses
 ```
 
-> **💡 Context Retention Strategy**: The `keep_tool_result` parameter implements a **recency-based context retention** strategy. In the standard ReAct paradigm, all tool outputs are retained in the message history, which can lead to inefficient context utilization. Empirically, we observe that the model's subsequent actions depend primarily on recent observations rather than distant ones. This strategy retains only the most recent K tool responses (where K is the `keep_tool_result` value) while preserving the complete sequence of thoughts and actions.
+> **💡 Context Retention Strategy**: The `keep_tool_result` parameter implements a **recency-based context retention** strategy. In the standard ReAct paradigm, all tool outputs are retained in the message history, which can lead to inefficient context utilization. Empirically, we observe that the agent's subsequent actions depend primarily on recent observations rather than distant ones. This strategy retains only the most recent K tool responses (where K is the `keep_tool_result` value) while preserving the complete sequence of thoughts and actions.
 >
 > **Benefits:**
 >
 > - ✅ Preserves the reasoning and action trace
-> - ✅ Focuses the model's attention on the most contextually relevant observations
+> - ✅ Focuses the agent's attention on the most contextually relevant observations
 > - ✅ Frees additional context space for extended reasoning and deeper tool-use trajectories
 > - ✅ Does not lead to performance degradation while allowing more context space for interactive scaling
 >
@@ -554,24 +554,24 @@ SUMMARY_LLM_API_KEY=your_summary_llm_api_key
 
 </details>
 
-### Serve the MiroThinker Model
+### Serve the MiroThinker Agent
 
 #### Option 1 (Recommended): Serve with SGLang or vLLM
 
-Use SGLang to serve MiroThinker models at port 61002:
+Use SGLang to serve MiroThinker agents at port 61002:
 
 ```bash
 NUM_GPUS=4
 PORT=61002
 
-# Downloading model from HF (v1.5 recommended)
-MODEL_PATH=miromind-ai/MiroThinker-v1.5-30B
+# Downloading agent from HF (v1.5 recommended)
+AGENT_PATH=miromind-ai/MiroThinker-v1.5-30B
 
 # Or use v1.0
-# MODEL_PATH=miromind-ai/MiroThinker-v1.0-30B
+# AGENT_PATH=miromind-ai/MiroThinker-v1.0-30B
 
 python3 -m sglang.launch_server \
-    --model-path $MODEL_PATH \
+    --model-path $AGENT_PATH \
     --tp $NUM_GPUS \
     --dp 1 \
     --host 0.0.0.0 \
@@ -583,18 +583,18 @@ python3 -m sglang.launch_server \
 
 #### Option 2: Quantized Light-Weight Options
 
-We also provide comprehensive guidance for serving MiroThinker models using CPU-optimized and GPU-accelerated quantization techniques, along with detailed analysis and guidelines for deployment with llama.cpp, Ollama, SGLang, and other inference frameworks.
+We also provide comprehensive guidance for serving MiroThinker agents using CPU-optimized and GPU-accelerated quantization techniques, along with detailed analysis and guidelines for deployment with llama.cpp, Ollama, SGLang, and other inference frameworks.
 
 > **📖 Complete Guide**: See [Deployment Documentation](apps/gradio-demo/) for detailed deployment instructions.
 
 ### Run Your First Task
 
-After setting up the environment and starting your model server, run `main.py` to test with a default question: *"What is the title of today's arxiv paper in computer science?"*
+After setting up the environment and starting your server, run `main.py` to test with a default question: *"What is the title of today's arxiv paper in computer science?"*
 
 ```bash
 cd apps/miroflow-agent
 
-# Using MiroThinker models (requires your own model server)
+# Using MiroThinker agents (requires your own server)
 uv run python main.py llm=qwen-3 agent=mirothinker_v1.5_keep5_max200 llm.base_url=http://localhost:61002/v1
 
 # Or using Claude (requires ANTHROPIC_API_KEY in .env)
@@ -638,8 +638,8 @@ You can customize the evaluation by setting the following environment variables 
 
 | Parameter | Default | Description |
 |:----------|:--------|:------------|
-| `LLM_MODEL` | `"MiroThinker-Models"` | Model name identifier |
-| `BASE_URL` | `"https://your-api.com/v1"` | Base URL of your model server |
+| `LLM_AGENT` | `"MiroThinker-Agents"` | Agent name identifier |
+| `BASE_URL` | `"https://your-api.com/v1"` | Base URL of your server |
 | `NUM_RUNS` | Varies by benchmark | Number of evaluation runs (3 for most benchmarks, 8 for GAIA/XBench/FutureX/SEAL-0, 32 for AIME2025) |
 | `LLM_PROVIDER` | `"qwen"` | LLM provider (e.g., `qwen`, `openai`, `anthropic`) |
 | `AGENT_SET` | `"mirothinker_v1.5_keep5_max200"` | Agent configuration (e.g., `mirothinker_v1.5_keep5_max200`, `mirothinker_v1.5_keep5_max400`, `mirothinker_v1.0_keep5`) |
@@ -647,7 +647,7 @@ You can customize the evaluation by setting the following environment variables 
 | `MAX_CONCURRENT` | `10` | Maximum concurrent tasks |
 | `PASS_AT_K` | `1` | Pass@K evaluation metric |
 | `TEMPERATURE` | `1.0` | Sampling temperature |
-| `API_KEY` | `"xxx"` | API key for the model server |
+| `API_KEY` | `"xxx"` | API key for the server |
 
 **Example Usage:**
 
@@ -656,20 +656,20 @@ You can customize the evaluation by setting the following environment variables 
 cd apps/miroflow-agent
 
 # Basic usage with v1.5 (recommended)
-NUM_RUNS=8 LLM_MODEL="MiroThinker-v1.5-30B" BASE_URL="https://your-api.com/v1" bash scripts/run_evaluate_multiple_runs_gaia-validation-text-103.sh
+NUM_RUNS=8 LLM_AGENT="MiroThinker-v1.5-30B" BASE_URL="https://your-api.com/v1" bash scripts/run_evaluate_multiple_runs_gaia-validation-text-103.sh
 
 # Or with v1.0
-# NUM_RUNS=8 LLM_MODEL="MiroThinker-v1.0-30B" BASE_URL="https://your-api.com/v1" bash scripts/run_evaluate_multiple_runs_gaia-validation-text-103.sh
+# NUM_RUNS=8 LLM_AGENT="MiroThinker-v1.0-30B" BASE_URL="https://your-api.com/v1" bash scripts/run_evaluate_multiple_runs_gaia-validation-text-103.sh
 
 # Customize number of runs and agent configuration (v1.5 with context management)
-LLM_MODEL="MiroThinker-v1.5-30B" \
+LLM_AGENT="MiroThinker-v1.5-30B" \
 BASE_URL="https://your-api.com/v1" \
 NUM_RUNS=8 \
 AGENT_SET="mirothinker_v1.5_keep5_max200" \
 bash scripts/run_evaluate_multiple_runs_gaia-validation-text-103.sh
 
 # Or with v1.0 configuration (with context management)
-# LLM_MODEL="MiroThinker-v1.0-30B" \
+# LLM_AGENT="MiroThinker-v1.0-30B" \
 # BASE_URL="https://your-api.com/v1" \
 # NUM_RUNS=8 \
 # AGENT_SET="mirothinker_v1.0_keep5" \
@@ -689,46 +689,46 @@ bash scripts/run_evaluate_multiple_runs_gaia-validation-text-103.sh
 cd apps/miroflow-agent
 
 # HLE
-NUM_RUNS=3 LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_hle.sh
+NUM_RUNS=3 LLM_AGENT="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_hle.sh
 
 # HLE-Text-2158
-NUM_RUNS=3 LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_hle-text-2158.sh
+NUM_RUNS=3 LLM_AGENT="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_hle-text-2158.sh
 
 # HLE-Text-500
-NUM_RUNS=3 LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_hle-text-500.sh
+NUM_RUNS=3 LLM_AGENT="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_hle-text-500.sh
 
 # GAIA-Text-103
-NUM_RUNS=8 LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_gaia-validation-text-103.sh
+NUM_RUNS=8 LLM_AGENT="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_gaia-validation-text-103.sh
 
 # GAIA-Validation (GAIA-Val-165)
-NUM_RUNS=8 LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_gaia-validation.sh
+NUM_RUNS=8 LLM_AGENT="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_gaia-validation.sh
 
 # BrowseComp-EN (⚠️ use max400)
-NUM_RUNS=3 LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max400" bash scripts/run_evaluate_multiple_runs_browsecomp.sh
+NUM_RUNS=3 LLM_AGENT="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max400" bash scripts/run_evaluate_multiple_runs_browsecomp.sh
 
 # BrowseComp-ZH (⚠️ use max400)
-NUM_RUNS=3 LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max400" bash scripts/run_evaluate_multiple_runs_browsecomp_zh.sh
+NUM_RUNS=3 LLM_AGENT="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max400" bash scripts/run_evaluate_multiple_runs_browsecomp_zh.sh
 
 # WebWalkerQA
-NUM_RUNS=3 LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_webwalkerqa.sh
+NUM_RUNS=3 LLM_AGENT="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_webwalkerqa.sh
 
 # XBench-DeepSearch
-NUM_RUNS=8 LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_xbench_deepsearch.sh
+NUM_RUNS=8 LLM_AGENT="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_xbench_deepsearch.sh
 
 # FRAMES
-NUM_RUNS=3 LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_frames.sh
+NUM_RUNS=3 LLM_AGENT="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_frames.sh
 
 # SEAL-0
-NUM_RUNS=8 LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_seal-0.sh
+NUM_RUNS=8 LLM_AGENT="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_seal-0.sh
 
 # FutureX
-NUM_RUNS=8 LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_futurex.sh
+NUM_RUNS=8 LLM_AGENT="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_futurex.sh
 
 # AIME2025
-NUM_RUNS=32 LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_aime2025.sh
+NUM_RUNS=32 LLM_AGENT="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_aime2025.sh
 
 # DeepSearchQA
-NUM_RUNS=3 LLM_MODEL="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_deepsearchqa.sh
+NUM_RUNS=3 LLM_AGENT="xxx" BASE_URL="xxx" AGENT_SET="mirothinker_v1.5_keep5_max200" bash scripts/run_evaluate_multiple_runs_deepsearchqa.sh
 ```
 
 </details>
@@ -828,13 +828,13 @@ bash scripts/collect_trace_qwen3.sh
 - **OPENAI_API_KEY**: Get from [OpenAI](https://platform.openai.com/) (Required for benchmark evaluation, used for LLM-as-a-Judge)
 - **OPENAI_BASE_URL**: Optional, defaults to `https://api.openai.com/v1`. Can be changed to use OpenAI-compatible APIs.
 
-#### **Q: Model server connection errors**
+#### **Q: Agent server connection errors**
 
 **A:** Common issues:
 
 - **Check base URL format**: Should end with `/v1` (e.g., `https://your-api.com/v1`)
 - **Verify API key**: Ensure `API_KEY` is set correctly in environment or script
-- **Check server status**: Make sure your model server is running and accessible
+- **Check server status**: Make sure your server is running and accessible
 - **Network issues**: Verify firewall/network settings allow connections
 
 #### **Q: Evaluation script fails to run**
@@ -856,7 +856,7 @@ bash scripts/collect_trace_qwen3.sh
   - For v1.5: Use `mirothinker_v1.5_keep5_max200` or `mirothinker_v1.5_keep5_max400` (with context management)
   - For v1.0: Use `mirothinker_v1.0_keep5` (with context management)
 - **Reduce concurrent tasks**: Set `MAX_CONCURRENT` to a smaller number (e.g., 5)
-- **Use smaller model**:
+- **Use smaller agents**:
   - For v1.5: Try 30B instead of 235B
   - For v1.0: Try 8B or 30B instead of 72B
 
@@ -867,7 +867,7 @@ bash scripts/collect_trace_qwen3.sh
 - **E2B errors**: Verify `E2B_API_KEY` is valid and account has credits
 - **Serper errors**: Check `SERPER_API_KEY` and rate limits
 - **Jina errors**: Verify `JINA_API_KEY` and `JINA_BASE_URL` are correct
-- **LLM summarization errors**: Check `SUMMARY_LLM_*` variables and model availability
+- **LLM summarization errors**: Check `SUMMARY_LLM_*` variables and agent availability
 
 #### **Q: How to monitor long-running evaluations?**
 
