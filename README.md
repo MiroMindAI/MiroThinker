@@ -921,7 +921,7 @@ If you find this project useful in your research, please consider citing:
 ```
 @article{miromind2025mirothinker,
   title={MiroThinker: Pushing the Performance Boundaries of Open-Source Research Agents via Model, Context, and Interactive Scaling},
-  author={MiroMind Team and Bai, Song and Bing, Lidong and Chen, Carson and Chen, Guanzheng and Chen, Yuntao and Chen, Zhe and Chen, Ziyi and Dai, Jifeng and Dong, Xuan and others},
+  author={MiroMind Team and Bai, Song and Bing, Lidong and Chen, Carson and Chen, Guanzheng and Chen, Yuntao and Chen, Zhe and Chen, Ziyi and Dong, Xuan and others},
   journal={arXiv preprint arXiv:2511.11793},
   year={2025}
 }
