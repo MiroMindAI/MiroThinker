@@ -2,7 +2,9 @@
   <img src="assets/miro_thinker.png" width="55%" alt="MiroThinker" />
 </div>
 
-<br>
+# 🍴 MiroThinker (Gemini Edition Fork)
+
+> **⚠️ Note:** This is a fork of the original [MiroThinker](https://github.com/MiroMindAI/MiroThinker) project. It has been modified to support **Google Gemini** as the primary LLM and to leverage **Google Search Grounding** via GCP project credits, removing dependencies on OpenAI, Anthropic, and Serper.
 
 <div align="center">
 
@@ -10,23 +12,11 @@
 [![Blog](https://img.shields.io/badge/Blog-4285F4?style=for-the-badge&logo=google-chrome&logoColor=white)](https://miromind.ai/#blog)
 [![DATA](https://img.shields.io/badge/Data-0040A1?style=for-the-badge&logo=huggingface&logoColor=ffffff&labelColor)](https://huggingface.co/datasets/miromind-ai/MiroVerse-v0.1)
 
-[![GITHUB](https://img.shields.io/badge/Github-24292F?style=for-the-badge&logo=github&logoColor=white)](https://github.com/MiroMindAI)
-[![WEBSITE](https://img.shields.io/badge/Website-4285F4?style=for-the-badge&logo=google-chrome&logoColor=white)](https://miromind.ai/)
-[![DISCORD](https://img.shields.io/badge/Discord-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.com/invite/GPqEnkzQZd)
-
 </div>
-
-<div align="center">
-
-### 🚀 [Try our Demo!](https://dr.miromind.ai/)
-
-</div>
-
-> **MiroThinker** is an open source deep research agent optimized for research and prediction. It achieves a 60.2% Avg@8 score on the challenging GAIA benchmark.
 
 The project currently comprises four key components:
 
-- 💡 **MiroThinker**: An open source deep research agent optimized for research and prediction. It achieves a 60.2% Avg@8 score on the challenging GAIA benchmark. See [Quick Start](#-quick-start).
+- 💡 **MiroThinker (Gemini)**: An enhanced deep research agent that runs entirely on Google Cloud infrastructure (Gemini 1.5/2.0 + Search Grounding).
 - 🤖 **MiroFlow**: An agent framework that enables tool-use agent tasks, featuring a reproducible GAIA score of 82.4%. See [MiroFlow](https://github.com/MiroMindAI/MiroFlow) for details.
 - 📚 **MiroVerse**: A premium open-source training dataset with 147k samples supporting research agent training. See [MiroVerse](https://huggingface.co/datasets/miromind-ai/MiroVerse-v0.1) on HuggingFace.
 
@@ -339,7 +329,7 @@ We have released the **MiroThinker v0.1** series, including both SFT and DPO var
 
 ```bash
 # Clone the repository
-git clone https://github.com/MiroMindAI/MiroThinker
+git clone <YOUR_REPO_URL>
 cd MiroThinker
 
 # Setup environment
@@ -348,8 +338,29 @@ uv sync
 
 # Configure API keys
 cp .env.example .env
-# Edit .env with your API keys (SERPER_API_KEY, JINA_API_KEY, E2B_API_KEY, etc.)
 ```
+
+### ⚡️ Gemini Setup (New Method)
+
+This fork is optimized for **Google Gemini**. Instead of multiple API keys, you primarily need your GCP credentials.
+
+1.  **Authentication**:
+    *   Place your GCP Service Account JSON key on your machine.
+    *   Set the path in `.env`:
+        ```bash
+        GOOGLE_APPLICATION_CREDENTIALS="/path/to/your/credentials.json"
+        ```
+    *   *Alternatively*, if using AI Studio, set `GOOGLE_API_KEY`.
+
+2.  **Configuration**:
+    *   The agent is configured to use the `gemini` provider by default in this fork's documentation context.
+    *   Run the agent specifying the provider:
+        ```bash
+        uv run python main.py llm.provider=gemini llm.model_name=gemini-1.5-pro agent=mirothinker_v1.5_keep5_max200
+        ```
+
+3.  **Search Grounding**:
+    *   **No Serper Key Needed:** When the agent requests a Google Search, it now uses Gemini's native [Search Grounding](https://ai.google.dev/gemini-api/docs/grounding). This uses your GCP/Vertex AI quotas directly.
 
 > **📝 Environment Variables**: See [Tool Configuration](#tool-configuration) section for required API keys.
 
@@ -360,15 +371,24 @@ cp .env.example .env
 | Server | Description | Tools Provided | Required Environment Variables |
 |:-------|:------------|:---------------|:-------------------------------|
 | **`tool-python`** | Execution environment and file management (E2B sandbox) | `create_sandbox`, `run_command`, `run_python_code`, `upload_file_from_local_to_sandbox`, `download_file_from_sandbox_to_local`, `download_file_from_internet_to_sandbox` | `E2B_API_KEY` |
-| **`search_and_scrape_webpage`** | Google search via Serper API | `google_search` | `SERPER_API_KEY`, `SERPER_BASE_URL` |
+| **`search_and_scrape_webpage`** | Google search via Serper API (or Gemini Grounding) | `google_search` | `SERPER_API_KEY`, `SERPER_BASE_URL` (or `GOOGLE_APPLICATION_CREDENTIALS` for Gemini) |
 | **`jina_scrape_llm_summary`** | Web scraping with LLM-based information extraction | `scrape_and_extract_info` | `JINA_API_KEY`, `JINA_BASE_URL`, `SUMMARY_LLM_BASE_URL`, `SUMMARY_LLM_MODEL_NAME`, `SUMMARY_LLM_API_KEY` |
 
 **Minimal `.env` configuration example:**
 
 ```bash
 # Required for MiroThinker v1.5 and v1.0 (minimal setup)
+
+# Option 1: Using Serper (Standard)
 SERPER_API_KEY=your_serper_key
 SERPER_BASE_URL="https://google.serper.dev"
+
+# Option 2: Using Gemini with Google Search Grounding (No Serper key needed)
+# Ensure you are using the 'gemini' provider and have GCP credentials
+GOOGLE_APPLICATION_CREDENTIALS="path/to/your/gcp_credentials.json"
+# OR
+GOOGLE_API_KEY="your_google_api_key"
+
 JINA_API_KEY=your_jina_key
 JINA_BASE_URL="https://r.jina.ai"
 E2B_API_KEY=your_e2b_key
@@ -385,6 +405,8 @@ OPENAI_API_KEY=your_openai_key  # Required for running benchmark evaluations
 OPENAI_BASE_URL="https://api.openai.com/v1"  # Optional, defaults to OpenAI's API
 ```
 
+> **💡 Gemini Support**: To use **Google Gemini** as your primary model (replacing OpenAI/Anthropic), set your LLM provider to `gemini` in the config. This also enables **Google Search Grounding** automatically, removing the need for `SERPER_API_KEY`.
+>
 > **💡 Why this is minimal**: These 3 MCP servers cover the core capabilities needed for research tasks: web search, content extraction, and code execution. All other servers are optional enhancements.
 >
 > **🤖 Summary LLM**: The `SUMMARY_LLM` can be a small model like Qwen3-14B or GPT-5-Nano. The choice has minimal impact on overall performance, use whichever is most convenient for your setup.
@@ -589,20 +611,16 @@ We also provide comprehensive guidance for serving MiroThinker agents using CPU-
 
 ### Run Your First Task
 
-After setting up the environment and starting your server, run `main.py` to test with a default question: *"What is the title of today's arxiv paper in computer science?"*
+After setting up the environment, run `main.py` to test with a default question: *"What is the title of today's arxiv paper in computer science?"*
 
 ```bash
 cd apps/miroflow-agent
 
-# Using MiroThinker agents (requires your own server)
-uv run python main.py llm=qwen-3 agent=mirothinker_v1.5_keep5_max200 llm.base_url=http://localhost:61002/v1
-
-# Or using Claude (requires ANTHROPIC_API_KEY in .env)
-uv run python main.py llm=claude-3-7 agent=single_agent_keep5
-
-# Or using GPT-5 (requires OPENAI_API_KEY in .env)
-uv run python main.py llm=gpt-5 agent=single_agent_keep5
+# Run with Gemini (Uses GCP Credentials + Search Grounding)
+uv run python main.py llm.provider=gemini llm.model_name=gemini-1.5-pro agent=mirothinker_v1.5_keep5_max200
 ```
+
+> **Note:** The `tool-google-search` requested by the agent will automatically be converted to a Grounding request.
 
 **To customize your question**, edit `main.py` line 32:
 

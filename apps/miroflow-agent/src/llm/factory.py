@@ -15,10 +15,11 @@ from omegaconf import DictConfig, OmegaConf
 
 from ..logging.task_logger import TaskLog
 from .providers.anthropic_client import AnthropicClient
+from .providers.gemini_client import GeminiClient
 from .providers.openai_client import OpenAIClient
 
 # Supported LLM providers
-SUPPORTED_PROVIDERS = {"anthropic", "openai", "qwen"}
+SUPPORTED_PROVIDERS = {"anthropic", "openai", "qwen", "gemini"}
 
 
 def ClientFactory(
@@ -55,6 +56,7 @@ def ClientFactory(
         ),
         "qwen": lambda: OpenAIClient(task_id=task_id, task_log=task_log, cfg=config),
         "openai": lambda: OpenAIClient(task_id=task_id, task_log=task_log, cfg=config),
+        "gemini": lambda: GeminiClient(task_id=task_id, task_log=task_log, cfg=config),
     }
 
     factory = client_creators.get(provider)
