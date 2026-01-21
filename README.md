@@ -22,11 +22,11 @@
 
 </div>
 
-> **MiroThinker** is an open source deep research agent optimized for research and prediction. It achieves a 60.2% Avg@8 score on the challenging GAIA benchmark.
+> **MiroThinker** is an open source deep research agent optimized for research and prediction. It achieves a 80.8% Avg@8 score on the challenging GAIA benchmark.
 
 The project currently comprises four key components:
 
-- 💡 **MiroThinker**: An open source deep research agent optimized for research and prediction. It achieves a 60.2% Avg@8 score on the challenging GAIA benchmark. See [Quick Start](#-quick-start).
+- 💡 **MiroThinker**: An open source deep research agent optimized for research and prediction. It achieves a 80.8% Avg@8 score on the challenging GAIA benchmark. See [Quick Start](#-quick-start).
 - 🤖 **MiroFlow**: An agent framework that enables tool-use agent tasks, featuring a reproducible GAIA score of 82.4%. See [MiroFlow](https://github.com/MiroMindAI/MiroFlow) for details.
 - 📚 **MiroVerse**: A premium open-source training dataset with 147k samples supporting research agent training. See [MiroVerse](https://huggingface.co/datasets/miromind-ai/MiroVerse-v0.1) on HuggingFace.
 
