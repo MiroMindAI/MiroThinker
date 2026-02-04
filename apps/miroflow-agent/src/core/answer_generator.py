@@ -466,6 +466,7 @@ class AnswerGenerator:
         turn_count: int,
         task_description: str,
         reached_max_turns: bool = False,
+        is_final_retry: bool = False,
         save_callback=None,
     ) -> Tuple[str, str, Optional[str], str, List[Dict[str, Any]]]:
         """
@@ -499,9 +500,10 @@ class AnswerGenerator:
         failure_experience_summary = None
         usage_log = ""
 
-        # CASE: Context management ON + reached max turns
+        # CASE: Context management ON + reached max turns + NOT final retry
         # Skip answer generation entirely - any answer would be a blind guess
-        if context_management_enabled and reached_max_turns:
+        # But if this is the final retry, we still try to generate an answer (last chance)
+        if context_management_enabled and reached_max_turns and not is_final_retry:
             self.task_log.log_step(
                 "info",
                 "Main Agent | Final Answer (Context Management Mode)",
@@ -524,6 +526,7 @@ class AnswerGenerator:
             )
 
         # ALL OTHER CASES: Generate final answer first
+        # (including final retry with reached_max_turns - last chance to get an answer)
         (
             final_answer_text,
             final_summary,
@@ -541,14 +544,21 @@ class AnswerGenerator:
         if save_callback:
             save_callback(system_prompt, message_history)
 
-        # CASE: Context management OFF
+        # CASE: Context management OFF or final retry
         # Try to use intermediate answers as fallback to maximize accuracy
-        if not context_management_enabled:
+        # For final retry, there's no more retry opportunity, so we use fallback
+        if not context_management_enabled or is_final_retry:
             final_answer_text, final_summary, final_boxed_answer = (
                 self.handle_no_context_management_fallback(
                     final_answer_text, final_summary, final_boxed_answer
                 )
             )
+            if is_final_retry:
+                self.task_log.log_step(
+                    "info",
+                    "Main Agent | Final Answer (Final Retry)",
+                    "This is the final retry. Using intermediate fallback if available.",
+                )
             return (
                 final_summary,
                 final_boxed_answer,
@@ -557,7 +567,7 @@ class AnswerGenerator:
                 message_history,
             )
 
-        # CASE: Context management ON + normal completion (not reached max turns)
+        # CASE: Context management ON + normal completion (not reached max turns, not final retry)
         # Don't use fallback - wrong guess would reduce accuracy
         final_answer_text, final_summary, final_boxed_answer = (
             self.handle_context_management_no_fallback(

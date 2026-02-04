@@ -347,6 +347,9 @@ class BenchmarkEvaluator(ABC):
 
                     while format_retry_count <= max_format_retries:
                         try:
+                            # Check if this is the final retry (no more chances after this)
+                            is_final_retry = format_retry_count == max_format_retries
+
                             (
                                 response,
                                 final_boxed_answer,
@@ -362,6 +365,7 @@ class BenchmarkEvaluator(ABC):
                                 output_formatter=self.output_formatter,
                                 ground_truth=task.ground_truth,
                                 log_dir=str(self.get_log_dir()),
+                                is_final_retry=is_final_retry,
                             )
 
                             attempt_result["model_boxed_answer"] = (
