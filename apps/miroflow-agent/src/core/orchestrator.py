@@ -734,7 +734,11 @@ class Orchestrator:
         return final_answer_text
 
     async def run_main_agent(
-        self, task_description, task_file_name=None, task_id="default_task"
+        self,
+        task_description,
+        task_file_name=None,
+        task_id="default_task",
+        is_final_retry=False,
     ):
         """
         Execute the main end-to-end task.
@@ -1170,6 +1174,7 @@ class Orchestrator:
             turn_count=turn_count,
             task_description=task_description,
             reached_max_turns=reached_max_turns,
+            is_final_retry=is_final_retry,
             save_callback=self._save_message_history,
         )
 
