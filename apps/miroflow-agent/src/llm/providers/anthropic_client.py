@@ -208,6 +208,8 @@ class AnthropicClient(BaseClient):
         assistant_response_text = ""
         assistant_response_content = []
 
+        from ...utils.parsing_utils import fix_server_name_in_text
+
         for block in llm_response.content:
             if block.type == "text":
                 assistant_response_text += block.text + "\n"
@@ -221,6 +223,12 @@ class AnthropicClient(BaseClient):
                         "input": block.input,
                     }
                 )
+
+        # Fix server_name in text content
+        assistant_response_text = fix_server_name_in_text(assistant_response_text)
+        for item in assistant_response_content:
+            if item.get("type") == "text":
+                item["text"] = fix_server_name_in_text(item["text"])
 
         # Add assistant response to history
         message_history.append(
@@ -264,7 +272,11 @@ class AnthropicClient(BaseClient):
         return message_history
 
     def generate_agent_system_prompt(self, date: Any, mcp_servers: List[Dict]) -> str:
-        return generate_mcp_system_prompt(date, mcp_servers)
+        from ...utils.parsing_utils import set_tool_server_mapping
+
+        prompt = generate_mcp_system_prompt(date, mcp_servers)
+        set_tool_server_mapping(prompt)
+        return prompt
 
     def _estimate_tokens(self, text: str) -> int:
         """Use tiktoken to estimate the number of tokens in text"""

@@ -89,6 +89,14 @@ class ToolExecutor:
                         fixed_args["info_to_extract"] = fixed_args.pop(mistake_name)
                         break
 
+        # Fix run_python_code parameter names: 'code' -> 'code_block'
+        # Also add default sandbox_id if missing (will trigger stateless fallback)
+        if tool_name == "run_python_code":
+            if "code_block" not in fixed_args and "code" in fixed_args:
+                fixed_args["code_block"] = fixed_args.pop("code")
+            if "sandbox_id" not in fixed_args:
+                fixed_args["sandbox_id"] = "default"
+
         return fixed_args
 
     def get_query_str_from_tool_call(

@@ -288,8 +288,11 @@ class OpenAIClient(BaseClient):
             return "", True, message_history  # Exit loop, return message_history
 
         # Extract LLM response text
+        from ...utils.parsing_utils import fix_server_name_in_text
+
         if llm_response.choices[0].finish_reason == "stop":
             assistant_response_text = llm_response.choices[0].message.content or ""
+            assistant_response_text = fix_server_name_in_text(assistant_response_text)
 
             message_history.append(
                 {"role": "assistant", "content": assistant_response_text}
@@ -297,6 +300,7 @@ class OpenAIClient(BaseClient):
 
         elif llm_response.choices[0].finish_reason == "length":
             assistant_response_text = llm_response.choices[0].message.content or ""
+            assistant_response_text = fix_server_name_in_text(assistant_response_text)
             if assistant_response_text == "":
                 assistant_response_text = "LLM response is empty."
             elif "Context length exceeded" in assistant_response_text:
@@ -358,7 +362,11 @@ class OpenAIClient(BaseClient):
         return message_history
 
     def generate_agent_system_prompt(self, date: Any, mcp_servers: List[Dict]) -> str:
-        return generate_mcp_system_prompt(date, mcp_servers)
+        from ...utils.parsing_utils import set_tool_server_mapping
+
+        prompt = generate_mcp_system_prompt(date, mcp_servers)
+        set_tool_server_mapping(prompt)
+        return prompt
 
     def _estimate_tokens(self, text: str) -> int:
         """Use tiktoken to estimate the number of tokens in text"""

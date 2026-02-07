@@ -6,8 +6,10 @@
 from .parsing_utils import (
     extract_failure_experience_summary,
     extract_llm_response_text,
+    fix_server_name_in_text,
     parse_llm_response_for_tool_calls,
     safe_json_loads,
+    set_tool_server_mapping,
 )
 from .prompt_utils import (
     FORMAT_ERROR_MESSAGE,
@@ -22,6 +24,8 @@ __all__ = [
     "parse_llm_response_for_tool_calls",
     "extract_llm_response_text",
     "extract_failure_experience_summary",
+    "fix_server_name_in_text",
+    "set_tool_server_mapping",
     "safe_json_loads",
     # prompt_utils
     "FORMAT_ERROR_MESSAGE",
