@@ -21,6 +21,106 @@ from json_repair import repair_json
 logger = logging.getLogger("miroflow_agent")
 
 
+def parse_tool_server_mapping(system_prompt: str) -> dict:
+    """
+    Parse system prompt to extract tool_name → server_name mapping.
+
+    Parses patterns like:
+        ## Server name: tool-python
+        ### Tool name: run_python_code
+
+    Only extracts mappings for the 3 target tools that models commonly get wrong:
+    run_python_code, google_search, scrape_and_extract_info.
+
+    Args:
+        system_prompt: The system prompt containing MCP tool definitions
+
+    Returns:
+        Dict mapping tool_name to correct server_name, e.g.
+        {"run_python_code": "tool-python", "google_search": "search_and_scrape_webpage", ...}
+    """
+    TARGET_TOOLS = {"run_python_code", "google_search", "scrape_and_extract_info"}
+    mapping = {}
+    current_server = None
+    for line in system_prompt.split("\n"):
+        server_match = re.match(r"## Server name:\s*(.+)", line)
+        if server_match:
+            current_server = server_match.group(1).strip()
+            continue
+        tool_match = re.match(r"### Tool name:\s*(.+)", line)
+        if tool_match and current_server:
+            tool_name = tool_match.group(1).strip()
+            if tool_name in TARGET_TOOLS:
+                mapping[tool_name] = current_server
+    return mapping
+
+
+# Module-level cache for tool_server_mapping
+_tool_server_mapping: dict = {}
+
+
+def set_tool_server_mapping(system_prompt: str) -> None:
+    """
+    Parse system prompt and cache the tool_name → server_name mapping.
+
+    Should be called once when system prompt is available.
+
+    Args:
+        system_prompt: The system prompt containing MCP tool definitions
+    """
+    global _tool_server_mapping
+    _tool_server_mapping = parse_tool_server_mapping(system_prompt)
+
+
+def fix_server_name_in_text(text: str) -> str:
+    """
+    Fix incorrect server_name and tool_name in MCP XML tool calls.
+
+    Uses the cached tool_server_mapping (parsed from system prompt) to determine
+    the correct server_name for each tool. Only fixes the 3 target tools:
+    run_python_code, google_search, scrape_and_extract_info.
+
+    Also handles the special case where model outputs tool_name=python
+    (should be run_python_code).
+
+    Args:
+        text: The LLM response text containing MCP tool calls
+
+    Returns:
+        Text with corrected server_name and tool_name if needed
+    """
+    if not isinstance(text, str):
+        return text
+
+    mapping = _tool_server_mapping
+    if not mapping:
+        return text
+
+    # Special case: tool_name=python or python_code → rename to run_python_code
+    # Only apply if system prompt defines run_python_code (not python)
+    if "run_python_code" in mapping:
+        for wrong_name in ("python", "python_code"):
+            tag = f"<tool_name>{wrong_name}</tool_name>"
+            if tag in text:
+                text = text.replace(tag, "<tool_name>run_python_code</tool_name>")
+
+    # Fix server_name for each target tool using the mapping from system prompt
+    for tool_name, correct_server in mapping.items():
+        tool_tag = f"<tool_name>{tool_name}</tool_name>"
+        if tool_tag not in text:
+            continue
+        correct_server_tag = f"<server_name>{correct_server}</server_name>"
+        if correct_server_tag in text:
+            continue
+        text = re.sub(
+            r'<server_name>[^<]+</server_name>(\s*' + re.escape(tool_tag) + r')',
+            correct_server_tag + r'\1',
+            text,
+        )
+
+    return text
+
+
 def filter_none_values(arguments: Union[Dict, Any]) -> Union[Dict, Any]:
     """
     Filter out keys with None values from arguments dictionary.

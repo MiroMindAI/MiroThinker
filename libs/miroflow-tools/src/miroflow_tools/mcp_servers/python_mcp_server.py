@@ -180,8 +180,22 @@ async def run_python_code(code_block: str, sandbox_id: str) -> str:
     Returns:
         A CommandResult object containing the result of the command execution, format like CommandResult(stderr=..., stdout=..., exit_code=..., error=...)
     """
-    if sandbox_id in INVALID_SANDBOX_IDS:
-        return f"[ERROR]: '{sandbox_id}' is not a valid sandbox_id. Please create a real sandbox first using the create_sandbox tool."
+    # If sandbox_id is invalid, fallback to stateless execution
+    if not sandbox_id or sandbox_id in INVALID_SANDBOX_IDS:
+        try:
+            sandbox = Sandbox(
+                template=DEFAULT_TEMPLATE_ID,
+                timeout=DEFAULT_TIMEOUT,
+                api_key=E2B_API_KEY,
+            )
+            try:
+                execution = sandbox.run_code(code_block)
+                return truncate_result(str(execution))
+            finally:
+                sandbox.kill()
+        except Exception as e:
+            error_details = str(e)[:MAX_ERROR_LEN]
+            return f"[ERROR]: Failed to run code in stateless mode. Exception type: {type(e).__name__}, Details: {error_details}"
 
     try:
         sandbox = Sandbox.connect(sandbox_id, api_key=E2B_API_KEY)
