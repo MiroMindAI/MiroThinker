@@ -29,6 +29,10 @@ SERPER_BASE_URL = os.environ.get("SERPER_BASE_URL", "https://google.serper.dev")
 JINA_API_KEY = os.environ.get("JINA_API_KEY")
 JINA_BASE_URL = os.environ.get("JINA_BASE_URL", "https://r.jina.ai")
 
+# API for Firecrawl Web Scraping
+FIRECRAWL_API_KEY = os.environ.get("FIRECRAWL_API_KEY", "")
+FIRECRAWL_BASE_URL = os.environ.get("FIRECRAWL_BASE_URL", "https://api.firecrawl.dev/v2/scrape")
+
 # API for Linux Sandbox
 E2B_API_KEY = os.environ.get("E2B_API_KEY")
 
@@ -334,6 +338,32 @@ def create_mcp_server_parameters(cfg: DictConfig, agent_cfg: DictConfig):
 
     if (
         agent_cfg.get("tools", None) is not None
+        and "jina_scrape_llm_summary_new" in agent_cfg["tools"]
+    ):
+        configs.append(
+            {
+                "name": "jina_scrape_llm_summary_new",
+                "params": StdioServerParameters(
+                    command=sys.executable,
+                    args=[
+                        "-m",
+                        "miroflow_tools.dev_mcp_servers.jina_scrape_llm_summary_new",
+                    ],
+                    env={
+                        "JINA_API_KEY": JINA_API_KEY,
+                        "JINA_BASE_URL": JINA_BASE_URL,
+                        "SUMMARY_LLM_BASE_URL": SUMMARY_LLM_BASE_URL,
+                        "SUMMARY_LLM_MODEL_NAME": SUMMARY_LLM_MODEL_NAME,
+                        "SUMMARY_LLM_API_KEY": SUMMARY_LLM_API_KEY,
+                        "FIRECRAWL_API_KEY": FIRECRAWL_API_KEY,
+                        "FIRECRAWL_BASE_URL": FIRECRAWL_BASE_URL,
+                    },
+                ),
+            }
+        )
+
+    if (
+        agent_cfg.get("tools", None) is not None
         and "stateless_python" in agent_cfg["tools"]
     ):
         configs.append(
@@ -468,6 +498,7 @@ def get_env_info(cfg: DictConfig) -> dict:
         "has_tencent_secret_id": bool(TENCENTCLOUD_SECRET_ID),
         "has_tencent_secret_key": bool(TENCENTCLOUD_SECRET_KEY),
         "has_summary_llm_api_key": bool(SUMMARY_LLM_API_KEY),
+        "has_firecrawl_api_key": bool(FIRECRAWL_API_KEY),
         # Base URLs
         "openai_base_url": OPENAI_BASE_URL,
         "anthropic_base_url": ANTHROPIC_BASE_URL,
@@ -477,4 +508,5 @@ def get_env_info(cfg: DictConfig) -> dict:
         "vision_base_url": VISION_BASE_URL,
         "reasoning_base_url": REASONING_BASE_URL,
         "summary_llm_base_url": SUMMARY_LLM_BASE_URL,
+        "firecrawl_base_url": FIRECRAWL_BASE_URL,
     }
