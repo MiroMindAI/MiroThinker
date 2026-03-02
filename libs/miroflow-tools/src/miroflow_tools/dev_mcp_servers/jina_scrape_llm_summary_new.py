@@ -829,7 +829,7 @@ async def scrape_and_extract_info(
         for r in chunk_results:
             total_tokens += r.get("tokens_used", 0)
             text = r["extracted_info"]
-            if r["success"] and text and len(text.strip()) > 20:
+            if r["success"] and text and len(text.strip()) > 10:
                 valid_partials.append(text)
         
         if not valid_partials:
