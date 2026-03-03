@@ -480,6 +480,7 @@ class Orchestrator:
             tool_calls_data = []
             all_tool_results_content_with_id = []
             should_rollback_turn = False
+            successful_queries_buffer = []
 
             for call in tool_calls:
                 server_name = call["server_name"]
@@ -531,9 +532,9 @@ class Orchestrator:
                         sub_agent_name
                     ].execute_tool_call(server_name, tool_name, arguments)
 
-                    # Update query count if successful
+                    # Buffer query if successful (deferred commit)
                     if "error" not in tool_result:
-                        await self._record_query(cache_name, tool_name, arguments)
+                        successful_queries_buffer.append((cache_name, tool_name, arguments))
 
                     # Post-process result
                     tool_result = self.tool_executor.post_process_tool_call_result(
@@ -616,6 +617,10 @@ class Orchestrator:
 
             if should_rollback_turn:
                 continue
+
+            # Commit buffered successful queries to cache
+            for cache_name, tool_name, arguments in successful_queries_buffer:
+                await self._record_query(cache_name, tool_name, arguments)
 
             # Reset consecutive rollbacks on successful execution
             if consecutive_rollbacks > 0:
@@ -905,6 +910,7 @@ class Orchestrator:
             tool_calls_data = []
             all_tool_results_content_with_id = []
             should_rollback_turn = False
+            successful_queries_buffer = []
             main_agent_last_call_tokens = self.llm_client.last_call_tokens
 
             for call in tool_calls:
@@ -954,8 +960,8 @@ class Orchestrator:
                             arguments["subtask"],
                         )
 
-                        # Update query count
-                        await self._record_query(cache_name, tool_name, arguments)
+                        # Buffer sub-agent query if successful (deferred commit)
+                        successful_queries_buffer.append((cache_name, tool_name, arguments))
 
                         tool_result = {
                             "server_name": server_name,
@@ -1002,9 +1008,9 @@ class Orchestrator:
                             )
                         )
 
-                        # Update query count if successful
+                        # Buffer query if successful (deferred commit)
                         if "error" not in tool_result:
-                            await self._record_query(cache_name, tool_name, arguments)
+                            successful_queries_buffer.append((cache_name, tool_name, arguments))
 
                         # Post-process result
                         tool_result = self.tool_executor.post_process_tool_call_result(
@@ -1091,6 +1097,10 @@ class Orchestrator:
 
             if should_rollback_turn:
                 continue
+
+            # Commit buffered successful queries to cache
+            for cache_name, tool_name, arguments in successful_queries_buffer:
+                await self._record_query(cache_name, tool_name, arguments)
 
             # Reset consecutive rollbacks on successful execution
             if consecutive_rollbacks > 0:
