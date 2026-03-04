@@ -75,6 +75,7 @@ class AnswerGenerator:
         self.max_final_answer_retries = (
             DEFAULT_MAX_FINAL_ANSWER_RETRIES if cfg.agent.keep_tool_result == -1 else 1
         )
+        self.retry_with_summary = cfg.agent.get("retry_with_summary", True)
 
     async def handle_llm_call(
         self,
@@ -513,9 +514,10 @@ class AnswerGenerator:
             if save_callback:
                 save_callback(system_prompt, message_history)
 
-            failure_experience_summary = await self.generate_failure_summary(
-                system_prompt, message_history, tool_definitions, turn_count
-            )
+            if self.retry_with_summary:
+                failure_experience_summary = await self.generate_failure_summary(
+                    system_prompt, message_history, tool_definitions, turn_count
+                )
 
             return (
                 "Task incomplete - reached maximum turns. Will retry with failure experience.",
@@ -575,7 +577,7 @@ class AnswerGenerator:
             )
         )
 
-        if final_boxed_answer == FORMAT_ERROR_MESSAGE:
+        if final_boxed_answer == FORMAT_ERROR_MESSAGE and self.retry_with_summary:
             failure_experience_summary = await self.generate_failure_summary(
                 system_prompt, message_history, tool_definitions, turn_count
             )
