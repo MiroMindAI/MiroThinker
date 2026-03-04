@@ -58,15 +58,20 @@ async def make_serper_request(
         return response
 
 
-def _is_huggingface_dataset_or_space_url(url):
+def _is_banned_url(url: str) -> bool:
     """
-    Check if the URL is a HuggingFace dataset or space URL.
+    Check if the URL is a banned URL.
     :param url: The URL to check
-    :return: True if it's a HuggingFace dataset or space URL, False otherwise
+    :return: True if it's a banned URL, False otherwise
     """
+    banned_list = [
+        "unifuncs",
+        "huggingface.co/datasets",
+        "huggingface.co/spaces",
+    ]
     if not url:
         return False
-    return "huggingface.co/datasets" in url or "huggingface.co/spaces" in url
+    return any(banned in url for banned in banned_list)
 
 
 @mcp.tool()
@@ -160,7 +165,7 @@ async def google_search(
             organic_results = []
             if "organic" in data:
                 for item in data["organic"]:
-                    if _is_huggingface_dataset_or_space_url(item.get("link", "")):
+                    if _is_banned_url(item.get("link", "")):
                         continue
                     organic_results.append(item)
 
