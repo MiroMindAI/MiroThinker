@@ -538,7 +538,7 @@ async def scrape_url_with_playwright(url: str, max_chars: int = MAX_TOTAL_CHARS)
                     content = "PDF detected but pypdf is not installed."
             else:
                 await asyncio.sleep(3)
-                content = await page.evaluate("document.body.innerText")
+                content = await asyncio.wait_for(page.evaluate("document.body.innerText"), timeout=30)
             
             if not content or not content.strip():
                 return {
@@ -661,7 +661,7 @@ async def call_robust_llm(
                     SUMMARY_LLM_BASE_URL, 
                     headers=headers, 
                     json=payload, 
-                    timeout=httpx.Timeout(None, connect=30, read=600)
+                    timeout=httpx.Timeout(None, connect=30, read=250)
                 )
                 
                 # Check for context window errors
