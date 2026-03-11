@@ -1,5 +1,5 @@
 # Copyright (c) 2025 MiroMind
-# This source code is licensed under the MIT License.
+# This source code is licensed under the Apache 2.0 License.
 
 """
 Stream handler module for SSE (Server-Sent Events) protocol.

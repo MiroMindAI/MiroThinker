@@ -1,5 +1,5 @@
 # Copyright (c) 2025 MiroMind
-# This source code is licensed under the MIT License.
+# This source code is licensed under the Apache 2.0 License.
 
 from .convert_non_oai_to_chatml import (
     convert_to_json_chatml,
