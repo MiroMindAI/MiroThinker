@@ -70,10 +70,10 @@ Our new MiroThinker family represents a significant leap in building reliable ag
 
 <div align="center">
 
-|      Agent Name       |         Base Agent            | Max Context | Max Tool Calls |                              HF Link                               |
+|      Model Name       |         Parameters            | Max Context | Max Tool Calls |                              HF Link                               |
 |:---------------------:|:-----------------------------:|:-----------:|:--------------:|:------------------------------------------------------------------:|
-| MiroThinker-1.7-mini  | Qwen3-30B-A3B-Thinking-2507   |    256K     |      300       | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-1.7-mini) |
-| MiroThinker-1.7 | Qwen3-235B-A22B-Thinking-2507 |    256K     |      300       | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-1.7) |
+| MiroThinker-1.7-mini  | 30B   |    256K     |      300       | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-1.7-mini) |
+| MiroThinker-1.7 | 235B |    256K     |      300       | [🤗 link](https://huggingface.co/miromind-ai/MiroThinker-1.7) |
 
 </div>
 
