@@ -21,11 +21,7 @@
 
 </div>
 
-> **MiroThinker** is a deep research model optimized for long-chain research and prediction. 
-
-The project currently comprises four key components:
-
-- 💡 **MiroThinker**: A deep research agent optimized for research and prediction. It achieves a 88.2  on the challenging BrowseComp benchmark. See [Quick Start](#-quick-start).
+**MiroThinker**: A deep research agent optimized for research and prediction. It achieves a 88.2  on the challenging BrowseComp benchmark. See [Quick Start](#-quick-start).
 
 
 ## 📋 Table of Contents
@@ -246,7 +242,7 @@ We have released the **MiroThinker v0.1** series, including both SFT and DPO var
 > To prevent potential information leakage (e.g., retrieving benchmark answers from HuggingFace), we blocked access to certain websites during evaluation.
 
 <div>
-  <img src="xxx" width="100%" alt="MiroThinker" />
+  <img src="assets/17_table.png" width="100%" alt="MiroThinker" />
 </div>
 
 </details>
