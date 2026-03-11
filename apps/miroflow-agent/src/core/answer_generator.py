@@ -1,5 +1,5 @@
 # Copyright (c) 2025 MiroMind
-# This source code is licensed under the MIT License.
+# This source code is licensed under the Apache 2.0 License.
 
 """
 Answer generator module for final answer generation and context management.
