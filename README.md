@@ -688,7 +688,7 @@ You can customize the evaluation by setting the following environment variables 
 | `LLM_MODEL` | `"MiroThinker-Agents"` | Agent name identifier |
 | `BASE_URL` | `"https://your-api.com/v1"` | Base URL of your server |
 | `NUM_RUNS` | Varies by benchmark | Number of evaluation runs (3 for most benchmarks, 8 for GAIA/XBench/FutureX/SEAL-0, 32 for AIME2025) |
-| `LLM_PROVIDER` | `"qwen"` | LLM provider (e.g., `qwen`, `openai`, `anthropic`) |
+| `LLM_PROVIDER` | `"qwen"` | LLM provider (e.g., `qwen`, `openai`, `anthropic`, `minimax`) |
 | `AGENT_SET` | `"mirothinker_1.7_keep5_max200"` | Agent configuration (e.g., `mirothinker_1.7_keep5_max200`, `mirothinker_1.7_keep5_max300`.) |
 | `MAX_CONTEXT_LENGTH` | `262144` | Maximum context length (256K) |
 | `MAX_CONCURRENT` | `10` | Maximum concurrent tasks |
@@ -712,6 +712,14 @@ NUM_RUNS=8 LLM_MODEL="MiroThinker-1.7-mini" BASE_URL="https://your-api.com/v1" b
 LLM_MODEL="MiroThinker-1.7-mini" \
 BASE_URL="https://your-api.com/v1" \
 NUM_RUNS=8 \
+AGENT_SET="mirothinker_1.7_keep5_max200" \
+bash scripts/run_evaluate_multiple_runs_gaia-validation-text-103.sh
+
+# Use MiniMax as the LLM provider (supports MiniMax-M2.5 and MiniMax-M2.5-highspeed, 204K context)
+LLM_MODEL="MiniMax-M2.5" \
+LLM_PROVIDER="minimax" \
+BASE_URL="https://api.minimax.io/v1" \
+API_KEY="your_minimax_api_key" \
 AGENT_SET="mirothinker_1.7_keep5_max200" \
 bash scripts/run_evaluate_multiple_runs_gaia-validation-text-103.sh
 
