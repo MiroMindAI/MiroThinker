@@ -101,96 +101,114 @@ class ToolManager(ToolManagerProtocol):
         """Get parameters for the specified server"""
         return self.server_dict.get(server_name)
 
+    async def _get_single_server_tools(self, config):
+        """Connect to a single server and get its tool definitions."""
+        server_name = config["name"]
+        server_params = config["params"]
+        one_server_for_prompt = {"name": server_name, "tools": []}
+        self._log(
+            "info",
+            "ToolManager | Get Tool Definitions",
+            f"Getting tool definitions for server '{server_name}'...",
+        )
+
+        try:
+            if isinstance(server_params, StdioServerParameters):
+                async with stdio_client(server_params) as (read, write):
+                    async with ClientSession(
+                        read, write, sampling_callback=None
+                    ) as session:
+                        await session.initialize()
+                        tools_response = await session.list_tools()
+                        # black list some tools
+                        for tool in tools_response.tools:
+                            if (server_name, tool.name) in self.tool_blacklist:
+                                self._log(
+                                    "info",
+                                    "ToolManager | Tool Blacklisted",
+                                    f"Tool '{tool.name}' in server '{server_name}' is blacklisted, skipping.",
+                                )
+                                continue
+                            one_server_for_prompt["tools"].append(
+                                {
+                                    "name": tool.name,
+                                    "description": tool.description,
+                                    "schema": tool.inputSchema,
+                                }
+                            )
+            elif isinstance(server_params, str) and server_params.startswith(
+                ("http://", "https://")
+            ):
+                # SSE endpoint
+                async with sse_client(server_params) as (read, write):
+                    async with ClientSession(
+                        read, write, sampling_callback=None
+                    ) as session:
+                        await session.initialize()
+                        tools_response = await session.list_tools()
+                        for tool in tools_response.tools:
+                            one_server_for_prompt["tools"].append(
+                                {
+                                    "name": tool.name,
+                                    "description": tool.description,
+                                    "schema": tool.inputSchema,
+                                }
+                            )
+            else:
+                self._log(
+                    "error",
+                    "ToolManager | Unknown Parameter Type",
+                    f"Error: Unknown parameter type for server '{server_name}': {type(server_params)}",
+                )
+                raise TypeError(
+                    f"Unknown server params type for {server_name}: {type(server_params)}"
+                )
+
+            self._log(
+                "info",
+                "ToolManager | Tool Definitions Success",
+                f"Successfully obtained {len(one_server_for_prompt['tools'])} tool definitions from server '{server_name}'.",
+            )
+
+        except Exception as e:
+            self._log(
+                "error",
+                "ToolManager | Connection Error",
+                f"Error: Unable to connect or get tools from server '{server_name}': {e}",
+            )
+            # Still add server entry, but mark tool list as empty or include error information
+            one_server_for_prompt["tools"] = [
+                {"error": f"Unable to fetch tools: {e}"}
+            ]
+
+        return one_server_for_prompt
+
     async def get_all_tool_definitions(self):
         """
         Connect to all configured servers and get their tool definitions.
+        Servers are initialized in parallel using asyncio.gather() for speed.
         Returns a list suitable for passing to the Prompt generator.
         """
+        # Launch all server connections in parallel
+        results = await asyncio.gather(
+            *(self._get_single_server_tools(config) for config in self.server_configs),
+            return_exceptions=True,
+        )
+
         all_servers_for_prompt = []
-        # Process remote server tools
-        for config in self.server_configs:
-            server_name = config["name"]
-            server_params = config["params"]
-            one_server_for_prompt = {"name": server_name, "tools": []}
-            self._log(
-                "info",
-                "ToolManager | Get Tool Definitions",
-                f"Getting tool definitions for server '{server_name}'...",
-            )
-
-            try:
-                if isinstance(server_params, StdioServerParameters):
-                    async with stdio_client(server_params) as (read, write):
-                        async with ClientSession(
-                            read, write, sampling_callback=None
-                        ) as session:
-                            await session.initialize()
-                            tools_response = await session.list_tools()
-                            # black list some tools
-                            for tool in tools_response.tools:
-                                if (server_name, tool.name) in self.tool_blacklist:
-                                    self._log(
-                                        "info",
-                                        "ToolManager | Tool Blacklisted",
-                                        f"Tool '{tool.name}' in server '{server_name}' is blacklisted, skipping.",
-                                    )
-                                    continue
-                                one_server_for_prompt["tools"].append(
-                                    {
-                                        "name": tool.name,
-                                        "description": tool.description,
-                                        "schema": tool.inputSchema,
-                                    }
-                                )
-                elif isinstance(server_params, str) and server_params.startswith(
-                    ("http://", "https://")
-                ):
-                    # SSE endpoint
-                    async with sse_client(server_params) as (read, write):
-                        async with ClientSession(
-                            read, write, sampling_callback=None
-                        ) as session:
-                            await session.initialize()
-                            tools_response = await session.list_tools()
-                            for tool in tools_response.tools:
-                                # Can add specific tool filtering logic here (if needed)
-                                # if server_name == "tool-excel" and tool.name not in ["get_workbook_metadata", "read_data_from_excel"]:
-                                #     continue
-                                one_server_for_prompt["tools"].append(
-                                    {
-                                        "name": tool.name,
-                                        "description": tool.description,
-                                        "schema": tool.inputSchema,
-                                    }
-                                )
-                else:
-                    self._log(
-                        "error",
-                        "ToolManager | Unknown Parameter Type",
-                        f"Error: Unknown parameter type for server '{server_name}': {type(server_params)}",
-                    )
-                    raise TypeError(
-                        f"Unknown server params type for {server_name}: {type(server_params)}"
-                    )
-
-                self._log(
-                    "info",
-                    "ToolManager | Tool Definitions Success",
-                    f"Successfully obtained {len(one_server_for_prompt['tools'])} tool definitions from server '{server_name}'.",
-                )
-                all_servers_for_prompt.append(one_server_for_prompt)
-
-            except Exception as e:
+        for config, result in zip(self.server_configs, results):
+            if isinstance(result, Exception):
+                server_name = config["name"]
                 self._log(
                     "error",
                     "ToolManager | Connection Error",
-                    f"Error: Unable to connect or get tools from server '{server_name}': {e}",
+                    f"Error: Unable to connect or get tools from server '{server_name}': {result}",
                 )
-                # Still add server entry, but mark tool list as empty or include error information
-                one_server_for_prompt["tools"] = [
-                    {"error": f"Unable to fetch tools: {e}"}
-                ]
-                all_servers_for_prompt.append(one_server_for_prompt)
+                all_servers_for_prompt.append(
+                    {"name": server_name, "tools": [{"error": f"Unable to fetch tools: {result}"}]}
+                )
+            else:
+                all_servers_for_prompt.append(result)
 
         return all_servers_for_prompt
 
