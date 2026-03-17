@@ -121,8 +121,8 @@ class OpenAIClient(BaseClient):
         )
 
         # Retry loop with dynamic max_tokens adjustment
-        max_retries = 5
-        base_wait_time = 10
+        max_retries = 10
+        base_wait_time = 30
         current_max_tokens = self.max_tokens
 
         for attempt in range(max_retries):
