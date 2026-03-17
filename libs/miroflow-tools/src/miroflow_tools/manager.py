@@ -177,9 +177,7 @@ class ToolManager(ToolManagerProtocol):
                 f"Error: Unable to connect or get tools from server '{server_name}': {e}",
             )
             # Still add server entry, but mark tool list as empty or include error information
-            one_server_for_prompt["tools"] = [
-                {"error": f"Unable to fetch tools: {e}"}
-            ]
+            one_server_for_prompt["tools"] = [{"error": f"Unable to fetch tools: {e}"}]
 
         return one_server_for_prompt
 
@@ -205,7 +203,10 @@ class ToolManager(ToolManagerProtocol):
                     f"Error: Unable to connect or get tools from server '{server_name}': {result}",
                 )
                 all_servers_for_prompt.append(
-                    {"name": server_name, "tools": [{"error": f"Unable to fetch tools: {result}"}]}
+                    {
+                        "name": server_name,
+                        "tools": [{"error": f"Unable to fetch tools: {result}"}],
+                    }
                 )
             else:
                 all_servers_for_prompt.append(result)
