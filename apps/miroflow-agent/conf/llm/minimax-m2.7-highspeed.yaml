@@ -1,12 +1,12 @@
-# conf/llm/minimax.yaml - MiniMax LLM configuration
-# MiniMax uses an OpenAI-compatible API.
+# conf/llm/minimax-m2.7-highspeed.yaml - MiniMax M2.7 Highspeed configuration
+# High-speed version of M2.7 for low-latency scenarios.
 # API docs: https://platform.minimax.io/docs/api-reference/text-openai-api
 defaults:
   - default
   - _self_
 
 provider: "minimax"
-model_name: "MiniMax-M2.7"
+model_name: "MiniMax-M2.7-highspeed"
 base_url: "https://api.minimax.io/v1"
 max_context_length: 204800
 max_tokens: 16384

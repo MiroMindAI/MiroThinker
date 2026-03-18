@@ -714,8 +714,8 @@ NUM_RUNS=8 \
 AGENT_SET="mirothinker_1.7_keep5_max200" \
 bash scripts/run_evaluate_multiple_runs_gaia-validation-text-103.sh
 
-# Use MiniMax as the LLM provider (supports MiniMax-M2.5 and MiniMax-M2.5-highspeed, 204K context)
-LLM_MODEL="MiniMax-M2.5" \
+# Use MiniMax as the LLM provider (supports MiniMax-M2.7, MiniMax-M2.7-highspeed, MiniMax-M2.5, MiniMax-M2.5-highspeed, 204K context)
+LLM_MODEL="MiniMax-M2.7" \
 LLM_PROVIDER="minimax" \
 BASE_URL="https://api.minimax.io/v1" \
 API_KEY="your_minimax_api_key" \
