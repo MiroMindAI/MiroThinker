@@ -953,11 +953,22 @@ Join our community and help us build the future of AI agents!
 
 If you find this project useful in your research, please consider citing:
 
+**MiroThinker** (Model & Method)
 ```
-@article{miromind2025mirothinker,
+@article{miromind2026mirothinker,
   title={MiroThinker-1.7 & H1: Towards Heavy-Duty Research Agents via Verification},
   author={MiroMind Team and Bai, S. and Bing, L. and Lei, L. and Li, R. and Li, X. and Lin, X. and Min, E. and Su, L. and Wang, B. and Wang, L. and Wang, L. and Wang, S. and Wang, X. and Zhang, Y. and Zhang, Z. and others},
   journal={arXiv preprint arXiv:2603.15726},
+  year={2026}
+}
+```
+
+**MiroFlow** (Framework)
+```bibtex
+@article{miromind2026miroflow,
+  title={MiroFlow: Towards High-Performance and Robust Open-Source Agent Framework for General Deep Research Tasks},
+  author={Su, Shiqian and Xing, Sen and Dong, Xuan and Zhong, Muyan and Wang, Bin and Zhu, Xizhou and Chen, Yuntao and Wang, Wenhai and Deng, Yue and Zhu, Pengxiang and others},
+  journal={arXiv preprint arXiv:2602.22808},
   year={2026}
 }
 ```
