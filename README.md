@@ -18,6 +18,10 @@
 
 <div align="center">
 
+<p align="center">
+  <a href="README.zh.md">中文</a> | <strong>English</strong>
+</p>
+
 ### 🚀 [Try MiroThinker!](https://dr.miromind.ai/)
 
 </div>
