@@ -375,6 +375,8 @@ We have released the **MiroThinker v0.1** series, including both SFT and DPO var
 
 ## 🚀 Quick Start
 
+For optimal usage, we recommend using MiroThinker with this tool-enabled agent framework and thinking mode enabled.
+
 ### Prerequisites
 
 - 🐍 **Python 3.10+**
