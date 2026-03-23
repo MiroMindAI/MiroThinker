@@ -963,6 +963,13 @@ If you find this project useful in your research, please consider citing:
   journal={arXiv preprint arXiv:2603.15726},
   year={2026}
 }
+
+@article{miromind2025mirothinker,
+  title={MiroThinker: Pushing the Performance Boundaries of Open-Source Research Agents via Model, Context, and Interactive Scaling},
+  author={MiroMind Team and Bai, Song and Bing, Lidong and Chen, Carson and Chen, Guanzheng and Chen, Yuntao and Chen, Zhe and Chen, Ziyi and Dong, Xuan and others},
+  journal={arXiv preprint arXiv:2511.11793},
+  year={2025}
+}
 ```
 
 **MiroFlow** (Framework)
