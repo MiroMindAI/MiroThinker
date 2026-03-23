@@ -9,6 +9,7 @@ alternative to the Serper-backed google_search tool.
 import json
 import os
 
+import httpx
 from mcp.server.fastmcp import FastMCP
 from tavily import TavilyClient
 from tenacity import (
@@ -18,6 +19,7 @@ from tenacity import (
     wait_exponential,
 )
 
+# Obtain from https://app.tavily.com
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "")
 
 # Initialize FastMCP server
@@ -27,7 +29,7 @@ mcp = FastMCP("tavily-mcp-server")
 @retry(
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=1, min=4, max=10),
-    retry=retry_if_exception_type((ConnectionError, TimeoutError)),
+    retry=retry_if_exception_type((httpx.ConnectError, httpx.TimeoutException)),
 )
 def _tavily_search_request(client: TavilyClient, **kwargs) -> dict:
     """Execute a Tavily search with retry logic."""
