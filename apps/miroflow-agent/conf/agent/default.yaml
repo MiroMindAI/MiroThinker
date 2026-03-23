@@ -14,6 +14,7 @@ sub_agents:
   agent-browsing:
     tools:
       - tool-google-search
+      # - tool-tavily-search  # Alternative to tool-google-search (requires TAVILY_API_KEY)
       - tool-vqa
       - tool-reader
       - tool-python
