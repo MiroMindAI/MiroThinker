@@ -1198,5 +1198,11 @@ class Orchestrator:
             "Main Agent | Task Completed",
             f"Main agent task {task_id} completed successfully",
         )
+
+        # Close all persistent MCP sessions to release subprocess resources
+        await self.main_agent_tool_manager.close_all_sessions()
+        for tm in self.sub_agent_tool_managers.values():
+            await tm.close_all_sessions()
+
         gc.collect()
         return final_summary, final_boxed_answer, failure_experience_summary

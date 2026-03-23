@@ -36,6 +36,17 @@ TENCENTCLOUD_SECRET_KEY = os.getenv("TENCENTCLOUD_SECRET_KEY", "")
 # Initialize FastMCP server
 mcp = FastMCP("search_and_scrape_webpage")
 
+# Module-level shared httpx client for connection pooling
+_serper_client: httpx.AsyncClient | None = None
+
+
+def _get_serper_client() -> httpx.AsyncClient:
+    """Get or create a shared httpx.AsyncClient for Serper API requests."""
+    global _serper_client
+    if _serper_client is None or _serper_client.is_closed:
+        _serper_client = httpx.AsyncClient(timeout=60.0)
+    return _serper_client
+
 
 @retry(
     stop=stop_after_attempt(3),
@@ -47,15 +58,16 @@ mcp = FastMCP("search_and_scrape_webpage")
 async def make_serper_request(
     payload: Dict[str, Any], headers: Dict[str, str]
 ) -> httpx.Response:
-    """Make HTTP request to Serper API with retry logic."""
-    async with httpx.AsyncClient() as client:
-        response = await client.post(
-            f"{SERPER_BASE_URL}/search",
-            json=payload,
-            headers=headers,
-        )
-        response.raise_for_status()
-        return response
+    """Make HTTP request to Serper API with retry logic.
+    Uses a module-level shared client for connection pooling."""
+    client = _get_serper_client()
+    response = await client.post(
+        f"{SERPER_BASE_URL}/search",
+        json=payload,
+        headers=headers,
+    )
+    response.raise_for_status()
+    return response
 
 
 def _is_banned_url(url: str) -> bool:
