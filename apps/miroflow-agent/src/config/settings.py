@@ -145,7 +145,7 @@ def create_mcp_server_parameters(cfg: DictConfig, agent_cfg: DictConfig):
     ):
         if not TAVILY_API_KEY:
             raise ValueError(
-                "TAVILY_API_KEY not set, tool-tavily-search will be unavailable."
+                "TAVILY_API_KEY is required when tool-tavily-search is configured but is not set."
             )
 
         configs.append(
