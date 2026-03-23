@@ -6,7 +6,7 @@ LLM Client Factory module.
 
 This module provides a factory function for creating LLM clients based on
 configuration. It supports multiple providers including OpenAI, Anthropic,
-and Qwen (via OpenAI-compatible API).
+Qwen, and MiniMax (via OpenAI-compatible API).
 """
 
 from typing import Optional, Union
@@ -18,7 +18,7 @@ from .providers.anthropic_client import AnthropicClient
 from .providers.openai_client import OpenAIClient
 
 # Supported LLM providers
-SUPPORTED_PROVIDERS = {"anthropic", "openai", "qwen"}
+SUPPORTED_PROVIDERS = {"anthropic", "openai", "qwen", "minimax"}
 
 
 def ClientFactory(
@@ -55,6 +55,9 @@ def ClientFactory(
         ),
         "qwen": lambda: OpenAIClient(task_id=task_id, task_log=task_log, cfg=config),
         "openai": lambda: OpenAIClient(task_id=task_id, task_log=task_log, cfg=config),
+        "minimax": lambda: OpenAIClient(
+            task_id=task_id, task_log=task_log, cfg=config
+        ),
     }
 
     factory = client_creators.get(provider)
