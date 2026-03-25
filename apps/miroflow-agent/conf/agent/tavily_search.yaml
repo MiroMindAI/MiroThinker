@@ -1,0 +1,29 @@
+# conf/agent/tavily_search.yaml
+# Variant of multi_agent.yaml that uses Tavily search instead of Google Search (Serper).
+# The name of tools and sub-agents defined in: apps/miroflow-agent/src/config/settings.py
+# Each sub-agent prompt is written in: apps/miroflow-agent/src/utils/prompt_utils.py
+defaults:
+  - default
+  - _self_
+
+main_agent:
+  tools:
+    - tool-python
+    - tool-vqa
+    - tool-transcribe
+    - tool-reasoning
+    - tool-reader
+  max_turns: 50  # Maximum number of turns for main agent execution
+
+sub_agents:
+  agent-browsing:
+    tools:
+      - tool-tavily-search
+      - tool-vqa
+      - tool-reader
+      - tool-python
+    max_turns: 50
+
+# Settings for context management
+keep_tool_result: -1
+context_compress_limit: 0  # Enable context compression (>0 = enabled, 0 = disabled).

@@ -18,7 +18,8 @@ dependencies = [
     "markitdown-mcp>=0.0.1a3",
     "google-genai",
     "aiohttp",
-    "redis"
+    "redis",
+    "tavily-python"
 ]
 
 [build-system]
