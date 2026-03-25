@@ -12,12 +12,6 @@ from typing import Any, Dict
 
 from mcp.server.fastmcp import FastMCP
 from tavily import TavilyClient
-from tenacity import (
-    retry,
-    retry_if_exception_type,
-    stop_after_attempt,
-    wait_exponential,
-)
 
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "")
 
@@ -25,15 +19,10 @@ TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "")
 mcp = FastMCP("tavily-mcp-server")
 
 
-@retry(
-    stop=stop_after_attempt(3),
-    wait=wait_exponential(multiplier=1, min=4, max=10),
-    retry=retry_if_exception_type(Exception),
-)
 def make_tavily_request(
     client: TavilyClient, query: str, max_results: int, search_depth: str, topic: str
 ) -> Dict[str, Any]:
-    """Make Tavily search request with retry logic."""
+    """Make Tavily search request."""
     return client.search(
         query=query,
         max_results=max_results,

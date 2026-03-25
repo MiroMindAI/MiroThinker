@@ -19,6 +19,7 @@ dependencies = [
     "google-genai",
     "aiohttp",
     "redis",
+    "tenacity",
     "tavily-python"
 ]
 
