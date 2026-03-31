@@ -8,6 +8,7 @@ from typing import Any, Dict
 
 import httpx
 from mcp.server.fastmcp import FastMCP
+from tavily import AsyncTavilyClient
 from tenacity import (
     retry,
     retry_if_exception_type,
@@ -326,6 +327,25 @@ async def sogou_search(
         )
 
 
+@retry(
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=1, min=4, max=10),
+    retry=retry_if_exception_type((httpx.ConnectError, httpx.TimeoutException, Exception)),
+)
+async def make_tavily_request(
+    query: str, max_results: int, search_depth: str, topic: str
+) -> Dict[str, Any]:
+    """Make request to Tavily Search API with retry logic."""
+    client = AsyncTavilyClient(api_key=TAVILY_API_KEY)
+    response = await client.search(
+        query=query,
+        max_results=max_results,
+        search_depth=search_depth,
+        topic=topic,
+    )
+    return response
+
+
 @mcp.tool()
 async def tavily_search(
     q: str,
@@ -371,10 +391,7 @@ async def tavily_search(
         )
 
     try:
-        from tavily import TavilyClient
-
-        client = TavilyClient(api_key=TAVILY_API_KEY)
-        response = client.search(
+        response = await make_tavily_request(
             query=q.strip(),
             max_results=max_results,
             search_depth=search_depth,

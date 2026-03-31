@@ -471,6 +471,7 @@ def get_env_info(cfg: DictConfig) -> dict:
         "has_e2b_api_key": bool(E2B_API_KEY),
         "has_tencent_secret_id": bool(TENCENTCLOUD_SECRET_ID),
         "has_tencent_secret_key": bool(TENCENTCLOUD_SECRET_KEY),
+        "has_tavily_api_key": bool(TAVILY_API_KEY),
         "has_summary_llm_api_key": bool(SUMMARY_LLM_API_KEY),
         # Base URLs
         "openai_base_url": OPENAI_BASE_URL,
