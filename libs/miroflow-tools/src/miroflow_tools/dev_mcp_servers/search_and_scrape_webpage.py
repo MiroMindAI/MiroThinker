@@ -9,6 +9,7 @@ from typing import Any, Dict
 import httpx
 from mcp.server.fastmcp import FastMCP
 from tavily import AsyncTavilyClient
+from tavily.errors import TimeoutError as TavilyTimeoutError
 from tenacity import (
     retry,
     retry_if_exception_type,
@@ -35,6 +36,9 @@ TENCENTCLOUD_SECRET_ID = os.getenv("TENCENTCLOUD_SECRET_ID", "")
 TENCENTCLOUD_SECRET_KEY = os.getenv("TENCENTCLOUD_SECRET_KEY", "")
 
 TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "")
+
+# Initialize Tavily client once at module level for connection reuse
+tavily_client = AsyncTavilyClient(api_key=TAVILY_API_KEY) if TAVILY_API_KEY else None
 
 # Initialize FastMCP server
 mcp = FastMCP("search_and_scrape_webpage")
@@ -330,14 +334,13 @@ async def sogou_search(
 @retry(
     stop=stop_after_attempt(3),
     wait=wait_exponential(multiplier=1, min=4, max=10),
-    retry=retry_if_exception_type((httpx.ConnectError, httpx.TimeoutException, Exception)),
+    retry=retry_if_exception_type((httpx.ConnectError, httpx.TimeoutException, TavilyTimeoutError)),
 )
 async def make_tavily_request(
     query: str, max_results: int, search_depth: str, topic: str
 ) -> Dict[str, Any]:
     """Make request to Tavily Search API with retry logic."""
-    client = AsyncTavilyClient(api_key=TAVILY_API_KEY)
-    response = await client.search(
+    response = await tavily_client.search(
         query=query,
         max_results=max_results,
         search_depth=search_depth,
@@ -385,6 +388,28 @@ async def tavily_search(
             {
                 "success": False,
                 "error": "Search query 'q' is required and cannot be empty",
+                "results": [],
+            },
+            ensure_ascii=False,
+        )
+
+    # Validate search_depth parameter
+    if search_depth not in ("basic", "advanced"):
+        return json.dumps(
+            {
+                "success": False,
+                "error": "search_depth must be 'basic' or 'advanced'",
+                "results": [],
+            },
+            ensure_ascii=False,
+        )
+
+    # Validate topic parameter
+    if topic not in ("general", "news", "finance"):
+        return json.dumps(
+            {
+                "success": False,
+                "error": "topic must be 'general', 'news', or 'finance'",
                 "results": [],
             },
             ensure_ascii=False,
