@@ -33,6 +33,8 @@ SERPER_API_KEY = os.getenv("SERPER_API_KEY", "")
 TENCENTCLOUD_SECRET_ID = os.getenv("TENCENTCLOUD_SECRET_ID", "")
 TENCENTCLOUD_SECRET_KEY = os.getenv("TENCENTCLOUD_SECRET_KEY", "")
 
+TAVILY_API_KEY = os.getenv("TAVILY_API_KEY", "")
+
 # Initialize FastMCP server
 mcp = FastMCP("search_and_scrape_webpage")
 
@@ -312,6 +314,80 @@ async def sogou_search(
             },
             ensure_ascii=False,
         )
+
+    except Exception as e:
+        return json.dumps(
+            {
+                "success": False,
+                "error": f"Unexpected error: {str(e)}",
+                "results": [],
+            },
+            ensure_ascii=False,
+        )
+
+
+@mcp.tool()
+async def tavily_search(
+    q: str,
+    max_results: int = 10,
+    search_depth: str = "advanced",
+    topic: str = "general",
+) -> str:
+    """
+    Tool to perform web searches via the Tavily API, optimised for global (non-Chinese) queries.
+
+    Tavily is a search engine designed for AI agents and delivers high-relevance results
+    for English and other non-Chinese languages.
+
+    Args:
+        q: Search query string (Required)
+        max_results: Maximum number of results to return (default: 10)
+        search_depth: Search depth – "basic" (fast, 1 credit) or "advanced" (thorough, 2 credits). Default: "advanced"
+        topic: Topic category – "general", "news", or "finance". Default: "general"
+
+    Returns:
+        JSON string containing search results with title, url, content, and relevance score.
+    """
+    # Check for API key
+    if not TAVILY_API_KEY:
+        return json.dumps(
+            {
+                "success": False,
+                "error": "TAVILY_API_KEY environment variable not set",
+                "results": [],
+            },
+            ensure_ascii=False,
+        )
+
+    # Validate required parameter
+    if not q or not q.strip():
+        return json.dumps(
+            {
+                "success": False,
+                "error": "Search query 'q' is required and cannot be empty",
+                "results": [],
+            },
+            ensure_ascii=False,
+        )
+
+    try:
+        from tavily import TavilyClient
+
+        client = TavilyClient(api_key=TAVILY_API_KEY)
+        response = client.search(
+            query=q.strip(),
+            max_results=max_results,
+            search_depth=search_depth,
+            topic=topic,
+        )
+
+        # Filter out banned URLs
+        filtered_results = [
+            r for r in response.get("results", []) if not _is_banned_url(r.get("url", ""))
+        ]
+        response["results"] = filtered_results
+
+        return json.dumps(response, ensure_ascii=False)
 
     except Exception as e:
         return json.dumps(

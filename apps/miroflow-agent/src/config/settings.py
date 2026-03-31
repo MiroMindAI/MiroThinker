@@ -59,6 +59,9 @@ OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1")
 TENCENTCLOUD_SECRET_ID = os.environ.get("TENCENTCLOUD_SECRET_ID")
 TENCENTCLOUD_SECRET_KEY = os.environ.get("TENCENTCLOUD_SECRET_KEY")
 
+# API for Tavily Search
+TAVILY_API_KEY = os.environ.get("TAVILY_API_KEY")
+
 # API for Summary LLM
 SUMMARY_LLM_API_KEY = os.environ.get("SUMMARY_LLM_API_KEY")
 SUMMARY_LLM_BASE_URL = os.environ.get("SUMMARY_LLM_BASE_URL")
@@ -303,6 +306,7 @@ def create_mcp_server_parameters(cfg: DictConfig, agent_cfg: DictConfig):
                         "SERPER_BASE_URL": SERPER_BASE_URL,
                         "TENCENTCLOUD_SECRET_ID": TENCENTCLOUD_SECRET_ID,
                         "TENCENTCLOUD_SECRET_KEY": TENCENTCLOUD_SECRET_KEY,
+                        "TAVILY_API_KEY": TAVILY_API_KEY,
                     },
                 ),
             }
