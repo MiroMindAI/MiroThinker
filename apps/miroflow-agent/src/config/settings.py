@@ -25,6 +25,9 @@ load_dotenv()
 SERPER_API_KEY = os.environ.get("SERPER_API_KEY")
 SERPER_BASE_URL = os.environ.get("SERPER_BASE_URL", "https://google.serper.dev")
 
+# API for Tavily Search
+TAVILY_API_KEY = os.environ.get("TAVILY_API_KEY")
+
 # API for Web Scraping
 JINA_API_KEY = os.environ.get("JINA_API_KEY")
 JINA_BASE_URL = os.environ.get("JINA_BASE_URL", "https://r.jina.ai")
@@ -106,6 +109,33 @@ def create_mcp_server_parameters(cfg: DictConfig, agent_cfg: DictConfig):
                     env={
                         "SERPER_API_KEY": SERPER_API_KEY,
                         "SERPER_BASE_URL": SERPER_BASE_URL,
+                        "JINA_API_KEY": JINA_API_KEY,
+                        "JINA_BASE_URL": JINA_BASE_URL,
+                    },
+                ),
+            }
+        )
+
+    if (
+        agent_cfg.get("tools", None) is not None
+        and "tool-tavily-search" in agent_cfg["tools"]
+    ):
+        if not TAVILY_API_KEY:
+            raise ValueError(
+                "TAVILY_API_KEY not set, tool-tavily-search will be unavailable."
+            )
+
+        configs.append(
+            {
+                "name": "tool-tavily-search",
+                "params": StdioServerParameters(
+                    command=sys.executable,
+                    args=[
+                        "-m",
+                        "miroflow_tools.mcp_servers.searching_tavily_mcp_server",
+                    ],
+                    env={
+                        "TAVILY_API_KEY": TAVILY_API_KEY,
                         "JINA_API_KEY": JINA_API_KEY,
                         "JINA_BASE_URL": JINA_BASE_URL,
                     },
@@ -460,6 +490,7 @@ def get_env_info(cfg: DictConfig) -> dict:
             else {}
         ),
         # API Keys (masked for security)
+        "has_tavily_api_key": bool(TAVILY_API_KEY),
         "has_serper_api_key": bool(SERPER_API_KEY),
         "has_jina_api_key": bool(JINA_API_KEY),
         "has_anthropic_api_key": bool(ANTHROPIC_API_KEY),
