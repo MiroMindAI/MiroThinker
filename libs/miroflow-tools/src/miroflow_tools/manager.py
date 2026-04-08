@@ -3,6 +3,7 @@
 
 import asyncio
 import functools
+from contextlib import AsyncExitStack
 from typing import Any, Awaitable, Callable, Protocol, TypeVar
 
 from mcp import ClientSession, StdioServerParameters  # (already imported in config.py)
@@ -58,6 +59,9 @@ class ToolManager(ToolManagerProtocol):
         self.browser_session = None
         self.tool_blacklist = tool_blacklist if tool_blacklist else set()
         self.task_log = None
+        self._session_stacks: dict[str, AsyncExitStack] = {}
+        self._sessions: dict[str, ClientSession] = {}
+        self._session_locks: dict[str, asyncio.Lock] = {}
 
     def set_task_log(self, task_log):
         """Set the task logger for structured logging."""
@@ -101,13 +105,79 @@ class ToolManager(ToolManagerProtocol):
         """Get parameters for the specified server"""
         return self.server_dict.get(server_name)
 
+    async def _get_or_create_session(
+        self, server_name: str, server_params
+    ) -> ClientSession:
+        """Get or create a persistent MCP session for a server.
+
+        Sessions are kept alive for the lifetime of the ToolManager, eliminating
+        per-call subprocess spawning overhead. Call ``close()`` when the task ends.
+        """
+        if server_name not in self._session_locks:
+            self._session_locks[server_name] = asyncio.Lock()
+
+        async with self._session_locks[server_name]:
+            if server_name in self._sessions:
+                return self._sessions[server_name]
+
+            stack = AsyncExitStack()
+            try:
+                if isinstance(server_params, StdioServerParameters):
+                    read, write = await stack.enter_async_context(
+                        stdio_client(server_params)
+                    )
+                elif isinstance(server_params, str) and server_params.startswith(
+                    ("http://", "https://")
+                ):
+                    read, write = await stack.enter_async_context(
+                        sse_client(server_params)
+                    )
+                else:
+                    await stack.aclose()
+                    raise TypeError(
+                        f"Unknown server params type for {server_name}: {type(server_params)}"
+                    )
+
+                session = await stack.enter_async_context(
+                    ClientSession(read, write, sampling_callback=None)
+                )
+                await session.initialize()
+                self._session_stacks[server_name] = stack
+                self._sessions[server_name] = session
+                return session
+            except Exception:
+                await stack.aclose()
+                raise
+
+    async def close(self) -> None:
+        """Close all persistent MCP server sessions."""
+        for server_name, stack in list(self._session_stacks.items()):
+            try:
+                await stack.aclose()
+            except Exception as e:
+                self._log(
+                    "error",
+                    "ToolManager | Session Close Error",
+                    f"Error closing session for '{server_name}': {e}",
+                )
+        self._session_stacks.clear()
+        self._sessions.clear()
+        if self.browser_session is not None:
+            try:
+                await self.browser_session.close()
+            except Exception:
+                pass
+            self.browser_session = None
+
     async def get_all_tool_definitions(self):
         """
         Connect to all configured servers and get their tool definitions.
         Returns a list suitable for passing to the Prompt generator.
+
+        Sessions opened here are kept alive and reused by ``execute_tool_call``,
+        so there is no need to reconnect when tools are actually invoked.
         """
         all_servers_for_prompt = []
-        # Process remote server tools
         for config in self.server_configs:
             server_name = config["name"]
             server_params = config["params"]
@@ -119,58 +189,22 @@ class ToolManager(ToolManagerProtocol):
             )
 
             try:
-                if isinstance(server_params, StdioServerParameters):
-                    async with stdio_client(server_params) as (read, write):
-                        async with ClientSession(
-                            read, write, sampling_callback=None
-                        ) as session:
-                            await session.initialize()
-                            tools_response = await session.list_tools()
-                            # black list some tools
-                            for tool in tools_response.tools:
-                                if (server_name, tool.name) in self.tool_blacklist:
-                                    self._log(
-                                        "info",
-                                        "ToolManager | Tool Blacklisted",
-                                        f"Tool '{tool.name}' in server '{server_name}' is blacklisted, skipping.",
-                                    )
-                                    continue
-                                one_server_for_prompt["tools"].append(
-                                    {
-                                        "name": tool.name,
-                                        "description": tool.description,
-                                        "schema": tool.inputSchema,
-                                    }
-                                )
-                elif isinstance(server_params, str) and server_params.startswith(
-                    ("http://", "https://")
-                ):
-                    # SSE endpoint
-                    async with sse_client(server_params) as (read, write):
-                        async with ClientSession(
-                            read, write, sampling_callback=None
-                        ) as session:
-                            await session.initialize()
-                            tools_response = await session.list_tools()
-                            for tool in tools_response.tools:
-                                # Can add specific tool filtering logic here (if needed)
-                                # if server_name == "tool-excel" and tool.name not in ["get_workbook_metadata", "read_data_from_excel"]:
-                                #     continue
-                                one_server_for_prompt["tools"].append(
-                                    {
-                                        "name": tool.name,
-                                        "description": tool.description,
-                                        "schema": tool.inputSchema,
-                                    }
-                                )
-                else:
-                    self._log(
-                        "error",
-                        "ToolManager | Unknown Parameter Type",
-                        f"Error: Unknown parameter type for server '{server_name}': {type(server_params)}",
-                    )
-                    raise TypeError(
-                        f"Unknown server params type for {server_name}: {type(server_params)}"
+                session = await self._get_or_create_session(server_name, server_params)
+                tools_response = await session.list_tools()
+                for tool in tools_response.tools:
+                    if (server_name, tool.name) in self.tool_blacklist:
+                        self._log(
+                            "info",
+                            "ToolManager | Tool Blacklisted",
+                            f"Tool '{tool.name}' in server '{server_name}' is blacklisted, skipping.",
+                        )
+                        continue
+                    one_server_for_prompt["tools"].append(
+                        {
+                            "name": tool.name,
+                            "description": tool.description,
+                            "schema": tool.inputSchema,
+                        }
                     )
 
                 self._log(
@@ -186,7 +220,6 @@ class ToolManager(ToolManagerProtocol):
                     "ToolManager | Connection Error",
                     f"Error: Unable to connect or get tools from server '{server_name}': {e}",
                 )
-                # Still add server entry, but mark tool list as empty or include error information
                 one_server_for_prompt["tools"] = [
                     {"error": f"Unable to fetch tools: {e}"}
                 ]
@@ -246,71 +279,28 @@ class ToolManager(ToolManagerProtocol):
                 }
         else:
             try:
+                session = await self._get_or_create_session(server_name, server_params)
                 result_content = None
-                if isinstance(server_params, StdioServerParameters):
-                    async with stdio_client(server_params) as (read, write):
-                        async with ClientSession(
-                            read, write, sampling_callback=None
-                        ) as session:
-                            await session.initialize()
-                            try:
-                                tool_result = await session.call_tool(
-                                    tool_name, arguments=arguments
-                                )
-                                result_content = (
-                                    tool_result.content[-1].text
-                                    if tool_result.content
-                                    else ""
-                                )
-                                # post hoc check for browsing agent reading answers from hf datsets
-                                if self._should_block_hf_scraping(tool_name, arguments):
-                                    result_content = "You are trying to scrape a Hugging Face dataset for answers, please do not use the scrape tool for this purpose."
-                            except Exception as tool_error:
-                                self._log(
-                                    "error",
-                                    "ToolManager | Tool Execution Error",
-                                    f"Tool execution error: {tool_error}",
-                                )
-                                return {
-                                    "server_name": server_name,
-                                    "tool_name": tool_name,
-                                    "error": f"Tool execution failed: {str(tool_error)}",
-                                }
-                elif isinstance(server_params, str) and server_params.startswith(
-                    ("http://", "https://")
-                ):
-                    async with sse_client(server_params) as (read, write):
-                        async with ClientSession(
-                            read, write, sampling_callback=None
-                        ) as session:
-                            await session.initialize()
-                            try:
-                                tool_result = await session.call_tool(
-                                    tool_name, arguments=arguments
-                                )
-                                result_content = (
-                                    tool_result.content[-1].text
-                                    if tool_result.content
-                                    else ""
-                                )
-                                # post hoc check for browsing agent reading answers from hf datsets
-                                if self._should_block_hf_scraping(tool_name, arguments):
-                                    result_content = "You are trying to scrape a Hugging Face dataset for answers, please do not use the scrape tool for this purpose."
-                            except Exception as tool_error:
-                                self._log(
-                                    "error",
-                                    "ToolManager | Tool Execution Error",
-                                    f"Tool execution error: {tool_error}",
-                                )
-                                return {
-                                    "server_name": server_name,
-                                    "tool_name": tool_name,
-                                    "error": f"Tool execution failed: {str(tool_error)}",
-                                }
-                else:
-                    raise TypeError(
-                        f"Unknown server params type for {server_name}: {type(server_params)}"
+                try:
+                    tool_result = await session.call_tool(
+                        tool_name, arguments=arguments
                     )
+                    result_content = (
+                        tool_result.content[-1].text if tool_result.content else ""
+                    )
+                    if self._should_block_hf_scraping(tool_name, arguments):
+                        result_content = "You are trying to scrape a Hugging Face dataset for answers, please do not use the scrape tool for this purpose."
+                except Exception as tool_error:
+                    self._log(
+                        "error",
+                        "ToolManager | Tool Execution Error",
+                        f"Tool execution error: {tool_error}",
+                    )
+                    return {
+                        "server_name": server_name,
+                        "tool_name": tool_name,
+                        "error": f"Tool execution failed: {str(tool_error)}",
+                    }
 
                 self._log(
                     "info",
@@ -321,17 +311,16 @@ class ToolManager(ToolManagerProtocol):
                 return {
                     "server_name": server_name,
                     "tool_name": tool_name,
-                    "result": result_content,  # Return extracted text content
+                    "result": result_content,
                 }
 
-            except Exception as outer_e:  # Rename this to outer_e to avoid shadowing
+            except Exception as outer_e:
                 self._log(
                     "error",
                     "ToolManager | Tool Call Failed",
                     f"Error: Failed to call tool '{tool_name}' (server: '{server_name}'): {outer_e}",
                 )
 
-                # Store the original error message for later use
                 error_message = str(outer_e)
 
                 if (
@@ -360,20 +349,15 @@ class ToolManager(ToolManagerProtocol):
                         return {
                             "server_name": server_name,
                             "tool_name": tool_name,
-                            "result": result.text_content,  # Return extracted text content
+                            "result": result.text_content,
                         }
-                    except (
-                        Exception
-                    ) as inner_e:  # Use a different name to avoid shadowing
-                        # Log the inner exception if needed
+                    except Exception as inner_e:
                         self._log(
                             "error",
                             "ToolManager | Fallback Failed",
                             f"Fallback also failed: {inner_e}",
                         )
-                        # No need for pass here as we'll continue to the return statement
 
-                # Always use the outer exception for the final error response
                 return {
                     "server_name": server_name,
                     "tool_name": tool_name,

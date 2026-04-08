@@ -176,6 +176,11 @@ async def execute_task_pipeline(
         )
         task_log.save()
 
+        # Close all persistent MCP server sessions
+        await main_agent_tool_manager.close()
+        for sub_manager in sub_agent_tool_managers.values():
+            await sub_manager.close()
+
 
 def create_pipeline_components(cfg: DictConfig):
     """
