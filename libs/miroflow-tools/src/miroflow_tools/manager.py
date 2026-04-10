@@ -199,14 +199,19 @@ class ToolManager(ToolManagerProtocol):
             return_exceptions=True
         )
         
-        for result in results:
+        for config, result in zip(self.server_configs, results):
             if isinstance(result, Exception):
-                # Log exception but continue with other servers
+                # Log with server identity preserved
                 self._log(
                     "error",
                     "ToolManager | Parallel Init Error",
-                    f"Unexpected error during parallel server initialization: {result}",
+                    f"Server '{config['name']}' failed: {result}",
                 )
+                # Append fallback entry so downstream knows this server exists but failed
+                all_servers_for_prompt.append({
+                    "name": config["name"],
+                    "tools": [{"error": f"Unable to fetch tools: {result}"}],
+                })
             else:
                 all_servers_for_prompt.append(result)
 
