@@ -480,6 +480,8 @@ class Orchestrator:
             tool_calls_data = []
             all_tool_results_content_with_id = []
             should_rollback_turn = False
+            # Buffer successful queries so a later rollback in the same turn
+            # does not pollute duplicate-query state.
             successful_queries_buffer = []
 
             for call in tool_calls:
@@ -910,6 +912,8 @@ class Orchestrator:
             tool_calls_data = []
             all_tool_results_content_with_id = []
             should_rollback_turn = False
+            # Buffer successful queries so a later rollback in the same turn
+            # does not pollute duplicate-query state.
             successful_queries_buffer = []
             main_agent_last_call_tokens = self.llm_client.last_call_tokens
 
