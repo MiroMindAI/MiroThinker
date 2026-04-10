@@ -890,6 +890,21 @@ bash scripts/collect_trace_qwen3.sh
 1. **Review logs**: Check `logs/` directory for detailed error messages
 1. **Verify data path**: Ensure benchmark data is downloaded and in correct location
 
+#### **Q: `uv sync` fails with memory allocation error on WSL**
+
+**A:** WSL2 imposes a memory cap that can cause `uv sync` to fail when building heavy packages (e.g. `transformers`, `pillow`). Two options:
+
+1. **Increase WSL2 memory limit** (recommended): Create or edit `%UserProfile%\.wslconfig` on your Windows host, then restart WSL (`wsl --shutdown`):
+   ```ini
+   [wsl2]
+   memory=8GB
+   ```
+
+2. **Limit parallel package builds** (no restart required): Set the `UV_CONCURRENT_BUILDS` environment variable before running `uv sync`:
+   ```bash
+   UV_CONCURRENT_BUILDS=1 uv sync
+   ```
+
 #### **Q: Out of memory errors**
 
 **A:** Solutions:
