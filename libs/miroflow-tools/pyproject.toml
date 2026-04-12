@@ -13,6 +13,7 @@ dependencies = [
     "playwright>=1.40.0",
     "requests>=2.32.0",
     "e2b-code-interpreter==1.2.1",
+    "exa-py>=2.0.0",
     "wikipedia",
     "mutagen",
     "markitdown-mcp>=0.0.1a3",
