@@ -7,6 +7,7 @@
 <div align="center">
 
 [![MODEL](https://img.shields.io/badge/Model-FFD21E?style=for-the-badge&logo=huggingface&logoColor=white)](https://huggingface.co/collections/miromind-ai/mirothinker-17)
+[![REPORT](https://img.shields.io/badge/Report-B31B1B?style=for-the-badge&logo=arxiv&logoColor=white)](https://arxiv.org/pdf/2603.15726)
 [![Blog](https://img.shields.io/badge/Blog-4285F4?style=for-the-badge&logo=google-chrome&logoColor=white)](https://miromind.ai/#blog)
 [![DATA](https://img.shields.io/badge/Data-0040A1?style=for-the-badge&logo=huggingface&logoColor=ffffff&labelColor)](https://huggingface.co/datasets/miromind-ai/MiroVerse-v0.1)
 
