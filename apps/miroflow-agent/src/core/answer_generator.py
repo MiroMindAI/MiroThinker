@@ -298,7 +298,7 @@ class AnswerGenerator:
             ) = await self.handle_llm_call(
                 system_prompt,
                 message_history,
-                tool_definitions,
+                [],  # Disable tools during final answer generation to prevent spurious tool calls
                 turn_count + 1 + retry_idx,
                 f"Main agent | Final Summary (attempt {retry_idx + 1}/{self.max_final_answer_retries})",
                 agent_type="main",

@@ -693,7 +693,7 @@ class Orchestrator:
         ) = await self.answer_generator.handle_llm_call(
             system_prompt,
             message_history,
-            tool_definitions,
+            [],  # Disable tools during final summary to prevent spurious tool calls
             turn_count + 1,
             f"{sub_agent_name} | Final summary",
             agent_type=sub_agent_name,
