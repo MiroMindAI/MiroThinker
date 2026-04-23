@@ -33,6 +33,7 @@ dependencies = [
     "markitdown-mcp>=0.0.1a3",
     "markitdown>=0.1.1",
     "regex>=2024.11.6",
+    "litellm>=1.60.0,<2.0.0",
     "openai>=1.78.1",
     "tenacity>=9.1.2",
     "transformers>=4.51.3",
