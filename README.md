@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/miromindai-mirothinker-badge.png)](https://mseep.ai/app/miromindai-mirothinker)
+
 <div align="center">
   <img src="assets/mirothinker_logo.png" width="55%" alt="MiroThinker" />
 </div>
