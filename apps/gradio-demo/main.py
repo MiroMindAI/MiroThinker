@@ -24,6 +24,10 @@ apply_prompt_patch()
 # Create global cleanup thread pool for operations that won't be affected by asyncio.cancel
 cleanup_executor = ThreadPoolExecutor(max_workers=2, thread_name_prefix="cleanup")
 
+# Register cleanup on exit to prevent resource leaks
+import atexit
+atexit.register(cleanup_executor.shutdown)
+
 logger = logging.getLogger(__name__)
 
 # Set DEMO_MODE for simplified tool configuration
@@ -399,13 +403,15 @@ async def stream_events_optimized(
             "data": {"workflow_id": workflow_id, "error": f"Stream error: {str(e)}"},
         }
     finally:
-        cancel_event.set()
-        stream_queue.close()
+        cancel_event.set()  # Signal pipeline to stop
         try:
-            future.result(timeout=1.0)
+            # Wait longer for pipeline thread to finish
+            future.result(timeout=5.0)
         except Exception:
-            pass
-        executor.shutdown(wait=False)
+            pass  # Thread may have been cancelled
+        finally:
+            stream_queue.close()  # Close queue after thread is done
+            executor.shutdown(wait=True, cancel_futures=True)
 
 
 # ========================= Gradio Integration =========================
