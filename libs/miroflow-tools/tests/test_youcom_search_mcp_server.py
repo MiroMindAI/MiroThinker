@@ -9,7 +9,7 @@ import json
 import os
 import sys
 import types
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 # --- Mock heavy dependencies before importing the target module ---
 
