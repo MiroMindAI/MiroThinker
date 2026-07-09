@@ -44,6 +44,7 @@ The following tools are implemented but were not used in the MiroThinker v1.0/v1
 |-----------------------------|----------------------|---------------------------------------------------|---------------------------------------------------------------------|--------------------------------|
 | **Web Searching**           | `tool-google-search` | `google_search`, `scrape_website`                 | `SERPER_API_KEY`, `SERPER_BASE_URL`, `JINA_API_KEY`, `JINA_BASE_URL` | [Details](#tool-google-search) |
 | **Web Searching (Sogou)**  | `tool-sogou-search` | `sogou_search`, `scrape_website`                 | `TENCENTCLOUD_SECRET_ID`, `TENCENTCLOUD_SECRET_KEY`, `JINA_API_KEY`, `JINA_BASE_URL` | [Details](#tool-sogou-search) |
+| **Web Searching (Sofya)**  | `tool-sofya-search` | `sofya_search`, `scrape_website`, `sofya_research` | `SOFYA_API_KEY`, `SOFYA_BASE_URL` | [Details](#tool-sofya-search) |
 | **Vision Processing**       | `tool-vqa`           | `visual_question_answering`                       | `ANTHROPIC_API_KEY`, `ANTHROPIC_BASE_URL`                            | [Details](#tool-vqa)           |
 | **Vision Processing**       | `tool-vqa-os`        | `visual_question_answering`                       | `VISION_API_KEY`, `VISION_BASE_URL`, `VISION_MODEL_NAME`            | [Details](#tool-vqa-os)        |
 | **Audio Processing**        | `tool-transcribe`    | `audio_transcription`, `audio_question_answering` | `OPENAI_API_KEY`, `OPENAI_BASE_URL`                                  | [Details](#tool-transcribe)    |
@@ -899,6 +900,70 @@ async def main():
     # Scrape website
     result = await manager.execute_tool_call(
         server_name="tool-sogou-search",
+        tool_name="scrape_website",
+        arguments={"url": "https://example.com/article"}
+    )
+    print(result)
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+</details>
+
+### Server: tool-sofya-search
+
+Web search, scraping, and deep research through the [Sofya](https://sofya.co) API. Search returns extracted page content instead of snippets, scrape fetches a URL as clean markdown (including PDF and DOCX), and research returns a cited multi-source report. *Optional: Not used in the MiroThinker v1.0/v1.5 evaluation*
+
+**Tools**:
+
+- 🔍 `sofya_search(query, max_results=10)`: Web search with extracted page content
+- 🌐 `scrape_website(url)`: Fetch a page as clean markdown
+- 📚 `sofya_research(query)`: Multi-source deep research with a cited report
+
+**Environment Variables**:
+
+- 🔑 `SOFYA_API_KEY`: Sofya API key (required). Get one at https://sofya.co
+- 🌐 `SOFYA_BASE_URL`: Sofya API base URL (default: `https://sofya.co`)
+
+**Example**:
+
+<details>
+<summary>Click to expand code example</summary>
+
+```python
+import asyncio
+from miroflow_tools import ToolManager
+from mcp import StdioServerParameters
+
+async def main():
+    server_configs = [
+        {
+            "name": "tool-sofya-search",
+            "params": StdioServerParameters(
+                command="python",
+                args=["-m", "miroflow_tools.mcp_servers.searching_sofya_mcp_server"],
+                env={
+                    "SOFYA_API_KEY": "your_sofya_api_key",
+                    "SOFYA_BASE_URL": "https://sofya.co"
+                }
+            )
+        }
+    ]
+
+    manager = ToolManager(server_configs)
+
+    # Web search
+    result = await manager.execute_tool_call(
+        server_name="tool-sofya-search",
+        tool_name="sofya_search",
+        arguments={"query": "Model Context Protocol", "max_results": 10}
+    )
+    print(result)
+
+    # Scrape website
+    result = await manager.execute_tool_call(
+        server_name="tool-sofya-search",
         tool_name="scrape_website",
         arguments={"url": "https://example.com/article"}
     )

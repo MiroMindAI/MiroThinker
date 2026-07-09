@@ -59,6 +59,10 @@ OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1")
 TENCENTCLOUD_SECRET_ID = os.environ.get("TENCENTCLOUD_SECRET_ID")
 TENCENTCLOUD_SECRET_KEY = os.environ.get("TENCENTCLOUD_SECRET_KEY")
 
+# API for Sofya Search, Scrape, and Research
+SOFYA_API_KEY = os.environ.get("SOFYA_API_KEY")
+SOFYA_BASE_URL = os.environ.get("SOFYA_BASE_URL", "https://sofya.co")
+
 # API for Summary LLM
 SUMMARY_LLM_API_KEY = os.environ.get("SUMMARY_LLM_API_KEY")
 SUMMARY_LLM_BASE_URL = os.environ.get("SUMMARY_LLM_BASE_URL")
@@ -131,6 +135,32 @@ def create_mcp_server_parameters(cfg: DictConfig, agent_cfg: DictConfig):
                         "TENCENTCLOUD_SECRET_KEY": TENCENTCLOUD_SECRET_KEY,
                         "JINA_API_KEY": JINA_API_KEY,
                         "JINA_BASE_URL": JINA_BASE_URL,
+                    },
+                ),
+            }
+        )
+
+    if (
+        agent_cfg.get("tools", None) is not None
+        and "tool-sofya-search" in agent_cfg["tools"]
+    ):
+        if not SOFYA_API_KEY:
+            raise ValueError(
+                "SOFYA_API_KEY not set, tool-sofya-search will be unavailable."
+            )
+
+        configs.append(
+            {
+                "name": "tool-sofya-search",
+                "params": StdioServerParameters(
+                    command=sys.executable,
+                    args=[
+                        "-m",
+                        "miroflow_tools.mcp_servers.searching_sofya_mcp_server",
+                    ],
+                    env={
+                        "SOFYA_API_KEY": SOFYA_API_KEY,
+                        "SOFYA_BASE_URL": SOFYA_BASE_URL,
                     },
                 ),
             }
@@ -467,6 +497,7 @@ def get_env_info(cfg: DictConfig) -> dict:
         "has_e2b_api_key": bool(E2B_API_KEY),
         "has_tencent_secret_id": bool(TENCENTCLOUD_SECRET_ID),
         "has_tencent_secret_key": bool(TENCENTCLOUD_SECRET_KEY),
+        "has_sofya_api_key": bool(SOFYA_API_KEY),
         "has_summary_llm_api_key": bool(SUMMARY_LLM_API_KEY),
         # Base URLs
         "openai_base_url": OPENAI_BASE_URL,

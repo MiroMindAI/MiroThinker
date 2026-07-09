@@ -7,6 +7,7 @@
 <div align="center">
 
 [![MODEL](https://img.shields.io/badge/Model-FFD21E?style=for-the-badge&logo=huggingface&logoColor=white)](https://huggingface.co/collections/miromind-ai/mirothinker-17)
+[![REPORT](https://img.shields.io/badge/Report-B31B1B?style=for-the-badge&logo=arxiv&logoColor=white)](https://arxiv.org/pdf/2603.15726)
 [![Blog](https://img.shields.io/badge/Blog-4285F4?style=for-the-badge&logo=google-chrome&logoColor=white)](https://miromind.ai/#blog)
 [![DATA](https://img.shields.io/badge/Data-0040A1?style=for-the-badge&logo=huggingface&logoColor=ffffff&labelColor)](https://huggingface.co/datasets/miromind-ai/MiroVerse-v0.1)
 
@@ -889,6 +890,21 @@ bash scripts/collect_trace_qwen3.sh
 1. **Check .env file**: Ensure all required environment variables are set
 1. **Review logs**: Check `logs/` directory for detailed error messages
 1. **Verify data path**: Ensure benchmark data is downloaded and in correct location
+
+#### **Q: `uv sync` fails with memory allocation error on WSL**
+
+**A:** WSL2 imposes a memory cap that can cause `uv sync` to fail when building heavy packages (e.g. `transformers`, `pillow`). Two options:
+
+1. **Increase WSL2 memory limit** (recommended): Create or edit `%UserProfile%\.wslconfig` on your Windows host, then restart WSL (`wsl --shutdown`):
+   ```ini
+   [wsl2]
+   memory=8GB
+   ```
+
+2. **Limit parallel package builds** (no restart required): Set the `UV_CONCURRENT_BUILDS` environment variable before running `uv sync`:
+   ```bash
+   UV_CONCURRENT_BUILDS=1 uv sync
+   ```
 
 #### **Q: Out of memory errors**
 
