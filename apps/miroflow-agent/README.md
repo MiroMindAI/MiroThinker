@@ -14,6 +14,21 @@ Before running the agent, ensure you have:
    ```
 1. **Started your model server** (for MiroThinker models): See the [Serve the MiroThinker Model](../../README.md#serve-the-mirothinker-model) section
 
+### Serper.dev-compatible endpoints
+
+Web search supports any Serper.dev-compatible endpoint, such as litescrape.com,
+serpbase.dev, and others. Set `SERPER_BASE_URL` to your provider's API base URL
+and `SERPER_API_KEY` to a key issued by that provider:
+
+```dotenv
+SERPER_API_KEY=your_provider_key
+SERPER_BASE_URL="https://your-provider.example"
+```
+
+The client appends `/search` and sends the key in `X-API-KEY`. Omit `/search`
+and any trailing slash from the base URL. The default remains
+`https://google.serper.dev`; no provider-specific code changes are required.
+
 ## Quick Start
 
 ### Run a Single Task
