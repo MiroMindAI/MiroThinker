@@ -110,8 +110,6 @@ def fix_server_name_in_text(text: str) -> str:
         if tool_tag not in text:
             continue
         correct_server_tag = f"<server_name>{correct_server}</server_name>"
-        if correct_server_tag in text:
-            continue
         text = re.sub(
             r"<server_name>[^<]+</server_name>(\s*" + re.escape(tool_tag) + r")",
             correct_server_tag + r"\1",
